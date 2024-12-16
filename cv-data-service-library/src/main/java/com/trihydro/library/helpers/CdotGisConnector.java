@@ -46,8 +46,8 @@ public class CdotGisConnector {
         logger.error("Error getting all routes from CDOT GIS service: {}", e.getMessage(), e);
         return null;
     }
-    if (response.getBody() != null) {
-      logger.info("Received response from CDOT GIS service: {}", response.getBody());
+    if (response.getBody() == null) {
+        logger.warn("Received null response body from CDOT GIS service");
     }
     return response;
   }
@@ -66,8 +66,8 @@ public class CdotGisConnector {
         logger.error("Error getting route with ID {} from CDOT GIS service: {}", routeId, e.getMessage(), e);
         return null;
     }
-    if (response.getBody() != null) {
-      logger.info("Received response from CDOT GIS service: {}", response.getBody());
+    if (response.getBody() == null) {
+        logger.warn("Received null response body from CDOT GIS service");
     }
     return response;
   }
