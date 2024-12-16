@@ -8,6 +8,8 @@ import com.trihydro.library.helpers.CdotGisConnector;
 import com.trihydro.library.helpers.Utility;
 import com.trihydro.library.model.Milepost;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -30,29 +32,29 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 @RequestMapping("cdot-upstream-path")
 public class CdotUpstreamPathController extends BaseController {
   private CdotGisConnector cdotGisService;
-  private Utility utility;
+
+  private final Logger logger = LoggerFactory.getLogger(CdotUpstreamPathController.class);
 
   @Autowired
-  public void InjectDependencies(CdotGisConnector cdotGisService, Utility utility) {
+  public void InjectDependencies(CdotGisConnector cdotGisService) {
     this.cdotGisService = cdotGisService;
-    this.utility = utility;
   }
 
   @RequestMapping(value = "/get-buffer-for-path/{routeId}/{desiredDistanceInMiles:.+}", method = RequestMethod.POST)
   public ResponseEntity<List<Milepost>> getBufferForPath(@RequestBody List<Milepost> pathMileposts, @PathVariable String routeId, @PathVariable double desiredDistanceInMiles) throws JsonMappingException, JsonProcessingException {
-    utility.logWithDate("Number of mileposts in path in request body: " + pathMileposts.size(), this.getClass());
+    logger.info("Number of mileposts in path in request body: {}", pathMileposts.size());
     for (Milepost milepost : pathMileposts) {
-      utility.logWithDate("Milepost in path: " + milepost.getLatitude() + ", " + milepost.getLongitude(), this.getClass());
+      logger.debug("Milepost in path: {}, {}", milepost.getLatitude(), milepost.getLongitude());
     }
     List<Milepost> allMileposts = getMilepostsForRoute(routeId);
     if (allMileposts == null || allMileposts.isEmpty()) {
-      utility.logWithDate("No mileposts found for route", this.getClass());
+      logger.warn("No mileposts found for route");
       return ResponseEntity.badRequest().body(null);
     }
-    utility.logWithDate("Number of mileposts in route: " + allMileposts.size(), this.getClass());
+    logger.info("Number of mileposts in route: {}", allMileposts.size());
     PathDirection direction = getPathDirection(pathMileposts, allMileposts);
     if (direction == null) {
-      utility.logWithDate("Invalid path direction", this.getClass());
+      logger.warn("Invalid path direction");
       return ResponseEntity.badRequest().body(null);
     }
     Milepost firstMilepostInPath = pathMileposts.get(0);
@@ -61,7 +63,7 @@ public class CdotUpstreamPathController extends BaseController {
     List<Milepost> buffer = new ArrayList<Milepost>();
     double distanceInMiles = 0;
     if (direction == PathDirection.ASCENDING) {
-      utility.logWithDate("Path direction is ascending. Start index: " + startIndex, this.getClass());
+      logger.info("Path direction is ascending. Start index: {}", startIndex);
       buffer.add(allMileposts.get(startIndex));
       // add mileposts in descending order
       for (int i = startIndex - 1; i >= 0; i--) {
@@ -72,7 +74,7 @@ public class CdotUpstreamPathController extends BaseController {
         buffer.add(allMileposts.get(i));
       }
     } else {
-      utility.logWithDate("Path direction is descending. Start index: " + startIndex, this.getClass());
+      logger.info("Path direction is descending. Start index: {}", startIndex);
       // add mileposts in ascending order
       for (int i = startIndex + 1; i < allMileposts.size(); i++) {
         distanceInMiles = DistanceCalculator.calculateDistanceInMiles(buffer);
@@ -84,16 +86,16 @@ public class CdotUpstreamPathController extends BaseController {
     }
     if (buffer.size() < 2) {
       // at least 2 mileposts are needed to create a valid buffer path
-      utility.logWithDate("Buffer path has less than 2 mileposts", this.getClass());
+      logger.warn("Buffer path has less than 2 mileposts");
       return ResponseEntity.badRequest().body(null);
     }
     if (distanceInMiles < desiredDistanceInMiles) {
-      utility.logWithDate("Buffer path has less distance than desired distance", this.getClass());
+      logger.warn("Buffer path has less distance than desired distance");
       return ResponseEntity.badRequest().body(null);
     }
-    utility.logWithDate("Distance of buffer path: " + distanceInMiles + " miles", this.getClass());
+    logger.info("Distance of buffer path: {} miles", distanceInMiles);
     String geojsonString = convertMilepostsToGeojsonString(buffer);
-    utility.logWithDate("Geojson string for buffer: " + geojsonString, this.getClass());
+    logger.debug("Geojson string for buffer: {}", geojsonString);
     return ResponseEntity.ok(buffer);
   }
 
@@ -119,19 +121,19 @@ public class CdotUpstreamPathController extends BaseController {
 
   public PathDirection getPathDirection(List<Milepost> pathMileposts, List<Milepost> allMileposts) {
     if (pathMileposts.size() < 2) {
-      utility.logWithDate("Path has less than 2 mileposts", this.getClass());
+      logger.warn("Path has less than 2 mileposts");
       return null;
     }
     Milepost firstMilepostInPath = pathMileposts.get(0);
     Milepost secondMilepostInPath = pathMileposts.get(1);
     int firstMilepostInPathIndex = getIndexOfMilepost(allMileposts, firstMilepostInPath);
     if (firstMilepostInPathIndex == -1) {
-      utility.logWithDate("First milepost not found in route", this.getClass());
+      logger.warn("First milepost not found in route");
       return null;
     }
     int secondMilepostInPathIndex = getIndexOfMilepost(allMileposts, secondMilepostInPath);
     if (secondMilepostInPathIndex == -1) {
-      utility.logWithDate("Second milepost not found in route", this.getClass());
+      logger.warn("Second milepost not found in route");
       return null;
     }
     if (firstMilepostInPathIndex < secondMilepostInPathIndex) {
@@ -143,7 +145,7 @@ public class CdotUpstreamPathController extends BaseController {
 
   private int getIndexOfMilepost(List<Milepost> mileposts, Milepost milepost) {
     if (milepost.getLatitude() == null || milepost.getLongitude() == null) {
-      utility.logWithDate("Milepost has null latitude or longitude", this.getClass());
+      logger.warn("Milepost has null latitude or longitude");
       return -1;
     }
     BigDecimal latitude = milepost.getLatitude().setScale(14, BigDecimal.ROUND_HALF_UP);

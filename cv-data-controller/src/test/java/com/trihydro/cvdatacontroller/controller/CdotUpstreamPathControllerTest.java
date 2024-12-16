@@ -57,7 +57,7 @@ class CdotUpstreamPathControllerTest extends TestBase<CdotUpstreamPathController
   @BeforeEach
   void setUp() {
     uut = new CdotUpstreamPathController();
-    uut.InjectDependencies(cdotGisService, utility);
+    uut.InjectDependencies(cdotGisService);
   }
 
   @Test
