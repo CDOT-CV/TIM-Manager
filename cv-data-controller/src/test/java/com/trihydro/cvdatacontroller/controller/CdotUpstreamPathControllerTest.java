@@ -1,5 +1,6 @@
 package com.trihydro.cvdatacontroller.controller;
 
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -86,7 +87,9 @@ class CdotUpstreamPathControllerTest {
   }
 
   @Test
-  void testGetPathDirection_ASCENDING() throws IOException {
+  void testGetPathDirection_ASCENDING()
+      throws IOException, CdotUpstreamPathController.MilepostNotFoundException,
+      CdotUpstreamPathController.NotEnoughMilepostsException {
     // prepare
     List<Milepost> allMileposts = getMockMileposts();
     Milepost mp1 = allMileposts.get(0);
@@ -101,7 +104,9 @@ class CdotUpstreamPathControllerTest {
   }
 
   @Test
-  void testGetPathDirection_DESCENDING() throws IOException {
+  void testGetPathDirection_DESCENDING()
+      throws IOException, CdotUpstreamPathController.MilepostNotFoundException,
+      CdotUpstreamPathController.NotEnoughMilepostsException {
     // prepare
     List<Milepost> allMileposts = getMockMileposts();
     Milepost mp1 = allMileposts.get(1);
@@ -116,21 +121,22 @@ class CdotUpstreamPathControllerTest {
   }
 
   @Test
-  void testGetPathDirection_NOT_ENOUGH_MILEPOSTS() throws IOException {
+  void testGetPathDirection_NOT_ENOUGH_MILEPOSTS()
+      throws IOException {
     // prepare
     List<Milepost> allMileposts = getMockMileposts();
     Milepost mp1 = allMileposts.get(0);
     List<Milepost> pathMileposts = List.of(mp1);
 
     // execute
-    PathDirection direction = uut.getPathDirection(pathMileposts, allMileposts);
-
-    // verify
-    Assertions.assertNull(direction);
+    assertThrows(CdotUpstreamPathController.NotEnoughMilepostsException.class, () -> {
+      uut.getPathDirection(pathMileposts, allMileposts);
+    });
   }
 
   @Test
-  void testGetPathDirection_FirstMilepostOfPathNotInAllMileposts() throws IOException {
+  void testGetPathDirection_FirstMilepostOfPathNotInAllMileposts()
+      throws IOException {
     // prepare
     List<Milepost> allMileposts = getMockMileposts();
     Milepost mp1 = new Milepost();
@@ -141,14 +147,14 @@ class CdotUpstreamPathControllerTest {
     List<Milepost> pathMileposts = List.of(mp1, mp2);
 
     // execute
-    PathDirection direction = uut.getPathDirection(pathMileposts, allMileposts);
-
-    // verify
-    Assertions.assertNull(direction);
+    assertThrows(CdotUpstreamPathController.MilepostNotFoundException.class, () -> {
+      uut.getPathDirection(pathMileposts, allMileposts);
+    });
   }
 
   @Test
-  void testGetPathDirection_SecondMilepostOfPathNotInAllMileposts() throws IOException {
+  void testGetPathDirection_SecondMilepostOfPathNotInAllMileposts()
+      throws IOException {
     // prepare
     List<Milepost> allMileposts = getMockMileposts();
     Milepost mp1 = allMileposts.get(0);
@@ -159,10 +165,9 @@ class CdotUpstreamPathControllerTest {
     List<Milepost> pathMileposts = List.of(mp1, mp2);
 
     // execute
-    PathDirection direction = uut.getPathDirection(pathMileposts, allMileposts);
-
-    // verify
-    Assertions.assertNull(direction);
+    assertThrows(CdotUpstreamPathController.MilepostNotFoundException.class, () -> {
+      uut.getPathDirection(pathMileposts, allMileposts);
+    });
   }
 
   @Test

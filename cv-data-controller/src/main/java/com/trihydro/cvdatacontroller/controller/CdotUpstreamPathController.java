@@ -22,6 +22,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.web.client.RestClientException;
 
 @CrossOrigin
 @RestController
@@ -43,13 +44,28 @@ public class CdotUpstreamPathController extends BaseController {
     for (Milepost milepost : pathMileposts) {
       logger.debug("Milepost in path: {}, {}", milepost.getLatitude(), milepost.getLongitude());
     }
-    List<Milepost> allMileposts = getMilepostsForRoute(routeId);
+    List<Milepost> allMileposts;
+    try {
+      allMileposts = getMilepostsForRoute(routeId);
+    } catch (RestClientException e) {
+      logger.error("Error getting mileposts for route", e);
+      return ResponseEntity.badRequest().body(null);
+    }
     if (allMileposts == null || allMileposts.isEmpty()) {
       logger.warn("No mileposts found for route");
       return ResponseEntity.badRequest().body(null);
     }
     logger.info("Number of mileposts in route: {}", allMileposts.size());
-    PathDirection direction = getPathDirection(pathMileposts, allMileposts);
+    PathDirection direction;
+    try {
+      direction = getPathDirection(pathMileposts, allMileposts);
+    } catch (NotEnoughMilepostsException e) {
+      logger.warn("Not enough mileposts in path", e);
+      return ResponseEntity.badRequest().body(null);
+    } catch (MilepostNotFoundException e) {
+      logger.warn("Milepost not found in route", e);
+      return ResponseEntity.badRequest().body(null);
+    }
     if (direction == null) {
       logger.warn("Invalid path direction");
       return ResponseEntity.badRequest().body(null);
@@ -96,12 +112,9 @@ public class CdotUpstreamPathController extends BaseController {
     return ResponseEntity.ok(buffer);
   }
 
-  public List<Milepost> getMilepostsForRoute(String routeId) throws JsonProcessingException {
+  public List<Milepost> getMilepostsForRoute(String routeId) throws JsonProcessingException,
+      RestClientException {
     ResponseEntity<String> response = cdotGisService.getRouteById(routeId);
-    if (response == null || response.getBody() == null) {
-      logger.warn("Response from CDOT GIS service is null");
-      return new ArrayList<>();
-    }
     String routeJsonString = response.getBody();
     ObjectMapper objectMapper = new ObjectMapper();
     JsonNode rootNode = objectMapper.readTree(routeJsonString);
@@ -119,22 +132,19 @@ public class CdotUpstreamPathController extends BaseController {
     return mileposts;
   }
 
-  public PathDirection getPathDirection(List<Milepost> pathMileposts, List<Milepost> allMileposts) {
+  public PathDirection getPathDirection(List<Milepost> pathMileposts, List<Milepost> allMileposts) throws NotEnoughMilepostsException, MilepostNotFoundException {
     if (pathMileposts.size() < 2) {
-      logger.warn("Path has less than 2 mileposts");
-      return null;
+      throw new NotEnoughMilepostsException("Path has less than 2 mileposts");
     }
     Milepost firstMilepostInPath = pathMileposts.get(0);
     Milepost secondMilepostInPath = pathMileposts.get(1);
     int firstMilepostInPathIndex = getIndexOfMilepost(allMileposts, firstMilepostInPath);
     if (firstMilepostInPathIndex == -1) {
-      logger.warn("First milepost not found in route");
-      return null;
+      throw new MilepostNotFoundException("First milepost not found in route");
     }
     int secondMilepostInPathIndex = getIndexOfMilepost(allMileposts, secondMilepostInPath);
     if (secondMilepostInPathIndex == -1) {
-      logger.warn("Second milepost not found in route");
-      return null;
+      throw new MilepostNotFoundException("Second milepost not found in route");
     }
     if (firstMilepostInPathIndex < secondMilepostInPathIndex) {
       return PathDirection.ASCENDING;
@@ -216,4 +226,15 @@ public class CdotUpstreamPathController extends BaseController {
     }
   }
 
+    public static class NotEnoughMilepostsException extends Exception {
+        public NotEnoughMilepostsException(String message) {
+        super(message);
+        }
+    }
+
+    public static class MilepostNotFoundException extends Exception {
+        public MilepostNotFoundException(String message) {
+        super(message);
+        }
+    }
 }

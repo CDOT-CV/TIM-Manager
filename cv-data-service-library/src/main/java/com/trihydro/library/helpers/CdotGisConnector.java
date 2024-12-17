@@ -10,6 +10,7 @@ import org.springframework.http.ResponseEntity;
 
 import com.trihydro.library.service.RestTemplateProvider;
 import org.springframework.stereotype.Component;
+import org.springframework.web.client.RestClientException;
 
 @Component
 public class CdotGisConnector {
@@ -32,23 +33,13 @@ public class CdotGisConnector {
     return restTemplateProvider;
   }
 
-  public ResponseEntity<String> getRouteById(String routeId) {
+  public ResponseEntity<String> getRouteById(String routeId) throws RestClientException {
     String targetUrl = baseUrl + "/Route";
     logger.info("Getting route with ID {} from CDOT GIS service at: {}", routeId, targetUrl);
     String params = "?routeId=" + routeId + "&outSR=4326&f=json";
     HttpHeaders headers = new HttpHeaders();
     headers.set("Accept", "application/json");
     HttpEntity<String> entity = new HttpEntity<>(headers);
-    ResponseEntity<String> response;
-    try {
-      response = restTemplateProvider.GetRestTemplate().exchange(targetUrl + params, HttpMethod.GET, entity, String.class);
-    } catch (Exception e) {
-        logger.error("Error getting route with ID {} from CDOT GIS service: {}", routeId, e.getMessage(), e);
-        return null;
-    }
-    if (response.getBody() == null) {
-        logger.warn("Received null response body from CDOT GIS service");
-    }
-    return response;
+    return restTemplateProvider.GetRestTemplate().exchange(targetUrl + params, HttpMethod.GET, entity, String.class);
   }
 }
