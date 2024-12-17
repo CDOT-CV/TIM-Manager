@@ -1,6 +1,7 @@
 package com.trihydro.cvdatacontroller.controller;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -95,7 +96,6 @@ public class CdotUpstreamPathController extends BaseController {
     return ResponseEntity.ok(buffer);
   }
 
-  @SuppressWarnings("deprecation")
   public List<Milepost> getMilepostsForRoute(String routeId) throws JsonProcessingException {
     ResponseEntity<String> response = cdotGisService.getRouteById(routeId);
     if (response == null || response.getBody() == null) {
@@ -110,8 +110,8 @@ public class CdotUpstreamPathController extends BaseController {
     for (JsonNode node : pathNode) {
       Milepost milepost = new Milepost();
       milepost.setCommonName(routeId);
-      BigDecimal latitude = new BigDecimal(node.get(1).asText()).setScale(14, BigDecimal.ROUND_HALF_UP);
-      BigDecimal longitude = new BigDecimal(node.get(0).asText()).setScale(14, BigDecimal.ROUND_HALF_UP);
+      BigDecimal latitude = new BigDecimal(node.get(1).asText()).setScale(14, RoundingMode.HALF_UP);
+      BigDecimal longitude = new BigDecimal(node.get(0).asText()).setScale(14, RoundingMode.HALF_UP);
       milepost.setLatitude(latitude);
       milepost.setLongitude(longitude);
       mileposts.add(milepost);

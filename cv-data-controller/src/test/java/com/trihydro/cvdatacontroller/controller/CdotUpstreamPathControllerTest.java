@@ -5,6 +5,7 @@ import static org.mockito.Mockito.when;
 
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -36,7 +37,6 @@ class CdotUpstreamPathControllerTest {
   @InjectMocks
   CdotUpstreamPathController uut;
 
-  @SuppressWarnings("deprecation")
   List<Milepost> getMockMileposts() throws IOException {
     String routeJsonString = new String(Files.readAllBytes(Paths.get(PATH_TO_ROUTE_JSON_TEST_DATA)));
     ObjectMapper objectMapper = new ObjectMapper();
@@ -46,8 +46,8 @@ class CdotUpstreamPathControllerTest {
     for (JsonNode node : pathNode) {
       Milepost milepost = new Milepost();
       milepost.setCommonName(ROUTE_ID);
-      BigDecimal latitude = new BigDecimal(node.get(1).asText()).setScale(14, BigDecimal.ROUND_HALF_UP);
-      BigDecimal longitude = new BigDecimal(node.get(0).asText()).setScale(14, BigDecimal.ROUND_HALF_UP);
+      BigDecimal latitude = new BigDecimal(node.get(1).asText()).setScale(14, RoundingMode.HALF_UP);
+      BigDecimal longitude = new BigDecimal(node.get(0).asText()).setScale(14, RoundingMode.HALF_UP);
       milepost.setLatitude(latitude);
       milepost.setLongitude(longitude);
       mileposts.add(milepost);
@@ -134,15 +134,14 @@ class CdotUpstreamPathControllerTest {
     Assertions.assertNull(direction);
   }
 
-  @SuppressWarnings("deprecation")
   @Test
   void testGetPathDirection_FirstMilepostOfPathNotInAllMileposts() throws IOException {
     // prepare
     List<Milepost> allMileposts = getMockMileposts();
     Milepost mp1 = new Milepost();
     mp1.setCommonName(ROUTE_ID);
-    mp1.setLatitude(new BigDecimal("30.12").setScale(14, BigDecimal.ROUND_HALF_UP));
-    mp1.setLongitude(new BigDecimal("-100.34").setScale(14, BigDecimal.ROUND_HALF_UP));
+    mp1.setLatitude(new BigDecimal("30.12").setScale(14, RoundingMode.HALF_UP));
+    mp1.setLongitude(new BigDecimal("-100.34").setScale(14, RoundingMode.HALF_UP));
     Milepost mp2 = allMileposts.get(1);
     List<Milepost> pathMileposts = List.of(mp1, mp2);
 
@@ -153,7 +152,6 @@ class CdotUpstreamPathControllerTest {
     Assertions.assertNull(direction);
   }
 
-  @SuppressWarnings("deprecation")
   @Test
   void testGetPathDirection_SecondMilepostOfPathNotInAllMileposts() throws IOException {
     // prepare
@@ -161,8 +159,8 @@ class CdotUpstreamPathControllerTest {
     Milepost mp1 = allMileposts.get(0);
     Milepost mp2 = new Milepost();
     mp2.setCommonName(ROUTE_ID);
-    mp1.setLatitude(new BigDecimal("30.12").setScale(14, BigDecimal.ROUND_HALF_UP));
-    mp1.setLongitude(new BigDecimal("-100.34").setScale(14, BigDecimal.ROUND_HALF_UP));
+    mp1.setLatitude(new BigDecimal("30.12").setScale(14, RoundingMode.HALF_UP));
+    mp1.setLongitude(new BigDecimal("-100.34").setScale(14, RoundingMode.HALF_UP));
     List<Milepost> pathMileposts = List.of(mp1, mp2);
 
     // execute
@@ -176,7 +174,7 @@ class CdotUpstreamPathControllerTest {
   void testGetBufferForPath_Ascending_Success() throws IOException {
     // prepare
     String routeJsonString = new String(Files.readAllBytes(Paths.get(PATH_TO_ROUTE_JSON_TEST_DATA)));
-    ResponseEntity<String> mockResponse = new ResponseEntity<String>(routeJsonString, HttpStatus.OK);
+    ResponseEntity<String> mockResponse = new ResponseEntity<>(routeJsonString, HttpStatus.OK);
     when(cdotGisService.getRouteById(ROUTE_ID)).thenReturn(mockResponse);
 
     List<Milepost> allMileposts = getMockMileposts();
@@ -202,7 +200,7 @@ class CdotUpstreamPathControllerTest {
   void testGetBufferForPath_Ascending_Failure_EndOfAllMilepostsReached() throws IOException {
     // prepare
     String routeJsonString = new String(Files.readAllBytes(Paths.get(PATH_TO_ROUTE_JSON_TEST_DATA)));
-    ResponseEntity<String> mockResponse = new ResponseEntity<String>(routeJsonString, HttpStatus.OK);
+    ResponseEntity<String> mockResponse = new ResponseEntity<>(routeJsonString, HttpStatus.OK);
     when(cdotGisService.getRouteById(ROUTE_ID)).thenReturn(mockResponse);
 
     List<Milepost> allMileposts = getMockMileposts();
@@ -250,7 +248,7 @@ class CdotUpstreamPathControllerTest {
   void testGetBufferForPath_Descending_Failure_EndOfAllMilepostsReached() throws IOException {
     // prepare
     String routeJsonString = new String(Files.readAllBytes(Paths.get(PATH_TO_ROUTE_JSON_TEST_DATA)));
-    ResponseEntity<String> mockResponse = new ResponseEntity<String>(routeJsonString, HttpStatus.OK);
+    ResponseEntity<String> mockResponse = new ResponseEntity<>(routeJsonString, HttpStatus.OK);
     when(cdotGisService.getRouteById(ROUTE_ID)).thenReturn(mockResponse);
 
     List<Milepost> allMileposts = getMockMileposts();
@@ -272,7 +270,7 @@ class CdotUpstreamPathControllerTest {
   void testGetBufferForPath_PathDirectionIsNull() throws IOException {
     // prepare
     String routeJsonString = new String(Files.readAllBytes(Paths.get(PATH_TO_ROUTE_JSON_TEST_DATA)));
-    ResponseEntity<String> mockResponse = new ResponseEntity<String>(routeJsonString, HttpStatus.OK);
+    ResponseEntity<String> mockResponse = new ResponseEntity<>(routeJsonString, HttpStatus.OK);
     when(cdotGisService.getRouteById(ROUTE_ID)).thenReturn(mockResponse);
 
     List<Milepost> allMileposts = getMockMileposts();
