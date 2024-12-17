@@ -40,10 +40,7 @@ public class CdotUpstreamPathController extends BaseController {
   @PostMapping(value = "/get-buffer-for-path/{routeId}/{desiredDistanceInMiles:.+}")
   public ResponseEntity<List<Milepost>> getBufferForPath(@RequestBody List<Milepost> pathMileposts, @PathVariable String routeId, @PathVariable double desiredDistanceInMiles) throws
       JsonProcessingException {
-    logger.info("Number of mileposts in path in request body: {}", pathMileposts.size());
-    for (Milepost milepost : pathMileposts) {
-      logger.debug("Milepost in path: {}, {}", milepost.getLatitude(), milepost.getLongitude());
-    }
+    logger.info("Getting buffer for path with desired distance: {} miles", desiredDistanceInMiles);
     List<Milepost> allMileposts;
     try {
       allMileposts = getMilepostsForRoute(routeId);
@@ -55,7 +52,6 @@ public class CdotUpstreamPathController extends BaseController {
       logger.warn("No mileposts found for route");
       return ResponseEntity.badRequest().body(null);
     }
-    logger.info("Number of mileposts in route: {}", allMileposts.size());
     PathDirection direction;
     try {
       direction = getPathDirection(pathMileposts, allMileposts);
@@ -76,7 +72,6 @@ public class CdotUpstreamPathController extends BaseController {
     List<Milepost> buffer = new ArrayList<>();
     double distanceInMiles = 0;
     if (direction == PathDirection.ASCENDING) {
-      logger.info("Path direction is ascending. Start index: {}", startIndex);
       buffer.add(allMileposts.get(startIndex));
       // add mileposts in descending order
       for (int i = startIndex - 1; i >= 0; i--) {
@@ -87,7 +82,6 @@ public class CdotUpstreamPathController extends BaseController {
         buffer.add(allMileposts.get(i));
       }
     } else {
-      logger.info("Path direction is descending. Start index: {}", startIndex);
       // add mileposts in ascending order
       for (int i = startIndex + 1; i < allMileposts.size(); i++) {
         distanceInMiles = DistanceCalculator.calculateDistanceInMiles(buffer);
@@ -107,8 +101,10 @@ public class CdotUpstreamPathController extends BaseController {
       return ResponseEntity.badRequest().body(null);
     }
     logger.info("Distance of buffer path: {} miles", distanceInMiles);
-    String geojsonString = convertMilepostsToGeojsonString(buffer);
-    logger.debug("Geojson string for buffer: {}", geojsonString);
+    if (logger.isDebugEnabled()) {
+      String geojsonString = convertMilepostsToGeojsonString(buffer);
+      logger.debug("Geojson string for buffer: {}", geojsonString);
+    }
     return ResponseEntity.ok(buffer);
   }
 
