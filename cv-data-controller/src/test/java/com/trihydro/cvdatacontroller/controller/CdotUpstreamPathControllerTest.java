@@ -61,11 +61,6 @@ class CdotUpstreamPathControllerTest {
   }
 
   @Test
-  void testInitialization() {
-    Assertions.assertNotNull(uut);
-  }
-
-  @Test
   void testGetMilepostsForRoute() throws IOException {
     // prepare
     String routeJsonString = new String(Files.readAllBytes(Paths.get(PATH_TO_ROUTE_JSON_TEST_DATA)));
