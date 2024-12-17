@@ -28,7 +28,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 @CrossOrigin
 @RestController
-@ApiIgnore
 @RequestMapping("cdot-upstream-path")
 public class CdotUpstreamPathController extends BaseController {
   private CdotGisConnector cdotGisService;
