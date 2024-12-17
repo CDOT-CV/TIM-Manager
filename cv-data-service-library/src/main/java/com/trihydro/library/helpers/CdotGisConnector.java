@@ -32,26 +32,6 @@ public class CdotGisConnector {
     return restTemplateProvider;
   }
 
-  public ResponseEntity<String> getAllRoutes() {
-    String targetUrl = baseUrl + "/Routes";
-    logger.info("Getting all routes from CDOT GIS service at: {}", targetUrl);
-    String params = "?f=json";
-    HttpHeaders headers = new HttpHeaders();
-    headers.set("Accept", "application/json");
-    HttpEntity<String> entity = new HttpEntity<>(headers);
-    ResponseEntity<String> response;
-    try {
-      response = restTemplateProvider.GetRestTemplate().exchange(targetUrl + params, HttpMethod.GET, entity, String.class);
-    } catch (Exception e) {
-        logger.error("Error getting all routes from CDOT GIS service: {}", e.getMessage(), e);
-        return null;
-    }
-    if (response.getBody() == null) {
-        logger.warn("Received null response body from CDOT GIS service");
-    }
-    return response;
-  }
-
   public ResponseEntity<String> getRouteById(String routeId) {
     String targetUrl = baseUrl + "/Route";
     logger.info("Getting route with ID {} from CDOT GIS service at: {}", routeId, targetUrl);

@@ -33,28 +33,6 @@ class CdotGisConnectorTest extends BaseServiceTest {
   }
 
   @Test
-  void testGetAllRoutes() {
-    // prepare
-    String expectedTargetUrl = expectedBaseUrl + "/Routes";
-    String f = "json";
-    String expectedParams = "?f=" + f;
-    HttpHeaders mockHeaders = new HttpHeaders();
-    mockHeaders.set("Accept", "application/json");
-    HttpEntity<String> mockEntity = new HttpEntity<>(mockHeaders);
-    String mockResponseString = "mockResponseString";
-    ResponseEntity<String> mockResponse = ResponseEntity.ok(mockResponseString);
-    when(mockRestTemplate.exchange(expectedTargetUrl + expectedParams, HttpMethod.GET, mockEntity, String.class)).thenReturn(mockResponse);
-
-    // execute
-    ResponseEntity<String> response = uut.getAllRoutes();
-
-    // verify
-    Assertions.assertEquals(mockResponse.getStatusCode(), response.getStatusCode());
-    Assertions.assertEquals(mockResponseString, response.getBody());
-    verify(mockRestTemplate).exchange(expectedTargetUrl + expectedParams, HttpMethod.GET, mockEntity, String.class);
-  }
-
-  @Test
   void testGetRouteById() {
     // prepare
     String expectedTargetUrl = expectedBaseUrl + "/Route";
