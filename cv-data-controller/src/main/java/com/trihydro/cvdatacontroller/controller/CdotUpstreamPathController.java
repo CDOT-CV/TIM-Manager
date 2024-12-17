@@ -57,7 +57,7 @@ public class CdotUpstreamPathController extends BaseController {
     Milepost firstMilepostInPath = pathMileposts.get(0);
     int startIndex = getIndexOfMilepost(allMileposts, firstMilepostInPath);
 
-    List<Milepost> buffer = new ArrayList<Milepost>();
+    List<Milepost> buffer = new ArrayList<>();
     double distanceInMiles = 0;
     if (direction == PathDirection.ASCENDING) {
       logger.info("Path direction is ascending. Start index: {}", startIndex);
@@ -106,7 +106,7 @@ public class CdotUpstreamPathController extends BaseController {
     ObjectMapper objectMapper = new ObjectMapper();
     JsonNode rootNode = objectMapper.readTree(routeJsonString);
     JsonNode pathNode = rootNode.path("features").get(0).path("geometry").path("paths").get(0);
-    List<Milepost> mileposts = new ArrayList<Milepost>();
+    List<Milepost> mileposts = new ArrayList<>();
     for (JsonNode node : pathNode) {
       Milepost milepost = new Milepost();
       milepost.setCommonName(routeId);
@@ -148,12 +148,13 @@ public class CdotUpstreamPathController extends BaseController {
       logger.warn("Milepost has null latitude or longitude");
       return -1;
     }
-    BigDecimal latitude = milepost.getLatitude().setScale(14, BigDecimal.ROUND_HALF_UP);
-    BigDecimal longitude = milepost.getLongitude().setScale(14, BigDecimal.ROUND_HALF_UP);
+    BigDecimal latitude = milepost.getLatitude().setScale(14, RoundingMode.HALF_UP);
+    BigDecimal longitude = milepost.getLongitude().setScale(14, RoundingMode.HALF_UP);
     for (int i = 0; i < mileposts.size(); i++) {
       Milepost currentMilepost = mileposts.get(i);
-      BigDecimal currentLatitude = currentMilepost.getLatitude().setScale(14, BigDecimal.ROUND_HALF_UP);
-      BigDecimal currentLongitude = currentMilepost.getLongitude().setScale(14, BigDecimal.ROUND_HALF_UP);
+      BigDecimal currentLatitude = currentMilepost.getLatitude().setScale(14, RoundingMode.HALF_UP);
+      BigDecimal currentLongitude = currentMilepost.getLongitude().setScale(14,
+          RoundingMode.HALF_UP);
       if (latitude.equals(currentLatitude) && longitude.equals(currentLongitude)) {
         return i;
       }
