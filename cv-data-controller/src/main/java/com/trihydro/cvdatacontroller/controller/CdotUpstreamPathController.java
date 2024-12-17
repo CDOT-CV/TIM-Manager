@@ -38,7 +38,8 @@ public class CdotUpstreamPathController extends BaseController {
   }
 
   @PostMapping(value = "/get-buffer-for-path/{routeId}/{desiredDistanceInMiles:.+}")
-  public ResponseEntity<List<Milepost>> getBufferForPath(@RequestBody List<Milepost> pathMileposts, @PathVariable String routeId, @PathVariable double desiredDistanceInMiles) throws JsonMappingException, JsonProcessingException {
+  public ResponseEntity<List<Milepost>> getBufferForPath(@RequestBody List<Milepost> pathMileposts, @PathVariable String routeId, @PathVariable double desiredDistanceInMiles) throws
+      JsonProcessingException {
     logger.info("Number of mileposts in path in request body: {}", pathMileposts.size());
     for (Milepost milepost : pathMileposts) {
       logger.debug("Milepost in path: {}, {}", milepost.getLatitude(), milepost.getLongitude());

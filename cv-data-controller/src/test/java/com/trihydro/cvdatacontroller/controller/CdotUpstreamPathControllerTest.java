@@ -64,7 +64,7 @@ class CdotUpstreamPathControllerTest {
   void testGetMilepostsForRoute() throws IOException {
     // prepare
     String routeJsonString = new String(Files.readAllBytes(Paths.get(PATH_TO_ROUTE_JSON_TEST_DATA)));
-    ResponseEntity<String> mockResponse = new ResponseEntity<String>(routeJsonString, HttpStatus.OK);
+    ResponseEntity<String> mockResponse = new ResponseEntity<>(routeJsonString, HttpStatus.OK);
     when(cdotGisService.getRouteById(ROUTE_ID)).thenReturn(mockResponse);
     List<Milepost> expectedMileposts = getMockMileposts();
 
@@ -217,7 +217,7 @@ class CdotUpstreamPathControllerTest {
   void testGetBufferForPath_Descending_Success() throws IOException {
     // prepare
     String routeJsonString = new String(Files.readAllBytes(Paths.get(PATH_TO_ROUTE_JSON_TEST_DATA)));
-    ResponseEntity<String> mockResponse = new ResponseEntity<String>(routeJsonString, HttpStatus.OK);
+    ResponseEntity<String> mockResponse = new ResponseEntity<>(routeJsonString, HttpStatus.OK);
     when(cdotGisService.getRouteById(ROUTE_ID)).thenReturn(mockResponse);
 
     List<Milepost> allMileposts = getMockMileposts();
