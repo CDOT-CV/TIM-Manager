@@ -13,6 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -36,7 +37,7 @@ public class CdotUpstreamPathController extends BaseController {
     this.cdotGisService = cdotGisService;
   }
 
-  @RequestMapping(value = "/get-buffer-for-path/{routeId}/{desiredDistanceInMiles:.+}", method = RequestMethod.POST)
+  @PostMapping(value = "/get-buffer-for-path/{routeId}/{desiredDistanceInMiles:.+}")
   public ResponseEntity<List<Milepost>> getBufferForPath(@RequestBody List<Milepost> pathMileposts, @PathVariable String routeId, @PathVariable double desiredDistanceInMiles) throws JsonMappingException, JsonProcessingException {
     logger.info("Number of mileposts in path in request body: {}", pathMileposts.size());
     for (Milepost milepost : pathMileposts) {
