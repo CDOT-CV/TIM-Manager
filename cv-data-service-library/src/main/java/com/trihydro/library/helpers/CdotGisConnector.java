@@ -15,12 +15,12 @@ import org.springframework.stereotype.Component;
 public class CdotGisConnector {
   private final String baseUrl = "https://dtdapps.coloradodot.info/arcgis/rest/services/LRS/Routes/MapServer/exts/CdotLrsAccessRounded";
 
-  private RestTemplateProvider restTemplateProvider;
+  private final RestTemplateProvider restTemplateProvider;
 
   private final Logger logger = LoggerFactory.getLogger(CdotGisConnector.class);
 
   @Autowired
-  public void InjectDependencies(RestTemplateProvider _restTemplateProvider) {
+  public CdotGisConnector(RestTemplateProvider _restTemplateProvider) {
     this.restTemplateProvider = _restTemplateProvider;
   }
 

@@ -5,7 +5,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.trihydro.library.helpers.CdotGisConnector;
-import com.trihydro.library.helpers.Utility;
 import com.trihydro.library.model.Milepost;
 
 import org.slf4j.Logger;
@@ -19,8 +18,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
-import springfox.documentation.annotations.ApiIgnore;
-
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -30,12 +27,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 @RestController
 @RequestMapping("cdot-upstream-path")
 public class CdotUpstreamPathController extends BaseController {
-  private CdotGisConnector cdotGisService;
+  private final CdotGisConnector cdotGisService;
 
   private final Logger logger = LoggerFactory.getLogger(CdotUpstreamPathController.class);
 
   @Autowired
-  public void InjectDependencies(CdotGisConnector cdotGisService) {
+  public CdotUpstreamPathController(CdotGisConnector cdotGisService) {
     this.cdotGisService = cdotGisService;
   }
 

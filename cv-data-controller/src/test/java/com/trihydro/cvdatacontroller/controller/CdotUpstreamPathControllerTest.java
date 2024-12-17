@@ -15,25 +15,26 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.trihydro.cvdatacontroller.controller.CdotUpstreamPathController.DistanceCalculator;
 import com.trihydro.cvdatacontroller.controller.CdotUpstreamPathController.PathDirection;
 import com.trihydro.library.helpers.CdotGisConnector;
-import com.trihydro.library.helpers.Utility;
 import com.trihydro.library.model.Milepost;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
-class CdotUpstreamPathControllerTest extends TestBase<CdotUpstreamPathController> {
+class CdotUpstreamPathControllerTest {
   private final String ROUTE_ID = "025A"; // I-25
   private final String PATH_TO_ROUTE_JSON_TEST_DATA = "src/test/resources/com/trihydro/cvdatacontroller/controller/cdotRouteResponseForI25_First30Mileposts.json";
 
   @Mock
-  CdotGisConnector cdotGisService;
+  CdotGisConnector cdotGisService = Mockito.mock(CdotGisConnector.class);
 
-  @Mock
-  Utility utility;
+  @InjectMocks
+  CdotUpstreamPathController uut;
 
   @SuppressWarnings("deprecation")
   List<Milepost> getMockMileposts() throws IOException {
@@ -41,7 +42,7 @@ class CdotUpstreamPathControllerTest extends TestBase<CdotUpstreamPathController
     ObjectMapper objectMapper = new ObjectMapper();
     JsonNode rootNode = objectMapper.readTree(routeJsonString);
     JsonNode pathNode = rootNode.path("features").get(0).path("geometry").path("paths").get(0);
-    List<Milepost> mileposts = new ArrayList<Milepost>();
+    List<Milepost> mileposts = new ArrayList<>();
     for (JsonNode node : pathNode) {
       Milepost milepost = new Milepost();
       milepost.setCommonName(ROUTE_ID);
@@ -56,8 +57,7 @@ class CdotUpstreamPathControllerTest extends TestBase<CdotUpstreamPathController
 
   @BeforeEach
   void setUp() {
-    uut = new CdotUpstreamPathController();
-    uut.InjectDependencies(cdotGisService);
+    uut = new CdotUpstreamPathController(cdotGisService);
   }
 
   @Test
