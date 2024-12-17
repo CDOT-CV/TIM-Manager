@@ -96,7 +96,7 @@ public class CdotUpstreamPathController extends BaseController {
   }
 
   @SuppressWarnings("deprecation")
-  public List<Milepost> getMilepostsForRoute(String routeId) throws JsonMappingException, JsonProcessingException {
+  public List<Milepost> getMilepostsForRoute(String routeId) throws JsonProcessingException {
     ResponseEntity<String> response = cdotGisService.getRouteById(routeId);
     if (response == null || response.getBody() == null) {
       logger.warn("Response from CDOT GIS service is null");
