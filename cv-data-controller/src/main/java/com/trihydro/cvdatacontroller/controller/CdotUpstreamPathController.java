@@ -271,9 +271,11 @@ public class CdotUpstreamPathController extends BaseController {
 
   /**
    * Traverse strategy to get buffer path by traversing the mileposts in ascending
-   * direction from a starting milepost.
+   * or descending direction from a starting milepost.
    */
-  public static class AscendingTraverseStrategy implements TraverseStrategy {
+  public abstract static class AbstractTraverseStrategy implements TraverseStrategy {
+
+    protected abstract int getNextIndex(int currentIndex);
 
     @Override
     public void traverse(TraverseContext context) {
@@ -284,7 +286,7 @@ public class CdotUpstreamPathController extends BaseController {
       double distanceInMiles = 0;
 
       buffer.add(allMileposts.get(startIndex));
-      for (int i = startIndex + 1; i < allMileposts.size(); i++) {
+      for (int i = getNextIndex(startIndex); i >= 0 && i < allMileposts.size(); i = getNextIndex(i)) {
         distanceInMiles = DistanceCalculator.calculateDistanceInMiles(buffer);
         if (distanceInMiles >= desiredDistanceInMiles) {
           break;
@@ -297,29 +299,26 @@ public class CdotUpstreamPathController extends BaseController {
   }
 
   /**
+   * Traverse strategy to get buffer path by traversing the mileposts in ascending
+   * direction from a starting milepost.
+   */
+  public static class AscendingTraverseStrategy extends AbstractTraverseStrategy {
+
+    @Override
+    protected int getNextIndex(int currentIndex) {
+      return currentIndex + 1;
+    }
+  }
+
+  /**
    * Traverse strategy to get buffer path by traversing the mileposts in descending
    * direction from a starting milepost.
    */
-  public static class DescendingTraverseStrategy implements TraverseStrategy {
+  public static class DescendingTraverseStrategy extends AbstractTraverseStrategy {
 
     @Override
-    public void traverse(TraverseContext context) {
-      List<Milepost> buffer = new ArrayList<>();
-      List<Milepost> allMileposts = context.getAllMileposts();
-      int startIndex = context.getStartIndex();
-      double desiredDistanceInMiles = context.getDesiredDistanceInMiles();
-      double distanceInMiles = 0;
-
-      buffer.add(allMileposts.get(startIndex));
-      for (int i = startIndex - 1; i >= 0; i--) {
-        distanceInMiles = DistanceCalculator.calculateDistanceInMiles(buffer);
-        if (distanceInMiles >= desiredDistanceInMiles) {
-          break;
-        }
-        buffer.add(allMileposts.get(i));
-      }
-      context.setBuffer(buffer);
-      context.setDistanceInMiles(distanceInMiles);
+    protected int getNextIndex(int currentIndex) {
+      return currentIndex - 1;
     }
   }
 
