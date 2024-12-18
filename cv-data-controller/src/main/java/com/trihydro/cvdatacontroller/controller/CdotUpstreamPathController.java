@@ -68,34 +68,20 @@ public class CdotUpstreamPathController extends BaseController {
     }
     Milepost firstMilepostInPath = pathMileposts.get(0);
     int startIndex = getIndexOfMilepost(allMileposts, firstMilepostInPath);
-
-    List<Milepost> buffer = new ArrayList<>();
-    double distanceInMiles = 0;
+    TraverseContext traverseContext = new TraverseContext(allMileposts, startIndex, desiredDistanceInMiles, direction);
     if (direction == PathDirection.ASCENDING) {
-      buffer.add(allMileposts.get(startIndex));
-      // add mileposts in descending order
-      for (int i = startIndex - 1; i >= 0; i--) {
-        distanceInMiles = DistanceCalculator.calculateDistanceInMiles(buffer);
-        if (distanceInMiles >= desiredDistanceInMiles) {
-          break;
-        }
-        buffer.add(allMileposts.get(i));
-      }
+      traverseContext.setTraverseStrategy(new DescendingTraverseStrategy());
     } else {
-      // add mileposts in ascending order
-      for (int i = startIndex + 1; i < allMileposts.size(); i++) {
-        distanceInMiles = DistanceCalculator.calculateDistanceInMiles(buffer);
-        if (distanceInMiles >= desiredDistanceInMiles) {
-          break;
-        }
-        buffer.add(allMileposts.get(i));
-      }
+      traverseContext.setTraverseStrategy(new AscendingTraverseStrategy());
     }
+    traverseContext.performTraversal();
+    List<Milepost> buffer = traverseContext.getBuffer();
     if (buffer.size() < 2) {
       // at least 2 mileposts are needed to create a valid buffer path
       logger.warn("Buffer path has less than 2 mileposts");
       return ResponseEntity.badRequest().body(null);
     }
+    double distanceInMiles = traverseContext.getDistanceInMiles();
     if (distanceInMiles < desiredDistanceInMiles) {
       logger.warn("Buffer path has less distance than desired distance");
       return ResponseEntity.badRequest().body(null);
@@ -194,6 +180,142 @@ public class CdotUpstreamPathController extends BaseController {
     DESCENDING
   }
 
+  public static class NotEnoughMilepostsException extends Exception {
+      public NotEnoughMilepostsException(String message) {
+      super(message);
+      }
+  }
+
+  public static class MilepostNotFoundException extends Exception {
+      public MilepostNotFoundException(String message) {
+      super(message);
+      }
+  }
+
+  /**
+   * Context class for traversing mileposts to get buffer path
+   */
+  public static class TraverseContext {
+      private final List<Milepost> allMileposts;
+      private final int startIndex;
+      private final double desiredDistanceInMiles;
+      private final PathDirection direction;
+
+      private TraverseStrategy traverseStrategy;
+
+      private List<Milepost> buffer;
+      private double distanceInMiles;
+
+      public TraverseContext(List<Milepost> allMileposts, int startIndex, double desiredDistanceInMiles, PathDirection direction) {
+          this.allMileposts = allMileposts;
+          this.startIndex = startIndex;
+          this.desiredDistanceInMiles = desiredDistanceInMiles;
+          this.direction = direction;
+          this.buffer = new ArrayList<>();
+      }
+
+      public void performTraversal() {
+          traverseStrategy.traverse(this);
+      }
+
+      public List<Milepost> getAllMileposts() {
+          return allMileposts;
+      }
+
+      public int getStartIndex() {
+          return startIndex;
+      }
+
+      public double getDesiredDistanceInMiles() {
+          return desiredDistanceInMiles;
+      }
+
+      public PathDirection getDirection() {
+          return direction;
+      }
+
+      public void setTraverseStrategy(TraverseStrategy traverseStrategy) {
+        this.traverseStrategy = traverseStrategy;
+      }
+
+      public List<Milepost> getBuffer() {
+          return buffer;
+      }
+
+      public void setBuffer(List<Milepost> buffer) {
+          this.buffer = buffer;
+      }
+
+      public double getDistanceInMiles() {
+          return distanceInMiles;
+      }
+
+      public void setDistanceInMiles(double distanceInMiles) {
+          this.distanceInMiles = distanceInMiles;
+      }
+  }
+
+  /**
+   * Interface for traverse strategy to get buffer path
+   */
+  public interface TraverseStrategy {
+      void traverse(TraverseContext context);
+  }
+
+  /**
+   * Traverse strategy to get buffer path by traversing the mileposts in ascending
+   * direction from a starting milepost.
+   */
+  public static class AscendingTraverseStrategy implements TraverseStrategy {
+
+    @Override
+    public void traverse(TraverseContext context) {
+      List<Milepost> buffer = new ArrayList<>();
+      List<Milepost> allMileposts = context.getAllMileposts();
+      int startIndex = context.getStartIndex();
+      double desiredDistanceInMiles = context.getDesiredDistanceInMiles();
+      double distanceInMiles = 0;
+
+      buffer.add(allMileposts.get(startIndex));
+      for (int i = startIndex + 1; i < allMileposts.size(); i++) {
+        distanceInMiles = DistanceCalculator.calculateDistanceInMiles(buffer);
+        if (distanceInMiles >= desiredDistanceInMiles) {
+          break;
+        }
+        buffer.add(allMileposts.get(i));
+      }
+      context.setBuffer(buffer);
+      context.setDistanceInMiles(distanceInMiles);
+    }
+  }
+
+  /**
+   * Traverse strategy to get buffer path by traversing the mileposts in descending
+   * direction from a starting milepost.
+   */
+  public static class DescendingTraverseStrategy implements TraverseStrategy {
+
+    @Override
+    public void traverse(TraverseContext context) {
+        List<Milepost> buffer = new ArrayList<>();
+        List<Milepost> allMileposts = context.getAllMileposts();
+        int startIndex = context.getStartIndex();
+        double desiredDistanceInMiles = context.getDesiredDistanceInMiles();
+        double distanceInMiles = 0;
+
+        buffer.add(allMileposts.get(startIndex));
+        for (int i = startIndex - 1; i >= 0; i--) {
+            distanceInMiles = DistanceCalculator.calculateDistanceInMiles(buffer);
+            if (distanceInMiles >= desiredDistanceInMiles) {
+              break;
+            }
+            buffer.add(allMileposts.get(i));
+        }
+        context.setBuffer(buffer);
+        context.setDistanceInMiles(distanceInMiles);
+    }
+  }
+
   /**
    * Helper class to calculate distance between two points and total distance of a buffer path
    */
@@ -221,16 +343,4 @@ public class CdotUpstreamPathController extends BaseController {
       return R * c; // Distance in meters
     }
   }
-
-    public static class NotEnoughMilepostsException extends Exception {
-        public NotEnoughMilepostsException(String message) {
-        super(message);
-        }
-    }
-
-    public static class MilepostNotFoundException extends Exception {
-        public MilepostNotFoundException(String message) {
-        super(message);
-        }
-    }
 }
