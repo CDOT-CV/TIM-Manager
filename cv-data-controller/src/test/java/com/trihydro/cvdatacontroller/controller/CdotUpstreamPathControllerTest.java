@@ -30,7 +30,8 @@ import org.springframework.http.ResponseEntity;
 
 class CdotUpstreamPathControllerTest {
   private final String ROUTE_ID = "025A"; // I-25
-  private final String PATH_TO_ROUTE_JSON_TEST_DATA = "src/test/resources/com/trihydro/cvdatacontroller/controller/cdotRouteResponseForI25_First30Mileposts.json";
+  private final String PATH_TO_ROUTE_JSON_TEST_DATA =
+      "src/test/resources/com/trihydro/cvdatacontroller/controller/cdotRouteResponseForI25_First30Mileposts.json";
 
   @Mock
   CdotGisConnector cdotGisService = Mockito.mock(CdotGisConnector.class);
@@ -39,7 +40,8 @@ class CdotUpstreamPathControllerTest {
   CdotUpstreamPathController uut;
 
   List<Milepost> getMockMileposts() throws IOException {
-    String routeJsonString = new String(Files.readAllBytes(Paths.get(PATH_TO_ROUTE_JSON_TEST_DATA)));
+    String routeJsonString =
+        new String(Files.readAllBytes(Paths.get(PATH_TO_ROUTE_JSON_TEST_DATA)));
     ObjectMapper objectMapper = new ObjectMapper();
     JsonNode rootNode = objectMapper.readTree(routeJsonString);
     JsonNode pathNode = rootNode.path("features").get(0).path("geometry").path("paths").get(0);
@@ -48,7 +50,8 @@ class CdotUpstreamPathControllerTest {
       Milepost milepost = new Milepost();
       milepost.setCommonName(ROUTE_ID);
       BigDecimal latitude = new BigDecimal(node.get(1).asText()).setScale(14, RoundingMode.HALF_UP);
-      BigDecimal longitude = new BigDecimal(node.get(0).asText()).setScale(14, RoundingMode.HALF_UP);
+      BigDecimal longitude =
+          new BigDecimal(node.get(0).asText()).setScale(14, RoundingMode.HALF_UP);
       milepost.setLatitude(latitude);
       milepost.setLongitude(longitude);
       mileposts.add(milepost);
@@ -64,7 +67,8 @@ class CdotUpstreamPathControllerTest {
   @Test
   void testGetMilepostsForRoute() throws IOException {
     // prepare
-    String routeJsonString = new String(Files.readAllBytes(Paths.get(PATH_TO_ROUTE_JSON_TEST_DATA)));
+    String routeJsonString =
+        new String(Files.readAllBytes(Paths.get(PATH_TO_ROUTE_JSON_TEST_DATA)));
     ResponseEntity<String> mockResponse = new ResponseEntity<>(routeJsonString, HttpStatus.OK);
     when(cdotGisService.getRouteById(ROUTE_ID)).thenReturn(mockResponse);
     List<Milepost> expectedMileposts = getMockMileposts();
@@ -173,7 +177,8 @@ class CdotUpstreamPathControllerTest {
   @Test
   void testGetBufferForPath_Ascending_Success() throws IOException {
     // prepare
-    String routeJsonString = new String(Files.readAllBytes(Paths.get(PATH_TO_ROUTE_JSON_TEST_DATA)));
+    String routeJsonString =
+        new String(Files.readAllBytes(Paths.get(PATH_TO_ROUTE_JSON_TEST_DATA)));
     ResponseEntity<String> mockResponse = new ResponseEntity<>(routeJsonString, HttpStatus.OK);
     when(cdotGisService.getRouteById(ROUTE_ID)).thenReturn(mockResponse);
 
@@ -185,21 +190,25 @@ class CdotUpstreamPathControllerTest {
     double desiredDistanceInMiles = 0.5;
 
     // execute
-    ResponseEntity<List<Milepost>> response = uut.getBufferForPath(pathMileposts, ROUTE_ID, desiredDistanceInMiles);
+    ResponseEntity<List<Milepost>> response =
+        uut.getBufferForPath(pathMileposts, ROUTE_ID, desiredDistanceInMiles);
 
     // verify
     List<Milepost> buffer = response.getBody();
     assert buffer != null;
     Assertions.assertFalse(buffer.isEmpty());
     double distanceInMiles = getDistanceInMiles(buffer);
-    Assertions.assertTrue(distanceInMiles >= desiredDistanceInMiles); // buffer should be at least as long as desired distance
-    Assertions.assertTrue(distanceInMiles <= desiredDistanceInMiles + 1); // buffer should not be much longer than desired distance
+    Assertions.assertTrue(distanceInMiles >=
+        desiredDistanceInMiles); // buffer should be at least as long as desired distance
+    Assertions.assertTrue(distanceInMiles <=
+        desiredDistanceInMiles + 1); // buffer should not be much longer than desired distance
   }
 
   @Test
   void testGetBufferForPath_Ascending_Failure_EndOfAllMilepostsReached() throws IOException {
     // prepare
-    String routeJsonString = new String(Files.readAllBytes(Paths.get(PATH_TO_ROUTE_JSON_TEST_DATA)));
+    String routeJsonString =
+        new String(Files.readAllBytes(Paths.get(PATH_TO_ROUTE_JSON_TEST_DATA)));
     ResponseEntity<String> mockResponse = new ResponseEntity<>(routeJsonString, HttpStatus.OK);
     when(cdotGisService.getRouteById(ROUTE_ID)).thenReturn(mockResponse);
 
@@ -211,7 +220,8 @@ class CdotUpstreamPathControllerTest {
     double desiredDistanceInMiles = 5.0;
 
     // execute
-    ResponseEntity<List<Milepost>> response = uut.getBufferForPath(pathMileposts, ROUTE_ID, desiredDistanceInMiles);
+    ResponseEntity<List<Milepost>> response =
+        uut.getBufferForPath(pathMileposts, ROUTE_ID, desiredDistanceInMiles);
 
     // verify
     List<Milepost> buffer = response.getBody();
@@ -221,7 +231,8 @@ class CdotUpstreamPathControllerTest {
   @Test
   void testGetBufferForPath_Descending_Success() throws IOException {
     // prepare
-    String routeJsonString = new String(Files.readAllBytes(Paths.get(PATH_TO_ROUTE_JSON_TEST_DATA)));
+    String routeJsonString =
+        new String(Files.readAllBytes(Paths.get(PATH_TO_ROUTE_JSON_TEST_DATA)));
     ResponseEntity<String> mockResponse = new ResponseEntity<>(routeJsonString, HttpStatus.OK);
     when(cdotGisService.getRouteById(ROUTE_ID)).thenReturn(mockResponse);
 
@@ -233,21 +244,25 @@ class CdotUpstreamPathControllerTest {
     double desiredDistanceInMiles = 0.5;
 
     // execute
-    ResponseEntity<List<Milepost>> response = uut.getBufferForPath(pathMileposts, ROUTE_ID, desiredDistanceInMiles);
+    ResponseEntity<List<Milepost>> response =
+        uut.getBufferForPath(pathMileposts, ROUTE_ID, desiredDistanceInMiles);
 
     // verify
     List<Milepost> buffer = response.getBody();
     assert buffer != null;
     Assertions.assertFalse(buffer.isEmpty());
     double distanceInMiles = getDistanceInMiles(buffer);
-    Assertions.assertTrue(distanceInMiles >= desiredDistanceInMiles); // buffer should be at least as long as desired distance
-    Assertions.assertTrue(distanceInMiles <= desiredDistanceInMiles + 1); // buffer should not be much longer than desired distance
+    Assertions.assertTrue(distanceInMiles >=
+        desiredDistanceInMiles); // buffer should be at least as long as desired distance
+    Assertions.assertTrue(distanceInMiles <=
+        desiredDistanceInMiles + 1); // buffer should not be much longer than desired distance
   }
 
   @Test
   void testGetBufferForPath_Descending_Failure_EndOfAllMilepostsReached() throws IOException {
     // prepare
-    String routeJsonString = new String(Files.readAllBytes(Paths.get(PATH_TO_ROUTE_JSON_TEST_DATA)));
+    String routeJsonString =
+        new String(Files.readAllBytes(Paths.get(PATH_TO_ROUTE_JSON_TEST_DATA)));
     ResponseEntity<String> mockResponse = new ResponseEntity<>(routeJsonString, HttpStatus.OK);
     when(cdotGisService.getRouteById(ROUTE_ID)).thenReturn(mockResponse);
 
@@ -259,7 +274,8 @@ class CdotUpstreamPathControllerTest {
     double desiredDistanceInMiles = 5.0;
 
     // execute
-    ResponseEntity<List<Milepost>> response = uut.getBufferForPath(pathMileposts, ROUTE_ID, desiredDistanceInMiles);
+    ResponseEntity<List<Milepost>> response =
+        uut.getBufferForPath(pathMileposts, ROUTE_ID, desiredDistanceInMiles);
 
     // verify
     List<Milepost> buffer = response.getBody();
@@ -269,7 +285,8 @@ class CdotUpstreamPathControllerTest {
   @Test
   void testGetBufferForPath_PathDirectionIsNull() throws IOException {
     // prepare
-    String routeJsonString = new String(Files.readAllBytes(Paths.get(PATH_TO_ROUTE_JSON_TEST_DATA)));
+    String routeJsonString =
+        new String(Files.readAllBytes(Paths.get(PATH_TO_ROUTE_JSON_TEST_DATA)));
     ResponseEntity<String> mockResponse = new ResponseEntity<>(routeJsonString, HttpStatus.OK);
     when(cdotGisService.getRouteById(ROUTE_ID)).thenReturn(mockResponse);
 
@@ -280,7 +297,8 @@ class CdotUpstreamPathControllerTest {
     int desiredDistanceInMiles = 5;
 
     // execute
-    ResponseEntity<List<Milepost>> response = uut.getBufferForPath(pathMileposts, ROUTE_ID, desiredDistanceInMiles);
+    ResponseEntity<List<Milepost>> response =
+        uut.getBufferForPath(pathMileposts, ROUTE_ID, desiredDistanceInMiles);
 
     // verify
     List<Milepost> buffer = response.getBody();

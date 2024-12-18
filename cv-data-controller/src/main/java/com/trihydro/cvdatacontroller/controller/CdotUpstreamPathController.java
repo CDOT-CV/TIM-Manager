@@ -38,7 +38,9 @@ public class CdotUpstreamPathController extends BaseController {
   }
 
   @PostMapping(value = "/get-buffer-for-path/{routeId}/{desiredDistanceInMiles:.+}")
-  public ResponseEntity<List<Milepost>> getBufferForPath(@RequestBody List<Milepost> pathMileposts, @PathVariable String routeId, @PathVariable double desiredDistanceInMiles) throws
+  public ResponseEntity<List<Milepost>> getBufferForPath(@RequestBody List<Milepost> pathMileposts,
+                                                         @PathVariable String routeId, @PathVariable
+                                                         double desiredDistanceInMiles) throws
       JsonProcessingException {
     logger.info("Getting buffer for path with desired distance: {} miles", desiredDistanceInMiles);
     List<Milepost> allMileposts;
@@ -68,7 +70,8 @@ public class CdotUpstreamPathController extends BaseController {
     }
     Milepost firstMilepostInPath = pathMileposts.get(0);
     int startIndex = getIndexOfMilepost(allMileposts, firstMilepostInPath);
-    TraverseContext traverseContext = new TraverseContext(allMileposts, startIndex, desiredDistanceInMiles, direction);
+    TraverseContext traverseContext =
+        new TraverseContext(allMileposts, startIndex, desiredDistanceInMiles, direction);
     if (direction == PathDirection.ASCENDING) {
       traverseContext.setTraverseStrategy(new DescendingTraverseStrategy());
     } else {
@@ -106,7 +109,8 @@ public class CdotUpstreamPathController extends BaseController {
       Milepost milepost = new Milepost();
       milepost.setCommonName(routeId);
       BigDecimal latitude = new BigDecimal(node.get(1).asText()).setScale(14, RoundingMode.HALF_UP);
-      BigDecimal longitude = new BigDecimal(node.get(0).asText()).setScale(14, RoundingMode.HALF_UP);
+      BigDecimal longitude =
+          new BigDecimal(node.get(0).asText()).setScale(14, RoundingMode.HALF_UP);
       milepost.setLatitude(latitude);
       milepost.setLongitude(longitude);
       mileposts.add(milepost);
@@ -114,7 +118,8 @@ public class CdotUpstreamPathController extends BaseController {
     return mileposts;
   }
 
-  public PathDirection getPathDirection(List<Milepost> pathMileposts, List<Milepost> allMileposts) throws NotEnoughMilepostsException, MilepostNotFoundException {
+  public PathDirection getPathDirection(List<Milepost> pathMileposts, List<Milepost> allMileposts)
+      throws NotEnoughMilepostsException, MilepostNotFoundException {
     if (pathMileposts.size() < 2) {
       throw new NotEnoughMilepostsException("Path has less than 2 mileposts");
     }
@@ -156,7 +161,8 @@ public class CdotUpstreamPathController extends BaseController {
 
   private String convertMilepostsToGeojsonString(List<Milepost> mileposts) {
     StringBuilder geojsonStringBuilder = new StringBuilder();
-    geojsonStringBuilder.append("{ \"type\": \"FeatureCollection\", \"features\": [{ \"type\": \"Feature\", \"geometry\": { \"type\": \"LineString\", \"coordinates\": [");
+    geojsonStringBuilder.append(
+        "{ \"type\": \"FeatureCollection\", \"features\": [{ \"type\": \"Feature\", \"geometry\": { \"type\": \"LineString\", \"coordinates\": [");
     for (int i = 0; i < mileposts.size(); i++) {
       Milepost milepost = mileposts.get(i);
       geojsonStringBuilder.append("[");
@@ -181,85 +187,86 @@ public class CdotUpstreamPathController extends BaseController {
   }
 
   public static class NotEnoughMilepostsException extends Exception {
-      public NotEnoughMilepostsException(String message) {
+    public NotEnoughMilepostsException(String message) {
       super(message);
-      }
+    }
   }
 
   public static class MilepostNotFoundException extends Exception {
-      public MilepostNotFoundException(String message) {
+    public MilepostNotFoundException(String message) {
       super(message);
-      }
+    }
   }
 
   /**
    * Context class for traversing mileposts to get buffer path
    */
   public static class TraverseContext {
-      private final List<Milepost> allMileposts;
-      private final int startIndex;
-      private final double desiredDistanceInMiles;
-      private final PathDirection direction;
+    private final List<Milepost> allMileposts;
+    private final int startIndex;
+    private final double desiredDistanceInMiles;
+    private final PathDirection direction;
 
-      private TraverseStrategy traverseStrategy;
+    private TraverseStrategy traverseStrategy;
 
-      private List<Milepost> buffer;
-      private double distanceInMiles;
+    private List<Milepost> buffer;
+    private double distanceInMiles;
 
-      public TraverseContext(List<Milepost> allMileposts, int startIndex, double desiredDistanceInMiles, PathDirection direction) {
-          this.allMileposts = allMileposts;
-          this.startIndex = startIndex;
-          this.desiredDistanceInMiles = desiredDistanceInMiles;
-          this.direction = direction;
-          this.buffer = new ArrayList<>();
-      }
+    public TraverseContext(List<Milepost> allMileposts, int startIndex,
+                           double desiredDistanceInMiles, PathDirection direction) {
+      this.allMileposts = allMileposts;
+      this.startIndex = startIndex;
+      this.desiredDistanceInMiles = desiredDistanceInMiles;
+      this.direction = direction;
+      this.buffer = new ArrayList<>();
+    }
 
-      public void performTraversal() {
-          traverseStrategy.traverse(this);
-      }
+    public void performTraversal() {
+      traverseStrategy.traverse(this);
+    }
 
-      public List<Milepost> getAllMileposts() {
-          return allMileposts;
-      }
+    public List<Milepost> getAllMileposts() {
+      return allMileposts;
+    }
 
-      public int getStartIndex() {
-          return startIndex;
-      }
+    public int getStartIndex() {
+      return startIndex;
+    }
 
-      public double getDesiredDistanceInMiles() {
-          return desiredDistanceInMiles;
-      }
+    public double getDesiredDistanceInMiles() {
+      return desiredDistanceInMiles;
+    }
 
-      public PathDirection getDirection() {
-          return direction;
-      }
+    public PathDirection getDirection() {
+      return direction;
+    }
 
-      public void setTraverseStrategy(TraverseStrategy traverseStrategy) {
-        this.traverseStrategy = traverseStrategy;
-      }
+    public void setTraverseStrategy(TraverseStrategy traverseStrategy) {
+      this.traverseStrategy = traverseStrategy;
+    }
 
-      public List<Milepost> getBuffer() {
-          return buffer;
-      }
+    public List<Milepost> getBuffer() {
+      return buffer;
+    }
 
-      public void setBuffer(List<Milepost> buffer) {
-          this.buffer = buffer;
-      }
+    public void setBuffer(List<Milepost> buffer) {
+      this.buffer = buffer;
+    }
 
-      public double getDistanceInMiles() {
-          return distanceInMiles;
-      }
+    public double getDistanceInMiles() {
+      return distanceInMiles;
+    }
 
-      public void setDistanceInMiles(double distanceInMiles) {
-          this.distanceInMiles = distanceInMiles;
-      }
+    public void setDistanceInMiles(double distanceInMiles) {
+      this.distanceInMiles = distanceInMiles;
+    }
   }
 
   /**
    * Interface for traverse strategy to get buffer path
    */
   public interface TraverseStrategy {
-      void traverse(TraverseContext context);
+    void traverse(TraverseContext context);
   }
 
   /**
@@ -297,22 +304,22 @@ public class CdotUpstreamPathController extends BaseController {
 
     @Override
     public void traverse(TraverseContext context) {
-        List<Milepost> buffer = new ArrayList<>();
-        List<Milepost> allMileposts = context.getAllMileposts();
-        int startIndex = context.getStartIndex();
-        double desiredDistanceInMiles = context.getDesiredDistanceInMiles();
-        double distanceInMiles = 0;
+      List<Milepost> buffer = new ArrayList<>();
+      List<Milepost> allMileposts = context.getAllMileposts();
+      int startIndex = context.getStartIndex();
+      double desiredDistanceInMiles = context.getDesiredDistanceInMiles();
+      double distanceInMiles = 0;
 
-        buffer.add(allMileposts.get(startIndex));
-        for (int i = startIndex - 1; i >= 0; i--) {
-            distanceInMiles = DistanceCalculator.calculateDistanceInMiles(buffer);
-            if (distanceInMiles >= desiredDistanceInMiles) {
-              break;
-            }
-            buffer.add(allMileposts.get(i));
+      buffer.add(allMileposts.get(startIndex));
+      for (int i = startIndex - 1; i >= 0; i--) {
+        distanceInMiles = DistanceCalculator.calculateDistanceInMiles(buffer);
+        if (distanceInMiles >= desiredDistanceInMiles) {
+          break;
         }
-        context.setBuffer(buffer);
-        context.setDistanceInMiles(distanceInMiles);
+        buffer.add(allMileposts.get(i));
+      }
+      context.setBuffer(buffer);
+      context.setDistanceInMiles(distanceInMiles);
     }
   }
 
@@ -325,14 +332,17 @@ public class CdotUpstreamPathController extends BaseController {
       for (int i = 0; i < buffer.size() - 1; i++) {
         Milepost mp1 = buffer.get(i);
         Milepost mp2 = buffer.get(i + 1);
-        double distanceInMeters = DistanceCalculator.calculateDistanceInMetersBetweenTwoPoints(mp1.getLatitude().doubleValue(),
-            mp1.getLongitude().doubleValue(), mp2.getLatitude().doubleValue(), mp2.getLongitude().doubleValue());
+        double distanceInMeters = DistanceCalculator.calculateDistanceInMetersBetweenTwoPoints(
+            mp1.getLatitude().doubleValue(),
+            mp1.getLongitude().doubleValue(), mp2.getLatitude().doubleValue(),
+            mp2.getLongitude().doubleValue());
         distanceInMiles += distanceInMeters / 1609.34;
       }
       return distanceInMiles;
     }
 
-    public static double calculateDistanceInMetersBetweenTwoPoints(double lat1, double lon1, double lat2, double lon2) {
+    public static double calculateDistanceInMetersBetweenTwoPoints(double lat1, double lon1,
+                                                                   double lat2, double lon2) {
       final int R = 6371000; // Radius of the earth in meters
       double latDistance = Math.toRadians(lat2 - lat1);
       double lonDistance = Math.toRadians(lon2 - lon1);
