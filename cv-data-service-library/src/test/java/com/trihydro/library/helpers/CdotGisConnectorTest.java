@@ -18,7 +18,7 @@ class CdotGisConnectorTest extends BaseServiceTest {
   @InjectMocks
   private CdotGisConnector uut;
 
-  private final String expectedBaseUrl = "https://dtdapps.coloradodot.info/arcgis/rest/services/LRS/Routes/MapServer/exts/CdotLrsAccessRounded";
+  private final String expectedBaseUrl = "https://dtdapps.coloradodot.info/arcgis/rest/services/LRS/Routes_withDEC/MapServer/exts/CdotLrsAccessRounded";
 
   @Test
   void testInitialization() {
@@ -29,7 +29,7 @@ class CdotGisConnectorTest extends BaseServiceTest {
 
   @Test
   void testGetBaseUrl() {
-    Assertions.assertEquals("https://dtdapps.coloradodot.info/arcgis/rest/services/LRS/Routes/MapServer/exts/CdotLrsAccessRounded", uut.getBaseUrl());
+    Assertions.assertEquals("https://dtdapps.coloradodot.info/arcgis/rest/services/LRS/Routes_withDEC/MapServer/exts/CdotLrsAccessRounded", uut.getBaseUrl());
   }
 
   @Test

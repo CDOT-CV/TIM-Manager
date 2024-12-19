@@ -14,7 +14,7 @@ import org.springframework.web.client.RestClientException;
 
 @Component
 public class CdotGisConnector {
-  private final String baseUrl = "https://dtdapps.coloradodot.info/arcgis/rest/services/LRS/Routes/MapServer/exts/CdotLrsAccessRounded";
+  private final String baseUrl = "https://dtdapps.coloradodot.info/arcgis/rest/services/LRS/Routes_withDEC/MapServer/exts/CdotLrsAccessRounded";
 
   private final RestTemplateProvider restTemplateProvider;
 
