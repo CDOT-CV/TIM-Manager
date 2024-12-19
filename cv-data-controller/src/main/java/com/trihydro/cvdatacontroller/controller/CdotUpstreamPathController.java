@@ -37,6 +37,24 @@ public class CdotUpstreamPathController extends BaseController {
     this.cdotGisService = cdotGisService;
   }
 
+  /**
+   * Retrieves a buffer path of mileposts for a given route and desired distance.
+   *
+   * This method takes a list of path mileposts, a route ID, and a desired distance in miles.
+   * It fetches all mileposts for the specified route and determines the direction of the path.
+   * Then, it traverses the mileposts to create a buffer path that meets the desired distance.
+   *
+   * Note: The current implementation pulls back the entire route linestring in one request.
+   * There is a possibility to optimize this by hitting the geo REST service multiple times
+   * to fetch smaller segments of the route. However, this method will proceed with the current
+   * implementation unless performance issues are observed.
+   *
+   * @param pathMileposts the list of mileposts defining the path
+   * @param routeId the ID of the route
+   * @param desiredDistanceInMiles the desired distance for the buffer path in miles
+   * @return a ResponseEntity containing the buffer path of mileposts or a bad request status if an error occurs
+   * @throws JsonProcessingException if there is an error processing the JSON response from the geo service
+   */
   @PostMapping(value = "/get-buffer-for-path/{routeId}/{desiredDistanceInMiles:.+}")
   public ResponseEntity<List<Milepost>> getBufferForPath(@RequestBody List<Milepost> pathMileposts,
                                                          @PathVariable String routeId, @PathVariable
@@ -277,6 +295,18 @@ public class CdotUpstreamPathController extends BaseController {
 
     protected abstract int getNextIndex(int currentIndex);
 
+    /**
+     * Traverses the mileposts to create a buffer path.
+     *
+     * This method iterates through the mileposts starting from the given start index
+     * and adds them to the buffer until the desired distance in miles is reached.
+     *
+     * Note: The current implementation recalculates the total distance of the buffer
+     * after adding each milepost, which can be inefficient. If performance issues are
+     * observed, consider optimizing this calculation.
+     *
+     * @param context the context containing the mileposts, start index, desired distance, and direction
+     */
     @Override
     public void traverse(TraverseContext context) {
       List<Milepost> buffer = new ArrayList<>();
