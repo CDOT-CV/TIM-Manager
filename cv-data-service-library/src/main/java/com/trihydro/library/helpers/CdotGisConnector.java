@@ -33,6 +33,17 @@ public class CdotGisConnector {
     return restTemplateProvider;
   }
 
+  /**
+   * Retrieves the route information from the CDOT GIS service by route ID.
+   *
+   * <p>This method sends a GET request to the CDOT GIS service to retrieve the route information
+   * in JSON format. The JSON response includes every latitude and longitude point associated
+   * with the specified route, such as I-25.</p>
+   *
+   * @param routeId the ID of the route to retrieve
+   * @return a ResponseEntity containing the JSON response from the CDOT GIS service
+   * @throws RestClientException if an error occurs while making the request
+   */
   public ResponseEntity<String> getRouteById(String routeId) throws RestClientException {
     String targetUrl = baseUrl + "/Route";
     logger.info("Getting route with ID {} from CDOT GIS service at: {}", routeId, targetUrl);

@@ -115,6 +115,19 @@ public class CdotUpstreamPathController extends BaseController {
     return ResponseEntity.ok(buffer);
   }
 
+  /**
+   * Retrieves all mileposts for a given route from the CDOT GIS service.
+   *
+   * <p>This method uses `CdotGisService.getRouteById()` to retrieve the route information
+   * in JSON format. The JSON response contains all the latitude and longitude points
+   * in the route. This information is then extracted into the `Milepost` model and
+   * returned as a list of mileposts.</p>
+   *
+   * @param routeId the ID of the route to retrieve mileposts for
+   * @return a list of `Milepost` objects representing the mileposts in the route
+   * @throws JsonProcessingException if there is an error processing the JSON response
+   * @throws RestClientException if an error occurs while making the request
+   */
   public List<Milepost> getMilepostsForRoute(String routeId) throws JsonProcessingException,
       RestClientException {
     ResponseEntity<String> response = cdotGisService.getRouteById(routeId);
