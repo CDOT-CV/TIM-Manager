@@ -326,30 +326,17 @@ public class CdotUpstreamPathController extends BaseController {
    * Helper class to calculate distance between two points and total distance of a buffer path
    */
   public static class DistanceCalculator {
+    final static int R = 6371000; // Radius of the earth in meters
+
     public static double calculateDistanceInMiles(List<Milepost> buffer) {
       double distanceInMiles = 0;
       for (int i = 0; i < buffer.size() - 1; i++) {
         Milepost mp1 = buffer.get(i);
         Milepost mp2 = buffer.get(i + 1);
-        double distanceInMeters = DistanceCalculator.calculateDistanceInMetersBetweenTwoPoints(
-            mp1.getLatitude().doubleValue(),
-            mp1.getLongitude().doubleValue(), mp2.getLatitude().doubleValue(),
-            mp2.getLongitude().doubleValue());
+        double distanceInMeters = mp1.angularDistanceTo(mp2) * R;
         distanceInMiles += distanceInMeters / 1609.34;
       }
       return distanceInMiles;
-    }
-
-    public static double calculateDistanceInMetersBetweenTwoPoints(double lat1, double lon1,
-                                                                   double lat2, double lon2) {
-      final int R = 6371000; // Radius of the earth in meters
-      double latDistance = Math.toRadians(lat2 - lat1);
-      double lonDistance = Math.toRadians(lon2 - lon1);
-      double a = Math.sin(latDistance / 2) * Math.sin(latDistance / 2)
-          + Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2))
-          * Math.sin(lonDistance / 2) * Math.sin(lonDistance / 2);
-      double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-      return R * c; // Distance in meters
     }
   }
 }
