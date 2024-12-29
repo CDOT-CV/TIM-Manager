@@ -29,7 +29,7 @@ class CdotGisConnectorTest extends BaseServiceTest {
 
   @Test
   void testGetBaseUrl() {
-    Assertions.assertEquals("https://dtdapps.coloradodot.info/arcgis/rest/services/LRS/Routes_withDEC/MapServer/exts/CdotLrsAccessRounded", uut.getBaseUrl());
+    Assertions.assertEquals(expectedBaseUrl, uut.getBaseUrl());
   }
 
   @Test
