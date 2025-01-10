@@ -5,8 +5,8 @@
     <artifactId>cv-data-controller</artifactId>
 
     <parent>
-        <groupId>com.wyocv</groupId>
-        <artifactId>wyo-cv</artifactId>
+        <groupId>com.timm</groupId>
+        <artifactId>tim-manager</artifactId>
         <version>2.0.0</version>
     </parent>
     <dependencies>
