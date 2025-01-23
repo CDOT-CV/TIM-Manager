@@ -6,11 +6,6 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import com.trihydro.library.helpers.Utility;
-import com.trihydro.library.model.Coordinate;
-import com.trihydro.library.model.WydotRsu;
-import com.trihydro.library.model.WydotRsuTim;
-
 import org.gavaghan.geodesy.Ellipsoid;
 import org.gavaghan.geodesy.GeodeticCalculator;
 import org.gavaghan.geodesy.GeodeticCurve;
@@ -18,6 +13,11 @@ import org.gavaghan.geodesy.GlobalCoordinates;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
+
+import com.trihydro.library.helpers.Utility;
+import com.trihydro.library.model.Coordinate;
+import com.trihydro.library.model.WydotRsu;
+import com.trihydro.library.model.WydotRsuTim;
 
 @Component
 public class RsuService extends CvDataServiceLibrary {
@@ -38,6 +38,13 @@ public class RsuService extends CvDataServiceLibrary {
 
 	public List<WydotRsu> selectRsusByRoute(String route) {
 		String url = String.format("%s/rsus-by-route/%s", config.getCvRestService(), route);
+		ResponseEntity<WydotRsu[]> response = restTemplateProvider.GetRestTemplate().getForEntity(url,
+				WydotRsu[].class);
+		return Arrays.asList(response.getBody());
+	}
+
+	public List<WydotRsu> selectRsusByGeometry(String geometry) {
+		String url = String.format("%s/rsus-by-geometry/%s", config.getCvRestService(), geometry);
 		ResponseEntity<WydotRsu[]> response = restTemplateProvider.GetRestTemplate().getForEntity(url,
 				WydotRsu[].class);
 		return Arrays.asList(response.getBody());
@@ -199,6 +206,20 @@ public class RsuService extends CvDataServiceLibrary {
 		if (entryRsu != null)
 			rsus.add(entryRsu);
 
+		return rsus;
+	}
+
+	public List<WydotRsu> getRsusByGeometry(List<Coordinate> geometry) {
+		String coordinates = "LINESTRING(";
+		for (Coordinate coordinate : geometry) {
+            coordinates += coordinate.getLongitude() + " " + coordinate.getLatitude() + ",";
+        }
+		coordinates = coordinates.substring(0, coordinates.length() - 1) + ")";
+		List<WydotRsu> rsus = selectRsusByGeometry(coordinates);
+		for (WydotRsu rsu : rsus) {
+			rsu.setRsuRetries(3);
+			rsu.setRsuTimeout(5000);
+		}
 		return rsus;
 	}
 
