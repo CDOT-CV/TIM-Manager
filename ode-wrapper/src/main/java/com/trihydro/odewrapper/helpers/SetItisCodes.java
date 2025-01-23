@@ -284,7 +284,29 @@ public class SetItisCodes {
 
     public List<String> setItisCodesRw(WydotTim wydotTim) {
 
-        List<String> items = new ArrayList<String>();
+        List<String> items = new ArrayList<>();
+
+        if (wydotTim.getItisCodes() == null) {
+            return items;
+        }
+
+        ItisCode code;
+
+        for (String item : wydotTim.getItisCodes()) {
+
+            Integer itisCode = Integer.valueOf(item);
+
+            var alphaItis = getCustomAlphabetic(itisCode);
+            if (alphaItis != null) {
+                items.add(alphaItis);
+                continue;
+            }
+
+            code = getItisCodes().stream().filter(x -> x.getItisCode().equals(itisCode)).findFirst().orElse(null);
+
+            if (code != null)
+                items.add(code.getItisCode().toString());
+        }
 
         items.add("1025");
 
