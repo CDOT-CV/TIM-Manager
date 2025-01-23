@@ -215,11 +215,15 @@ public abstract class WydotTimBaseController {
                 && !tim.getDirection().equalsIgnoreCase("b")) {
             resultMessages.add("direction not supported");
         }
-        if (tim.getStartPoint() == null || !tim.getStartPoint().isValid()) {
-            resultMessages.add("Invalid startPoint");
-        }
-        if (tim.getEndPoint() == null || !tim.getEndPoint().isValid()) {
-            resultMessages.add("Invalid endPoint");
+
+        // if geometry isn't present check for start/end points
+        if (!tim.isGeometryValid()) {
+            if (tim.getStartPoint() == null || !tim.getStartPoint().isValid()) {
+                resultMessages.add("Invalid startPoint");
+            }
+            if (tim.getEndPoint() == null || !tim.getEndPoint().isValid()) {
+                resultMessages.add("Invalid endPoint");
+            }
         }
         if (tim.getHighway() == null) {
             resultMessages.add("Null value for highway");
@@ -320,12 +324,17 @@ public abstract class WydotTimBaseController {
                 && !tim.getDirection().equalsIgnoreCase("d") && !tim.getDirection().equalsIgnoreCase("b")) {
             resultMessages.add("direction not supported");
         }
-        if (tim.getStartPoint() == null || !tim.getStartPoint().isValid()) {
-            resultMessages.add("Invalid startPoint");
+
+        // if geometry isn't present check for start/end points
+        if (!tim.isGeometryValid()) {
+            if (tim.getStartPoint() == null || !tim.getStartPoint().isValid()) {
+                resultMessages.add("Invalid startPoint");
+            }
+            if (tim.getEndPoint() == null || !tim.getEndPoint().isValid()) {
+                resultMessages.add("Invalid endPoint");
+            }
         }
-        if (tim.getEndPoint() == null || !tim.getEndPoint().isValid()) {
-            resultMessages.add("Invalid endPoint");
-        }
+        
         if (tim.getRoute() == null) {
             resultMessages.add("Null value for route");
         }
@@ -642,15 +651,15 @@ public abstract class WydotTimBaseController {
         var existingTims = activeTimService.getActiveTimsByClientIdDirection(wydotTim.getClientId(), timTypeId,
                 wydotTim.getDirection());
 
+        // Use wydotTimService to get all mileposts for the TIM
+        List<Milepost> milepostsAll = wydotTimService.getAllMilepostsForTim(wydotTim);
+
         // Expire existing tims
         List<Long> existingTimIds = new ArrayList<Long>();
         for (ActiveTim existingTim : existingTims) {
             existingTimIds.add(existingTim.getActiveTimId());
         }
         timGenerationHelper.expireTimAndResubmitToOde(existingTimIds);
-
-        // Get mileposts that will define the TIM's region
-        var milepostsAll = wydotTimService.getAllMilepostsForTim(wydotTim);
 
         // Per J2735, NodeSetLL's must contain at least 2 nodes. ODE will fail to
         // PER-encode TIM if we supply less than 2.
@@ -692,10 +701,9 @@ public abstract class WydotTimBaseController {
             endPoint = new Coordinate(endMp.getLatitude(), endMp.getLongitude());
         }
 
-        if (Arrays.asList(configuration.getRsuRoutes()).contains(wydotTim.getRoute())) {
-            // send TIM to RSUs
-            wydotTimService.sendTimToRsus(wydotTim, timToSend, regionNamePrev, timType, pk, endDateTime, endPoint);
-        }
+        // send TIM to RSUs
+        wydotTimService.sendTimToRsus(wydotTim, timToSend, regionNamePrev, timType, pk, endDateTime, endPoint);
+        
         // send TIM to SDW
         // remove rsus from TIM
         timToSend.getRequest().setRsus(null);

@@ -72,6 +72,9 @@ public class WydotTimRcController extends WydotTimBaseController {
 
             resultTim = validateInputRc(wydotTim);
 
+            // workaround for geometry start/end point population 
+            WydotTimRc wydotTimRc = wydotTim.copy();
+
             if (resultTim.getResultMessages().size() > 0) {
                 resultList.add(resultTim);
                 errList.add(resultTim);
@@ -79,7 +82,7 @@ public class WydotTimRcController extends WydotTimBaseController {
             }
 
             // add TIM to list for processing later
-            timsToSend.add(wydotTim);
+            timsToSend.add(wydotTimRc);
 
             resultTim.getResultMessages().add("success");
             resultList.add(resultTim);
@@ -148,6 +151,9 @@ public class WydotTimRcController extends WydotTimBaseController {
         }
 
         String responseMessage = gson.toJson(resultList);
+        if (errList.size() > 0) {
+            utility.logWithDate("Failed to send TIMs: " + gson.toJson(errList), this.getClass());
+        }
         return ResponseEntity.status(HttpStatus.OK).body(responseMessage);
     }
 

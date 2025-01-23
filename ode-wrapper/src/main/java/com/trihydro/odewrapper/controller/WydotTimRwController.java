@@ -93,10 +93,12 @@ public class WydotTimRwController extends WydotTimBaseController {
                 makeDecreasingTims(wydotTim);
             }
             // else make one direction TIMs
-            else if (wydotTim.getDirection().equalsIgnoreCase("i"))
+            else if (wydotTim.getDirection().equalsIgnoreCase("i")) {
                 makeIncreasingTims(wydotTim);
-            else
+            }
+            else {
                 makeDecreasingTims(wydotTim);
+            }
 
             // compile result messages for user
             resultTim.getResultMessages().add("success");
@@ -161,6 +163,27 @@ public class WydotTimRwController extends WydotTimBaseController {
         return 0;
     }
 
+    private double getTimBearing(WydotTimRw wydotTim) {
+        if (wydotTim.getBearing() != null) {
+            switch (wydotTim.getBearing()) {
+                case 0:
+                    return 180;
+                case 90:
+                    return 270;
+                case 180:
+                    return 0;
+                case 270:
+                    return 90;
+                default:
+                    return 0;
+            }
+        } else if (wydotTim.getDirection().equalsIgnoreCase("i")) {
+            return getIBearingForRoute(wydotTim.getRoute());
+        } else {
+            return getDBearingForRoute(wydotTim.getRoute());
+        }
+    }
+
     public void makeIncreasingBufferTim(WydotTimRw wydotTim) {
 
         double bufferBefore = 0.000;
@@ -169,7 +192,7 @@ public class WydotTimRwController extends WydotTimBaseController {
         GlobalCoordinates startCoordinates = new GlobalCoordinates(wydotTim.getStartPoint().getLatitude().doubleValue(),
                 wydotTim.getStartPoint().getLongitude().doubleValue());
         GlobalCoordinates nextCoordinates = null;
-        double bearing = getIBearingForRoute(wydotTim.getRoute());
+        double bearing = getTimBearing(wydotTim);
         GeodeticCalculator calculator = new GeodeticCalculator();
 
         for (int i = 0; i < wydotTim.getBuffers().size(); i++) {
@@ -213,7 +236,7 @@ public class WydotTimRwController extends WydotTimBaseController {
         GlobalCoordinates startCoordinates = new GlobalCoordinates(wydotTim.getEndPoint().getLatitude().doubleValue(),
                 wydotTim.getEndPoint().getLongitude().doubleValue());
         GlobalCoordinates nextCoordinates = null;
-        double bearing = getDBearingForRoute(wydotTim.getRoute());
+        double bearing = getTimBearing(wydotTim);
         GeodeticCalculator calculator = new GeodeticCalculator();
 
         for (int i = 0; i < wydotTim.getBuffers().size(); i++) {
