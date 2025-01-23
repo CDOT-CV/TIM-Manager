@@ -3,7 +3,7 @@ SET client_encoding TO 'UTF8';
 
 
 -- not part of a dependency relationship --
-CREATE TABLE active_tim_holding (
+CREATE TABLE IF NOT EXISTS active_tim_holding (
 	active_tim_holding_id bigint NOT NULL,
 	client_id varchar(255),
 	direction varchar(50) NOT NULL,
@@ -29,7 +29,7 @@ ALTER TABLE active_tim_holding ALTER COLUMN END_LONGITUDE SET NOT NULL;
 ALTER TABLE active_tim_holding ALTER COLUMN DIRECTION SET NOT NULL;
 
 
-CREATE TABLE http_logging (
+CREATE TABLE IF NOT EXISTS http_logging (
 	http_logging_id bigint NOT NULL,
 	request_time timestamp NOT NULL,
 	rest_request varchar(2000) NOT NULL,
@@ -41,7 +41,7 @@ ALTER TABLE http_logging ALTER COLUMN REQUEST_TIME SET NOT NULL;
 ALTER TABLE http_logging ALTER COLUMN REST_REQUEST SET NOT NULL;
 
 
-CREATE TABLE milepost_test (
+CREATE TABLE IF NOT EXISTS milepost_test (
 	route varchar(255),
 	milepost decimal(38,8),
 	direction varchar(255),
@@ -52,7 +52,7 @@ CREATE TABLE milepost_test (
 ) ;
 
 
-CREATE TABLE mileposts (
+CREATE TABLE IF NOT EXISTS mileposts (
 	common_name varchar(20),
 	direction varchar(1),
 	milepost decimal(38,8),
@@ -63,7 +63,7 @@ CREATE TABLE mileposts (
 ) ;
 
 
-CREATE TABLE rw_buffer_action_lut (
+CREATE TABLE IF NOT EXISTS rw_buffer_action_lut (
 	description varchar(50),
 	code varchar(20),
 	rw_buffer_action_lut_id bigint NOT NULL
@@ -71,7 +71,7 @@ CREATE TABLE rw_buffer_action_lut (
 ALTER TABLE rw_buffer_action_lut ADD PRIMARY KEY (rw_buffer_action_lut_id);
 
 
-CREATE TABLE tim_type (
+CREATE TABLE IF NOT EXISTS tim_type (
 	type varchar(10),
 	description varchar(255),
 	tim_type_id bigint NOT NULL
@@ -79,7 +79,7 @@ CREATE TABLE tim_type (
 ALTER TABLE tim_type ADD PRIMARY KEY (tim_type_id);
 
 
-CREATE TABLE entity_type (
+CREATE TABLE IF NOT EXISTS entity_type (
 	entity_type_id bigint NOT NULL,
 	name varchar(128) NOT NULL,
 	description varchar(255)
@@ -89,7 +89,7 @@ ALTER TABLE entity_type ALTER COLUMN ENTITY_TYPE_ID SET NOT NULL;
 ALTER TABLE entity_type ALTER COLUMN NAME SET NOT NULL;
 
 
-CREATE TABLE status_type (
+CREATE TABLE IF NOT EXISTS status_type (
 	status_type_id bigint NOT NULL,
 	name varchar(128) NOT NULL,
 	description varchar(255)
@@ -99,7 +99,7 @@ ALTER TABLE status_type ALTER COLUMN STATUS_TYPE_ID SET NOT NULL;
 ALTER TABLE status_type ALTER COLUMN NAME SET NOT NULL;
 
 
-CREATE TABLE security_result_code_type (
+CREATE TABLE IF NOT EXISTS security_result_code_type (
 	security_result_code_type varchar(255) NOT NULL,
 	security_result_code_type_id bigint NOT NULL
 ) ;
@@ -107,7 +107,7 @@ ALTER TABLE security_result_code_type ADD PRIMARY KEY (security_result_code_type
 ALTER TABLE security_result_code_type ALTER COLUMN SECURITY_RESULT_CODE_TYPE SET NOT NULL;
 
 
-CREATE TABLE category (
+CREATE TABLE IF NOT EXISTS category (
 	category_id bigint NOT NULL,
 	category varchar(255)
 ) ;
@@ -115,7 +115,7 @@ ALTER TABLE category ADD PRIMARY KEY (category_id);
 ALTER TABLE category ALTER COLUMN CATEGORY_ID SET NOT NULL;
 
 
-CREATE TABLE node_xy (
+CREATE TABLE IF NOT EXISTS node_xy (
 	node_xy_id bigint NOT NULL,
 	delta varchar(255),
 	node_lat double precision,
@@ -129,7 +129,7 @@ ALTER TABLE node_xy ADD PRIMARY KEY (node_xy_id);
 ALTER TABLE node_xy ALTER COLUMN NODE_XY_ID SET NOT NULL;
 
 
-CREATE TABLE node_ll (
+CREATE TABLE IF NOT EXISTS node_ll (
 	node_ll_id bigint NOT NULL,
 	delta varchar(255),
 	node_lat double precision,
@@ -143,7 +143,7 @@ ALTER TABLE node_ll ADD PRIMARY KEY (node_ll_id);
 ALTER TABLE node_ll ALTER COLUMN NODE_LL_ID SET NOT NULL;
 
 
-CREATE TABLE computed_lane (
+CREATE TABLE IF NOT EXISTS computed_lane (
 	computed_lane_id bigint NOT NULL,
 	lane_id bigint NOT NULL,
 	offset_small_x bigint NOT NULL,
@@ -161,17 +161,6 @@ ALTER TABLE computed_lane ALTER COLUMN OFFSET_SMALL_X SET NOT NULL;
 ALTER TABLE computed_lane ALTER COLUMN OFFSET_LARGE_X SET NOT NULL;
 ALTER TABLE computed_lane ALTER COLUMN OFFSET_SMALL_Y SET NOT NULL;
 ALTER TABLE computed_lane ALTER COLUMN OFFSET_LARGE_Y SET NOT NULL;
-
-
-CREATE TABLE rsu_firmware (
-	firmware_id varchar(128) NOT NULL,
-	firmware_file varchar(255) NOT NULL,
-	update_process varchar(255),
-	release_date timestamp(0) NOT NULL
-) ;
-ALTER TABLE rsu_firmware ADD PRIMARY KEY (firmware_id);
-ALTER TABLE rsu_firmware ALTER COLUMN FIRMWARE_FILE SET NOT NULL;
-ALTER TABLE rsu_firmware ALTER COLUMN RELEASE_DATE SET NOT NULL;
 
 
 CREATE TABLE status_log (
@@ -193,7 +182,7 @@ ALTER TABLE status_log ADD CONSTRAINT entypetolog_fk FOREIGN KEY (entity_type_id
 ALTER TABLE status_log ADD CONSTRAINT sttypetolog_fk FOREIGN KEY (status_type_id) REFERENCES status_type(status_type_id) ON DELETE CASCADE NOT DEFERRABLE INITIALLY IMMEDIATE;
 
 
-CREATE TABLE itis_code (
+CREATE TABLE IF NOT EXISTS itis_code (
 	itis_code_id bigint NOT NULL,
 	description varchar(255) NOT NULL,
 	category_id bigint NOT NULL,
@@ -206,7 +195,7 @@ ALTER TABLE itis_code ALTER COLUMN CATEGORY_ID SET NOT NULL;
 ALTER TABLE itis_code ADD CONSTRAINT fk_category FOREIGN KEY (category_id) REFERENCES category(category_id) ON DELETE NO ACTION NOT DEFERRABLE INITIALLY IMMEDIATE;
 
 
-CREATE TABLE tim (
+CREATE TABLE IF NOT EXISTS tim (
 	msg_cnt varchar(255),
 	url_b varchar(255),
 	time_stamp timestamp,
@@ -243,7 +232,7 @@ ALTER TABLE tim ADD PRIMARY KEY (tim_id);
 ALTER TABLE tim ADD CONSTRAINT fk_sec_result_code_type_tim FOREIGN KEY (security_result_code) REFERENCES security_result_code_type(security_result_code_type_id) ON DELETE CASCADE NOT DEFERRABLE INITIALLY IMMEDIATE;
 
 
-CREATE TABLE shape_point (
+CREATE TABLE IF NOT EXISTS shape_point (
 	shape_point_id bigint NOT NULL,
 	lane_width bigint,
 	directionality bigint,
@@ -258,7 +247,7 @@ ALTER TABLE shape_point ALTER COLUMN SHAPE_POINT_ID SET NOT NULL;
 ALTER TABLE shape_point ADD CONSTRAINT fk_computed_lane_shape_point FOREIGN KEY (computed_lane_id) REFERENCES computed_lane(computed_lane_id) ON DELETE NO ACTION NOT DEFERRABLE INITIALLY IMMEDIATE;
 
 
-CREATE TABLE path (
+CREATE TABLE IF NOT EXISTS path (
 	path_id bigint NOT NULL,
 	scale bigint,
 	type varchar(255),
@@ -269,7 +258,7 @@ ALTER TABLE path ALTER COLUMN PATH_ID SET NOT NULL;
 ALTER TABLE path ADD CONSTRAINT fk_computed_lane_path FOREIGN KEY (computed_lane_id) REFERENCES computed_lane(computed_lane_id) ON DELETE NO ACTION NOT DEFERRABLE INITIALLY IMMEDIATE;
 
 
-CREATE TABLE data_list (
+CREATE TABLE IF NOT EXISTS data_list (
 	data_list_id bigint NOT NULL,
 	node_xy_id bigint NOT NULL,
 	path_endpoint_angle bigint NOT NULL,
@@ -289,18 +278,6 @@ ALTER TABLE data_list ALTER COLUMN LANE_ANGLE SET NOT NULL;
 ALTER TABLE data_list ADD CONSTRAINT fk_node_xy_data_list FOREIGN KEY (node_xy_id) REFERENCES node_xy(node_xy_id) ON DELETE NO ACTION NOT DEFERRABLE INITIALLY IMMEDIATE;
 
 
-CREATE TABLE rsu (
-	rsu_id bigint NOT NULL,
-	deviceid integer,
-	update_username varchar(255) DEFAULT 'ADMIN',
-	update_password varchar(128),
-	firmware_id varchar(128)
-) ;
-ALTER TABLE rsu ADD PRIMARY KEY (rsu_id);
-ALTER TABLE rsu ALTER COLUMN RSU_ID SET NOT NULL;
-ALTER TABLE rsu ADD CONSTRAINT fk_rsu2firmware FOREIGN KEY (firmware_id) REFERENCES rsu_firmware(firmware_id) ON DELETE SET NULL NOT DEFERRABLE INITIALLY IMMEDIATE;
-
-
 CREATE TABLE incident_action_lut (
 	description varchar(60),
 	code varchar(10),
@@ -311,7 +288,7 @@ ALTER TABLE incident_action_lut ADD PRIMARY KEY (incident_action_lut_id);
 ALTER TABLE incident_action_lut ADD CONSTRAINT fk_itis_code_incident_action FOREIGN KEY (itis_code_id) REFERENCES itis_code(itis_code_id) ON DELETE NO ACTION NOT DEFERRABLE INITIALLY IMMEDIATE;
 
 
-CREATE TABLE incident_effect_lut (
+CREATE TABLE IF NOT EXISTS incident_effect_lut (
 	description varchar(50),
 	code varchar(20),
 	itis_code_id bigint,
@@ -321,7 +298,7 @@ ALTER TABLE incident_effect_lut ADD PRIMARY KEY (incident_effect_lut_id);
 ALTER TABLE incident_effect_lut ADD CONSTRAINT fk_itis_code_incident_effect FOREIGN KEY (itis_code_id) REFERENCES itis_code(itis_code_id) ON DELETE NO ACTION NOT DEFERRABLE INITIALLY IMMEDIATE;
 
 
-CREATE TABLE incident_problem_lut (
+CREATE TABLE IF NOT EXISTS incident_problem_lut (
 	description varchar(50),
 	code varchar(20),
 	itis_code_id bigint,
@@ -331,7 +308,7 @@ ALTER TABLE incident_problem_lut ADD PRIMARY KEY (incident_problem_lut_id);
 ALTER TABLE incident_problem_lut ADD CONSTRAINT fk_itis_code_incident_problem FOREIGN KEY (itis_code_id) REFERENCES itis_code(itis_code_id) ON DELETE CASCADE NOT DEFERRABLE INITIALLY IMMEDIATE;
 
 
-CREATE TABLE active_tim (
+CREATE TABLE IF NOT EXISTS active_tim (
 	tim_id bigint,
 	milepost_start double precision,
 	milepost_stop double precision,
@@ -356,7 +333,7 @@ ALTER TABLE active_tim ADD PRIMARY KEY (active_tim_id);
 ALTER TABLE active_tim ADD CONSTRAINT fk_tim_active_tim FOREIGN KEY (tim_id) REFERENCES tim(tim_id) ON DELETE CASCADE NOT DEFERRABLE INITIALLY IMMEDIATE;
 
 
-CREATE TABLE data_frame (
+CREATE TABLE IF NOT EXISTS data_frame (
 	data_frame_id bigint NOT NULL,
 	tim_id bigint NOT NULL,
 	ssp_tim_rights integer,
@@ -385,7 +362,7 @@ ALTER TABLE data_frame ALTER COLUMN TIM_ID SET NOT NULL;
 ALTER TABLE data_frame ADD CONSTRAINT fk_tim_df FOREIGN KEY (tim_id) REFERENCES tim(tim_id) ON DELETE CASCADE NOT DEFERRABLE INITIALLY IMMEDIATE;
 
 
-CREATE TABLE path_node_ll (
+CREATE TABLE IF NOT EXISTS path_node_ll (
 	path_node_ll_id bigint NOT NULL,
 	path_id bigint NOT NULL,
 	node_ll_id bigint NOT NULL
@@ -399,7 +376,7 @@ ALTER TABLE path_node_ll ADD CONSTRAINT fk_path_node_ll_node_ll FOREIGN KEY (nod
 ALTER TABLE path_node_ll ADD CONSTRAINT fk_path_node_ll_path FOREIGN KEY (path_id) REFERENCES path(path_id) ON DELETE NO ACTION NOT DEFERRABLE INITIALLY IMMEDIATE;
 
 
-CREATE TABLE path_node_xy (
+CREATE TABLE IF NOT EXISTS path_node_xy (
 	path_node_xy_id bigint NOT NULL,
 	path_id bigint NOT NULL,
 	node_xy_id bigint NOT NULL
@@ -413,7 +390,7 @@ ALTER TABLE path_node_xy ADD CONSTRAINT fk_node_xy_path FOREIGN KEY (node_xy_id)
 ALTER TABLE path_node_xy ADD CONSTRAINT fk_path_node_xy FOREIGN KEY (path_id) REFERENCES path(path_id) ON DELETE NO ACTION NOT DEFERRABLE INITIALLY IMMEDIATE;
 
 
-CREATE TABLE shape_point_node_xy (
+CREATE TABLE IF NOT EXISTS shape_point_node_xy (
 	shape_point_node_xy_id bigint NOT NULL,
 	shape_point_id bigint NOT NULL,
 	node_xy_id bigint NOT NULL
@@ -427,7 +404,7 @@ ALTER TABLE shape_point_node_xy ADD CONSTRAINT fk_node_xy_shape_point FOREIGN KE
 ALTER TABLE shape_point_node_xy ADD CONSTRAINT fk_shape_point_node_xy FOREIGN KEY (shape_point_id) REFERENCES shape_point(shape_point_id) ON DELETE NO ACTION NOT DEFERRABLE INITIALLY IMMEDIATE;
 
 
-CREATE TABLE old_region (
+CREATE TABLE IF NOT EXISTS old_region (
 	old_region_id bigint NOT NULL,
 	direction varchar(255) NOT NULL,
 	extent bigint,
@@ -452,7 +429,7 @@ ALTER TABLE old_region ALTER COLUMN CIRCLE_UNITS SET NOT NULL;
 ALTER TABLE old_region ADD CONSTRAINT fk_shape_point FOREIGN KEY (shape_point_id) REFERENCES shape_point(shape_point_id) ON DELETE NO ACTION NOT DEFERRABLE INITIALLY IMMEDIATE;
 
 
-CREATE TABLE tim_rsu (
+CREATE TABLE IF NOT EXISTS tim_rsu (
 	tim_rsu_id bigint NOT NULL,
 	rsu_id bigint NOT NULL,
 	tim_id bigint NOT NULL,
@@ -463,13 +440,13 @@ ALTER TABLE tim_rsu ADD PRIMARY KEY (tim_rsu_id);
 ALTER TABLE tim_rsu ALTER COLUMN TIM_RSU_ID SET NOT NULL;
 ALTER TABLE tim_rsu ALTER COLUMN RSU_ID SET NOT NULL;
 ALTER TABLE tim_rsu ALTER COLUMN TIM_ID SET NOT NULL;
-ALTER TABLE tim_rsu ADD CONSTRAINT sys_c0021538 FOREIGN KEY (rsu_id) REFERENCES rsu(rsu_id) ON DELETE CASCADE NOT DEFERRABLE INITIALLY IMMEDIATE;
+ALTER TABLE tim_rsu ADD CONSTRAINT sys_c0021538 FOREIGN KEY (rsu_id) REFERENCES rsus(rsu_id) ON DELETE CASCADE NOT DEFERRABLE INITIALLY IMMEDIATE;
 
 ALTER TABLE tim_rsu ADD CONSTRAINT sys_c0021539 FOREIGN KEY (tim_id) REFERENCES tim(tim_id) ON DELETE CASCADE NOT DEFERRABLE INITIALLY IMMEDIATE;
 
 
 -- dependent level 3 (dependent on level 2 tables and possibly level 1/level 0 tables) --
-CREATE TABLE data_frame_itis_code (
+CREATE TABLE IF NOT EXISTS data_frame_itis_code (
 	data_frame_itis_code_id bigint NOT NULL,
 	itis_code_id bigint,
 	data_frame_id bigint NOT NULL,
@@ -484,7 +461,7 @@ ALTER TABLE data_frame_itis_code ADD CONSTRAINT fk_data_frame_itis_code FOREIGN 
 ALTER TABLE data_frame_itis_code ADD CONSTRAINT fk_itis_code FOREIGN KEY (itis_code_id) REFERENCES itis_code(itis_code_id) ON DELETE NO ACTION NOT DEFERRABLE INITIALLY IMMEDIATE;
 
 
-CREATE TABLE region (
+CREATE TABLE IF NOT EXISTS region (
 	region_id bigint NOT NULL,
 	data_frame_id bigint NOT NULL,
 	name varchar(255),
@@ -522,7 +499,7 @@ ALTER TABLE region ADD CONSTRAINT fk_old_region FOREIGN KEY (old_region_id) REFE
 ALTER TABLE region ADD CONSTRAINT fk_path FOREIGN KEY (path_id) REFERENCES path(path_id) ON DELETE NO ACTION NOT DEFERRABLE INITIALLY IMMEDIATE;
 
 
-CREATE TABLE region_list (
+CREATE TABLE IF NOT EXISTS region_list (
 	region_list_id bigint NOT NULL,
 	old_region_id bigint NOT NULL,
 	x_offset bigint NOT NULL,

@@ -362,21 +362,6 @@ CREATE TRIGGER trg_region_list_id
 	BEFORE INSERT ON region_list FOR EACH ROW
 	EXECUTE PROCEDURE trigger_fct_trg_region_list_id();
 
-DROP TRIGGER IF EXISTS trg_rsu_id ON rsu CASCADE;
-CREATE OR REPLACE FUNCTION trigger_fct_trg_rsu_id() RETURNS trigger AS $BODY$
-BEGIN
-select nextval('rsu_id_seq')
-into STRICT NEW.rsu_id
-;
-RETURN NEW;
-end
-$BODY$
- LANGUAGE 'plpgsql' SECURITY DEFINER;
-
-CREATE TRIGGER trg_rsu_id
-	BEFORE INSERT ON rsu FOR EACH ROW
-	EXECUTE PROCEDURE trigger_fct_trg_rsu_id();
-
 DROP TRIGGER IF EXISTS trg_shape_point_id ON shape_point CASCADE;
 CREATE OR REPLACE FUNCTION trigger_fct_trg_shape_point_id() RETURNS trigger AS $BODY$
 BEGIN
