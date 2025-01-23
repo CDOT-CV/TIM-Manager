@@ -7,6 +7,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -18,6 +19,7 @@ import com.trihydro.cvdatacontroller.services.MilepostService;
 import com.trihydro.library.model.Milepost;
 import com.trihydro.library.model.MilepostBuffer;
 import com.trihydro.library.model.WydotTim;
+import com.trihydro.library.model.MilepostCacheBody;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -37,6 +39,7 @@ import springfox.documentation.annotations.ApiIgnore;
 public class MilepostController extends BaseController {
 
 	private MilepostService milepostService;
+	private final HashMap<String, List<Milepost>> milepostCache = new HashMap<>();
 
 	@Autowired
 	public void InjectDependencies(MilepostService _milepostService) {
@@ -307,6 +310,85 @@ public class MilepostController extends BaseController {
 				wydotTim.getEndPoint().getLatitude(), wydotTim.getEndPoint().getLongitude(), wydotTim.getDirection());
 		return ResponseEntity.ok(data);
 	}
+
+	@RequestMapping(method = RequestMethod.POST, value="/set-milepost-cache")
+	public ResponseEntity<String> setMilepostCache(@RequestBody MilepostCacheBody milepostCacheBody) {
+		
+		utility.logWithDate("Setting milepost cache for timID: " + milepostCacheBody.getTimID());
+
+		if (milepostCacheBody.getMileposts().size() == 0 || milepostCacheBody.getTimID() == null) {
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid Request: please provide a valid milepost list and timID");
+		}
+		if (milepostCache.containsKey(milepostCacheBody.getTimID())) {
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Milepost cache already exists for timID: " + milepostCacheBody.getTimID());
+		}
+		milepostCache.put(milepostCacheBody.getTimID(), milepostCacheBody.getMileposts());
+		return ResponseEntity.ok("Milepost cache set successfully for timID: " + milepostCacheBody.getTimID());
+	}
+
+	@RequestMapping(method = RequestMethod.GET, value="/get-milepost-cache/{timID}")
+	public ResponseEntity<List<Milepost>> getMilepostCacheByTimID(@PathVariable String timID) {
+		List<Milepost> mileposts = new ArrayList<>();
+
+		if (milepostCache.containsKey(timID)) {
+			mileposts = milepostCache.get(timID);
+			utility.logWithDate("Found " + mileposts.size() + " mileposts in cache for timID: " + timID);
+			return ResponseEntity.ok(milepostCache.get(timID));
+		}
+
+		return ResponseEntity.ok(mileposts);
+	}
+
+	@RequestMapping(method = RequestMethod.DELETE, value="/delete-milepost-cache/{timID}")
+	public ResponseEntity<String> deleteMilepostCache(@PathVariable String timID) {
+		utility.logWithDate("Deleting milepost cache for timID: " + timID);
+
+		if (milepostCache.containsKey(timID)) {
+			milepostCache.remove(timID);
+			return ResponseEntity.ok("Milepost cache deleted successfully for timID: " + timID);
+		}
+		return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Milepost cache not found for timID: " + timID);
+	}
+
+	@RequestMapping(method = RequestMethod.GET, value="/clear-milepost-cache")
+	public ResponseEntity<String> clearMilepostCache() {
+		utility.logWithDate("Clearing milepost cache");
+		List<String> timIDs = new ArrayList<>(milepostCache.keySet());
+		Connection connection = null;
+		Statement statement = null;
+		ResultSet rs = null;
+
+		try {
+			connection = dbInteractions.getConnectionPool();
+			statement = connection.createStatement();
+			rs = statement.executeQuery("SELECT client_id FROM active_tim WHERE marked_for_deletion = False");
+
+			// convert result to milepost objects
+			while (rs.next()) {
+				String tim_id = rs.getString("CLIENT_ID");
+				if (!timIDs.contains(tim_id)) {
+					milepostCache.remove(tim_id);
+				}
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+		} finally {
+			try {
+				// close prepared statement
+				if (statement != null)
+					statement.close();
+				// return connection back to pool
+				if (connection != null)
+					connection.close();
+				// close result set
+				if (rs != null)
+					rs.close();
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
+		}
+        return ResponseEntity.ok("Milepost cache cleared successfully");
+    }
 
 	/**
 	 * Rewrite of getMilepostsByStartEndPoint used in testing to cut time on geojson

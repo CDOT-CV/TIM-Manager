@@ -314,7 +314,24 @@ public class TimGenerationHelper {
 
         utility.logWithDate("Fetching mileposts for regular TIM with client id: " + wydotTim.getClientId());
         if (wydotTim.getEndPoint() != null) {
-            allMps = milepostService.getMilepostsByStartEndPointDirection(wydotTim);
+                if (wydotTim.getGeometry() != null && wydotTim.getGeometry().size() > 1) {
+                    for (Coordinate coordinate : wydotTim.getGeometry()) {
+                        Milepost milepost = new Milepost();
+                        milepost.setLatitude(coordinate.getLatitude());
+                        milepost.setLongitude(coordinate.getLongitude());
+                        milepost.setDirection(wydotTim.getDirection());
+                        milepost.setCommonName(wydotTim.getRoute());
+                        milepost.setMilepost(0.0);
+                        allMps.add(milepost);
+                    }
+                    milepostService.setMilepostCache(allMps, wydotTim.getClientId());
+                } else {
+                    // Check to see if milepost array exists in cache
+                    allMps = milepostService.getMilepostCache(wydotTim.getClientId());
+                    if (allMps.isEmpty()) {
+                        allMps = milepostService.getMilepostsByStartEndPointDirection(wydotTim);
+                    }
+                }
             utility.logWithDate(String.format("Found %d mileposts between %s and %s", allMps.size(),
                     gson.toJson(wydotTim.getStartPoint()), gson.toJson(wydotTim.getEndPoint())));
         } else {
@@ -562,6 +579,77 @@ public class TimGenerationHelper {
         return exceptions;
     }
 
+        /**
+     * Expires existing TIMs that utilize geometry instead of start/end points and resubmits them to the ODE
+     * 
+     * @param activeTimId TIM to resubmit
+     * @param allMps List of all mileposts for the active TIM
+     * @return Errors that occurred while processing the request
+     */
+    public List<ResubmitTimException> expireTimAndResubmitToOdeGeometry(Long activeTimID, List<Milepost> allMps) {
+        List<ResubmitTimException> exceptions = new ArrayList<>();
+        if (activeTimID == null) {
+            utility.logWithDate("No active TIM found to resubmit to ODE. Returning...", TimGenerationHelper.class);
+            return exceptions;
+        }
+
+        try {
+            var tum = activeTimService.getUpdateModelFromActiveTimId(activeTimID);
+
+            if (tum == null) {
+                exceptions.add(new ResubmitTimException(activeTimID, "Failed to get Update Model from active tim"));
+            }
+            if (!isValidTim(tum)) {
+                exceptions.add(new ResubmitTimException(activeTimID,
+                        "Failed to generate valid Update Model from active tim"));
+            }
+
+            if (tum.getLaneWidth() == null) {
+                tum.setLaneWidth(config.getDefaultLaneWidth());
+            } else {
+                // Database has lane width as cm, but ODE takes m
+                tum.setLaneWidth(tum.getLaneWidth().divide(BigDecimal.valueOf(100)));
+            }
+
+            List<Milepost> reduced_mps;
+            if (allMps.size() < 2) {
+                String exMsg = String.format(
+                        "Unable to resubmit TIM, less than 2 mileposts found for Active_Tim %d",
+                        tum.getActiveTimId());
+                utility.logWithDate(exMsg);
+                exceptions.add(new ResubmitTimException(activeTimID, exMsg));
+            }
+            Milepost firstPoint = allMps.get(0);
+            Milepost secondPoint = allMps.get(1);
+
+            // reduce the mileposts by removing straight away posts
+            var anchorMp = getAnchorPoint(firstPoint, secondPoint);
+            reduced_mps = milepostReduction.applyMilepostReductionAlgorithm(allMps, config.getPathDistanceLimit());
+
+            OdeTravelerInformationMessage tim = getTim(tum, reduced_mps, allMps, anchorMp, false, true);
+            if (tim == null) {
+                String exMsg = String.format("Failed to instantiate TIM for active_tim_id %d",
+                        tum.getActiveTimId());
+                utility.logWithDate(exMsg);
+                exceptions.add(new ResubmitTimException(activeTimID, exMsg));
+            }
+            WydotTravelerInputData timToSend = new WydotTravelerInputData();
+            timToSend.setTim(tim);
+            var extraEx = sendTim(timToSend, tum, activeTimID, reduced_mps);
+            activeTimService.markForDeletion(activeTimID);
+            if (!extraEx.isEmpty()) {
+                exceptions.addAll(extraEx);
+            }
+        } catch (Exception ex) {
+            exceptions.add(new ResubmitTimException(activeTimID, ex.getMessage()));
+        }
+        if (!exceptions.isEmpty()) {
+            utility.logWithDate("Errors occurred while resubmitting TIMs: " + gson.toJson(exceptions),
+                    TimGenerationHelper.class);
+        }
+        return exceptions;
+    }
+
     public boolean isValidTim(TimUpdateModel tum) {
 
         // start point
@@ -684,9 +772,8 @@ public class TimGenerationHelper {
             List<Milepost> reduced_mps) {
         List<ResubmitTimException> exceptions = new ArrayList<>();
         // try to send to RSU if not a sat TIM and along route with RSUs
-        if (StringUtils.isBlank(tum.getSatRecordId())
-                && Arrays.asList(config.getRsuRoutes()).contains(tum.getRoute())) {
-            var exMsg = updateAndSendRSU(timToSend, tum);
+        if (StringUtils.isBlank(tum.getSatRecordId())) {
+            var exMsg = updateAndSendRSU(timToSend, tum, reduced_mps);
             if (StringUtils.isNotBlank(exMsg)) {
                 exceptions.add(new ResubmitTimException(activeTimId, exMsg));
             }
@@ -901,15 +988,24 @@ public class TimGenerationHelper {
         return regionName;
     }
 
-    private String updateAndSendRSU(WydotTravelerInputData timToSend, TimUpdateModel aTim) {
+    private String updateAndSendRSU(WydotTravelerInputData timToSend, TimUpdateModel aTim, List<Milepost> mileposts) {
         String exMsg = "";
         List<WydotRsuTim> wydotRsus = rsuService.getFullRsusTimIsOn(aTim.getTimId());
         List<WydotRsu> dbRsus = new ArrayList<WydotRsu>();
         if (wydotRsus == null || wydotRsus.size() <= 0) {
             utility.logWithDate("RSUs not found to update db for active_tim_id " + aTim.getActiveTimId());
 
-            dbRsus = rsuService.getRsusByLatLong(aTim.getDirection(), aTim.getStartPoint(), aTim.getEndPoint(),
-                    aTim.getRoute());
+            if (mileposts != null && mileposts.size() > 0) {
+                // use milepost geometry to find RSUs
+                List<Coordinate> coords = new ArrayList<Coordinate>();
+                for (Milepost mp : mileposts) {
+                    coords.add(new Coordinate(mp.getLatitude(), mp.getLongitude()));
+                }
+                dbRsus = rsuService.getRsusByGeometry(coords);
+            } else {
+                dbRsus = rsuService.getRsusByLatLong(aTim.getDirection(), aTim.getStartPoint(), aTim.getEndPoint(),
+                aTim.getRoute());
+            }
 
             // if no RSUs found
             if (dbRsus.size() == 0) {

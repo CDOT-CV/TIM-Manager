@@ -159,9 +159,25 @@ public class WydotTimService {
     }
 
     public List<Milepost> getAllMilepostsForTim(WydotTim wydotTim) {
-        List<Milepost> milepostsAll = new ArrayList<>();
+        List<Milepost> milepostsAll;
 
-        if (wydotTim.getEndPoint() != null && wydotTim.getEndPoint().getLatitude() != null
+        // get mileposts from cache if they exist
+        milepostsAll = milepostService.getMilepostCache(wydotTim.getClientId());
+        if (milepostsAll != null && milepostsAll.size() > 0) {
+            return milepostsAll;
+        }
+
+        if (wydotTim.getGeometry() != null && wydotTim.getGeometry().size() > 1) {
+            for (Coordinate coordinate : wydotTim.getGeometry()) {
+                Milepost milepost = new Milepost();
+                milepost.setLatitude(coordinate.getLatitude());
+                milepost.setLongitude(coordinate.getLongitude());
+                milepost.setDirection(wydotTim.getDirection());
+                milepost.setCommonName(wydotTim.getRoute());
+                milepost.setMilepost(0.0);
+                milepostsAll.add(milepost);
+            }
+        } else if (wydotTim.getEndPoint() != null && wydotTim.getEndPoint().getLatitude() != null
                 && wydotTim.getEndPoint().getLongitude() != null) {
             milepostsAll = milepostService.getMilepostsByStartEndPointDirection(wydotTim);
         } else {
@@ -172,6 +188,11 @@ public class WydotTimService {
             mpb.setDirection(wydotTim.getDirection());
             mpb.setPoint(wydotTim.getStartPoint());
             milepostsAll = milepostService.getMilepostsByPointWithBuffer(mpb);
+        }
+
+        // cache mileposts
+        if (milepostsAll != null && !milepostsAll.isEmpty()) {
+            milepostService.setMilepostCache(milepostsAll, wydotTim.getClientId());
         }
 
         return milepostsAll;
@@ -242,8 +263,17 @@ public class WydotTimService {
             TimType timType, Integer pk, String endDateTime, Coordinate endPoint) {
         // FIND ALL RSUS TO SEND TO
         // TODO: should this query a graph db instead to follow with milepost?
-        List<WydotRsu> rsus = rsuService.getRsusByLatLong(wydotTim.getDirection(), wydotTim.getStartPoint(), endPoint,
+
+        // if geometry exists, use it to find RSUs
+        List<WydotRsu> rsus = new ArrayList<>();
+
+        if (wydotTim.isGeometryValid() && wydotTim.getGeometry().size() > 1) {
+            rsus = rsuService.getRsusByGeometry(wydotTim.getGeometry());
+            utility.logWithDate("Found " + rsus.size() + " RSUs by geometry");
+        } else {
+            rsus = rsuService.getRsusByLatLong(wydotTim.getDirection(), wydotTim.getStartPoint(), endPoint,
                 wydotTim.getRoute());
+        }
 
         // if no RSUs found
         if (rsus.size() == 0) {
@@ -259,7 +289,14 @@ public class WydotTimService {
 
             odeRsu.setRsuIndex(rsu.getRsuIndex());
             odeRsu.setRsuTarget(rsu.getRsuTarget());
-            // rsuUsername, rsuPassword will take ODE defaults.
+            
+            if (rsu.getRsuUsername() != null) {
+                odeRsu.setRsuUsername(rsu.getRsuUsername());
+            }
+            if (rsu.getRsuPassword() != null) {
+                odeRsu.setRsuPassword(rsu.getRsuPassword());
+            }
+
             odeRsu.setRsuRetries(rsu.getRsuRetries());
             odeRsu.setRsuTimeout(rsu.getRsuTimeout());
 
@@ -393,6 +430,7 @@ public class WydotTimService {
             }
             // delete active tim
             if (activeTimService.deleteActiveTim(activeTim.getActiveTimId())) {
+                milepostService.deleteMilepostCache(activeTim.getClientId());
                 returnValue.addSuccessfulRsuDeletions(activeTim.getActiveTimId());
             } else {
                 returnValue.addFailedActiveTimDeletions(activeTim.getActiveTimId());
