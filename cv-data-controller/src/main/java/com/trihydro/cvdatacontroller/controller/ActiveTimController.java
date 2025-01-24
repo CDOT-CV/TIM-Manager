@@ -533,6 +533,7 @@ public class ActiveTimController extends BaseController {
 			selectStatement += " inner join tim on active_tim.tim_id = tim.tim_id";
 			selectStatement += " inner join tim_rsu on tim_rsu.tim_id = tim.tim_id";
 			selectStatement += " inner join rsus on rsus.rsu_id = tim_rsu.rsu_id";
+			selectStatement += " where rsus.ipv4_address = '" + rsuTarget + "'";
 
 			rs = statement.executeQuery(selectStatement);
 
