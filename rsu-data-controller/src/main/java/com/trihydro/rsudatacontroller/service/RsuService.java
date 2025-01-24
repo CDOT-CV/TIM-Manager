@@ -3,6 +3,10 @@ package com.trihydro.rsudatacontroller.service;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -10,6 +14,7 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import com.trihydro.library.helpers.DbInteractions;
 import com.trihydro.library.helpers.Utility;
 import com.trihydro.rsudatacontroller.config.BasicConfiguration;
 import com.trihydro.rsudatacontroller.model.RsuTim;
@@ -18,20 +23,26 @@ import com.trihydro.rsudatacontroller.process.ProcessFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import us.dot.its.jpo.ode.plugin.RoadSideUnit.RSU;
+import us.dot.its.jpo.ode.plugin.SnmpProtocol;
+
 @Component
 public class RsuService {
-    private static final String oid_rsuSRMDeliveryStart = "1.0.15628.4.1.4.1.7";
+    private static final String OID_FOUR_DOT_ONE_SRM_DELIVERY_START = "1.0.15628.4.1.4.1.7";
+    private static final String OID_NTCIP_1218_DELIVERY_START = "1.3.6.1.4.1.1206.4.2.18.3.2.1.5";
     private static final DateTimeFormatter rsuDateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
     private ProcessFactory processFactory;
     private BasicConfiguration config;
     private Utility utility;
+    protected DbInteractions dbInteractions;
 
     @Autowired
-    public void InjectDependencies(ProcessFactory processFactory, BasicConfiguration config, Utility utility) {
+    public void InjectDependencies(ProcessFactory processFactory, BasicConfiguration config, DbInteractions _dbInteractions, Utility utility) {
         this.processFactory = processFactory;
         this.config = config;
         this.utility = utility;
+        this.dbInteractions = _dbInteractions;
     }
 
     /**
@@ -42,10 +53,21 @@ public class RsuService {
      * @throws Exception if unable to invoke command to perform SNMP communication
      */
     public List<RsuTim> getAllDeliveryStartTimes(String rsuIpv4Address) throws Exception {
-        Process p = processFactory.buildAndStartProcess("snmpwalk", "-v", "3", "-r",
+        Process p;
+
+        RSU rsu = getRSU(rsuIpv4Address);
+
+        if (rsu.getSnmpProtocol() == SnmpProtocol.FOURDOT1) {
+            p = processFactory.buildAndStartProcess("snmpwalk", "-v", "3", "-r",
                 Integer.toString(config.getSnmpRetries()), "-t", Integer.toString(config.getSnmpTimeoutSeconds()), "-u",
-                config.getSnmpUserName(), "-l", config.getSnmpSecurityLevel(), "-a", config.getSnmpAuthProtocol(), "-A",
-                config.getSnmpAuthPassphrase(), rsuIpv4Address, oid_rsuSRMDeliveryStart);
+                rsu.getRsuUsername(), "-l", config.getSnmpSecurityLevel(), "-a", config.getSnmpAuthProtocol(), "-A",
+                rsu.getRsuPassword(), rsuIpv4Address, OID_FOUR_DOT_ONE_SRM_DELIVERY_START);
+        } else {
+            p = processFactory.buildAndStartProcess("snmpwalk", "-v", "3", "-r",
+                Integer.toString(config.getSnmpRetries()), "-t", Integer.toString(config.getSnmpTimeoutSeconds()), "-u",
+                rsu.getRsuUsername(), "-l", config.getSnmpSecurityLevel(), "-a", config.getSnmpAuthProtocol(), "-A",
+                rsu.getRsuPassword(), rsuIpv4Address, OID_NTCIP_1218_DELIVERY_START);
+        }
 
         String snmpWalkOutput = getProcessOutput(p);
 
@@ -67,7 +89,7 @@ public class RsuService {
 
             if (im.find() && hm.find()) {
                 RsuTim tim = new RsuTim();
-                tim.setIndex(Integer.parseInt(im.group(1)));
+                tim.setIndex(Integer.valueOf(im.group(1)));
                 tim.setDeliveryStartTime(hexStringToDateTime(hm.group(1)));
 
                 tims.add(tim);
@@ -105,5 +127,63 @@ public class RsuService {
 
         LocalDateTime date = LocalDateTime.of(year, month, day, hour, minute, 0);
         return date.format(rsuDateTimeFormatter);
+    }
+
+    private RSU getRSU(String rsuIpv4Address) throws Exception {
+        // Need to grab firmware type, username, password.
+        Connection connection = null;
+		Statement statement = null;
+		ResultSet rs = null;
+        RSU rsu = null;
+        
+
+		try {
+			connection = dbInteractions.getConnectionPool();
+
+			statement = connection.createStatement();
+
+			// The inner subqueries leave us with a list of tim_ids that aren't associated
+			// with any valid itis codes. Select the active_tims with
+			// those tim_ids
+            String selectStatement = "select rc.username, rc.password, sp.nickname FROM rsus " +
+                                "JOIN rsu_credentials AS rc " + //
+                                "ON rsus.snmp_credential_id = rc.credential_id " + //
+                                "JOIN snmp_protocols AS sp " + //
+                                "ON rsus.snmp_protocol_id = sp.snmp_protocol_id " + //
+                                "WHERE rsus.ipv4_address = '" + rsuIpv4Address + "'";
+
+			rs = statement.executeQuery(selectStatement);
+
+            // parse resultSet
+            while (rs.next()) {
+                String rsuUsername = rs.getString("username");
+                String rsuPassword = rs.getString("password");
+                SnmpProtocol snmpProtocol = rs.getString("nickname").equals("NTCIP 1218") ? SnmpProtocol.NTCIP1218 : SnmpProtocol.FOURDOT1;
+                
+                rsu = new RSU(rsuIpv4Address, rsuUsername, rsuPassword, config.getSnmpRetries(), config.getSnmpTimeoutSeconds(), snmpProtocol);
+            }
+
+
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+			return null;
+		} finally {
+			try {
+				// close prepared statement
+				if (statement != null)
+					statement.close();
+				// return connection back to pool
+				if (connection != null)
+					connection.close();
+				// close result set
+				if (rs != null)
+					rs.close();
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
+		}
+        
+        return rsu;
     }
 }
