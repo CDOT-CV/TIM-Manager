@@ -4,6 +4,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.Arrays;
 
 import com.google.gson.Gson;
@@ -50,6 +51,8 @@ public class CopyConstructorTest {
         o.setRoute("firstRoute");
         o.setItisCodes(Arrays.asList("1", "2"));
         o.setClientId("firstClientId");
+        o.setGeometry(new ArrayList<Coordinate>());
+        o.setBearing(0);
     }
 
     @Test

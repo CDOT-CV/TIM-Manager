@@ -1,7 +1,6 @@
 package com.trihydro.library.helpers;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.isA;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
@@ -16,7 +15,6 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.TimeZone;
 
 import com.google.gson.Gson;
 import com.trihydro.library.model.ActiveTim;
@@ -44,8 +42,6 @@ import com.trihydro.library.service.RsuService;
 import com.trihydro.library.service.SdwService;
 import com.trihydro.library.service.TimGenerationProps;
 
-import org.junit.After;
-import org.junit.Before;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -94,16 +90,6 @@ public class TimGenerationHelperTest {
 
     @Captor
     private ArgumentCaptor<WydotTravelerInputData> timCaptor;
-
-    @Before
-    public void setup() {
-        TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
-    }
-
-    @After
-    public void teardown() {
-        TimeZone.setDefault(TimeZone.getTimeZone(java.time.ZoneId.systemDefault()));
-    }
 
     @Test
     public void resubmitToOde_EmptyList() {
@@ -170,6 +156,7 @@ public class TimGenerationHelperTest {
         verifyNoInteractions(mockDataFrameService, mockPathNodeXYService, mockRegionService, mockRsuService,
                 mockOdeService, mockActiveTimHoldingService, mockSdwService);
         verify(mockMilepostService).getMilepostsByStartEndPointDirection(any());
+        verify(mockMilepostService).getMilepostCache(any());
         verifyNoMoreInteractions(mockMilepostService, mockMilepostReduction);
     }
 
@@ -203,6 +190,7 @@ public class TimGenerationHelperTest {
 
         verify(mockMilepostService).getMilepostsByStartEndPointDirection(any());
         verify(mockMilepostReduction).applyMilepostReductionAlgorithm(any(), any());
+        verify(mockMilepostService).getMilepostCache(any());
         verifyNoMoreInteractions(mockMilepostService, mockMilepostReduction, mockDataFrameService);
     }
 
@@ -218,8 +206,6 @@ public class TimGenerationHelperTest {
         List<Milepost> mps = new ArrayList<Milepost>();
         mps.add(new Milepost());
         doReturn(mps).when(mockMilepostReduction).applyMilepostReductionAlgorithm(any(), any());
-        String[] rsuRoutes = new String[] { "I 80" };
-        doReturn(rsuRoutes).when(mockConfig).getRsuRoutes();
 
         doReturn(new String[] { "1234" }).when(mockDataFrameService).getItisCodesForDataFrameId(any());
 
@@ -235,13 +221,14 @@ public class TimGenerationHelperTest {
         Assertions.assertEquals(new ResubmitTimException(activeTimId, exMsg), ex);
 
         verify(mockRsuService).getFullRsusTimIsOn(any());
-        verify(mockRsuService).getRsusByLatLong(any(), any(), any(), any());
+        verify(mockRsuService).getRsusByGeometry(any());
         verify(mockDataFrameService).getItisCodesForDataFrameId(any());
         verifyNoInteractions(mockPathNodeXYService, mockRegionService, mockOdeService, mockActiveTimHoldingService,
                 mockSdwService);
 
         verify(mockMilepostService).getMilepostsByStartEndPointDirection(any());
         verify(mockMilepostReduction).applyMilepostReductionAlgorithm(any(), any());
+        verify(mockMilepostService).getMilepostCache(any());
         verifyNoMoreInteractions(mockMilepostService, mockMilepostReduction, mockDataFrameService, mockRsuService);
     }
 
@@ -257,8 +244,6 @@ public class TimGenerationHelperTest {
         List<Milepost> mps = new ArrayList<Milepost>();
         mps.add(new Milepost());
         doReturn(mps).when(mockMilepostReduction).applyMilepostReductionAlgorithm(any(), any());
-        String[] rsuRoutes = new String[] { "I 80" };
-        doReturn(rsuRoutes).when(mockConfig).getRsuRoutes();
 
         List<WydotRsuTim> wydotRsus = new ArrayList<>();
         var wydotRsuTim = new WydotRsuTim();
@@ -282,6 +267,7 @@ public class TimGenerationHelperTest {
 
         verify(mockMilepostService).getMilepostsByStartEndPointDirection(any());
         verify(mockMilepostReduction).applyMilepostReductionAlgorithm(any(), any());
+        verify(mockMilepostService).getMilepostCache(any());
         verifyNoMoreInteractions(mockMilepostService, mockMilepostReduction, mockDataFrameService, mockRsuService,
                 mockOdeService);
     }
@@ -298,8 +284,6 @@ public class TimGenerationHelperTest {
         List<Milepost> mps = new ArrayList<Milepost>();
         mps.add(new Milepost());
         doReturn(mps).when(mockMilepostReduction).applyMilepostReductionAlgorithm(any(), any());
-        String[] rsuRoutes = new String[] { "I 80" };
-        doReturn(rsuRoutes).when(mockConfig).getRsuRoutes();
 
         doReturn(new Coordinate(BigDecimal.valueOf(1), BigDecimal.valueOf(2))).when(mockUtility).calculateAnchorCoordinate(any(), any());
 
@@ -307,7 +291,7 @@ public class TimGenerationHelperTest {
         var rsu = new WydotRsu();
         rsu.setRsuTarget("10.10.10.10");
         dbRsus.add(rsu);
-        doReturn(dbRsus).when(mockRsuService).getRsusByLatLong(any(), any(), any(), any());
+        doReturn(dbRsus).when(mockRsuService).getRsusByGeometry(any());
         doReturn(new String[] { "1234" }).when(mockDataFrameService).getItisCodesForDataFrameId(any());
         when(mockOdeService.submitTimQuery(isA(WydotRsu.class), isA(Integer.class))).thenReturn(null);
 
@@ -323,13 +307,13 @@ public class TimGenerationHelperTest {
         Assertions.assertEquals(new ResubmitTimException(activeTimId, exMsg), ex);
 
         verify(mockRsuService).getFullRsusTimIsOn(any());
-        verify(mockRsuService).getRsusByLatLong(any(), any(), any(), any());
         verify(mockDataFrameService).getItisCodesForDataFrameId(any());
         verify(mockOdeService).submitTimQuery(isA(WydotRsu.class), isA(Integer.class));
         verifyNoInteractions(mockPathNodeXYService, mockRegionService, mockSdwService);
 
         verify(mockMilepostService).getMilepostsByStartEndPointDirection(any());
         verify(mockMilepostReduction).applyMilepostReductionAlgorithm(any(), any());
+        verify(mockMilepostService).getMilepostCache(any());
         verifyNoMoreInteractions(mockMilepostService, mockMilepostReduction, mockDataFrameService, mockRsuService,
                 mockOdeService, mockActiveTimHoldingService);
     }
@@ -346,14 +330,12 @@ public class TimGenerationHelperTest {
         List<Milepost> mps = new ArrayList<Milepost>();
         mps.add(new Milepost());
         doReturn(mps).when(mockMilepostReduction).applyMilepostReductionAlgorithm(any(), any());
-        String[] rsuRoutes = new String[] { "I 80" };
-        doReturn(rsuRoutes).when(mockConfig).getRsuRoutes();
 
         List<WydotRsu> dbRsus = new ArrayList<>();
         var rsu = new WydotRsu();
         rsu.setRsuTarget("10.10.10.10");
         dbRsus.add(rsu);
-        doReturn(dbRsus).when(mockRsuService).getRsusByLatLong(any(), any(), any(), any());
+        doReturn(dbRsus).when(mockRsuService).getRsusByGeometry(any());
         doReturn(new String[] { "1234" }).when(mockDataFrameService).getItisCodesForDataFrameId(any());
         when(mockOdeService.submitTimQuery(isA(WydotRsu.class), isA(Integer.class))).thenReturn(new TimQuery());
         when(mockOdeService.findFirstAvailableIndexWithRsuIndex(any())).thenReturn(null);
@@ -372,13 +354,14 @@ public class TimGenerationHelperTest {
         Assertions.assertEquals(new ResubmitTimException(activeTimId, exMsg), ex);
 
         verify(mockRsuService).getFullRsusTimIsOn(any());
-        verify(mockRsuService).getRsusByLatLong(any(), any(), any(), any());
+        verify(mockRsuService).getRsusByGeometry(any());
         verify(mockRsuService).getActiveRsuTimIndexes(any());
         verify(mockDataFrameService).getItisCodesForDataFrameId(any());
         verify(mockOdeService).submitTimQuery(isA(WydotRsu.class), isA(Integer.class));
         verify(mockActiveTimHoldingService).getActiveTimHoldingForRsu(any());
         verifyNoInteractions(mockPathNodeXYService, mockRegionService, mockSdwService);
 
+        verify(mockMilepostService).getMilepostCache(any());
         verify(mockMilepostService).getMilepostsByStartEndPointDirection(any());
         verify(mockMilepostReduction).applyMilepostReductionAlgorithm(any(), any());
         verifyNoMoreInteractions(mockMilepostService, mockMilepostReduction, mockDataFrameService, mockRsuService,
@@ -397,14 +380,12 @@ public class TimGenerationHelperTest {
         List<Milepost> mps = new ArrayList<Milepost>();
         mps.add(new Milepost());
         doReturn(mps).when(mockMilepostReduction).applyMilepostReductionAlgorithm(any(), any());
-        String[] rsuRoutes = new String[] { "I 80" };
-        doReturn(rsuRoutes).when(mockConfig).getRsuRoutes();
 
         List<WydotRsu> dbRsus = new ArrayList<>();
         var rsu = new WydotRsu();
         rsu.setRsuTarget("10.10.10.10");
         dbRsus.add(rsu);
-        doReturn(dbRsus).when(mockRsuService).getRsusByLatLong(any(), any(), any(), any());
+        doReturn(dbRsus).when(mockRsuService).getRsusByGeometry(any());
         doReturn(new String[] { "1234" }).when(mockDataFrameService).getItisCodesForDataFrameId(any());
         when(mockOdeService.submitTimQuery(isA(WydotRsu.class), isA(Integer.class))).thenReturn(new TimQuery());
         when(mockOdeService.findFirstAvailableIndexWithRsuIndex(any())).thenReturn(1);
@@ -423,7 +404,7 @@ public class TimGenerationHelperTest {
         Assertions.assertEquals(new ResubmitTimException(activeTimId, exMsg), ex);
 
         verify(mockRsuService).getFullRsusTimIsOn(any());
-        verify(mockRsuService).getRsusByLatLong(any(), any(), any(), any());
+        verify(mockRsuService).getRsusByGeometry(any());
         verify(mockRsuService).getActiveRsuTimIndexes(any());
         verify(mockDataFrameService).getItisCodesForDataFrameId(any());
         verify(mockOdeService).submitTimQuery(isA(WydotRsu.class), isA(Integer.class));
@@ -432,6 +413,7 @@ public class TimGenerationHelperTest {
         verify(mockOdeService).sendNewTimToRsu(any());
         verifyNoInteractions(mockPathNodeXYService, mockRegionService, mockSdwService);
 
+        verify(mockMilepostService).getMilepostCache(any());
         verify(mockMilepostService).getMilepostsByStartEndPointDirection(any());
         verify(mockMilepostReduction).applyMilepostReductionAlgorithm(any(), any());
         verifyNoMoreInteractions(mockMilepostService, mockMilepostReduction, mockDataFrameService, mockRsuService,
@@ -450,14 +432,12 @@ public class TimGenerationHelperTest {
         List<Milepost> mps = new ArrayList<Milepost>();
         mps.add(new Milepost());
         doReturn(mps).when(mockMilepostReduction).applyMilepostReductionAlgorithm(any(), any());
-        String[] rsuRoutes = new String[] { "I 80" };
-        doReturn(rsuRoutes).when(mockConfig).getRsuRoutes();
 
         List<WydotRsu> dbRsus = new ArrayList<>();
         var rsu = new WydotRsu();
         rsu.setRsuTarget("10.10.10.10");
         dbRsus.add(rsu);
-        doReturn(dbRsus).when(mockRsuService).getRsusByLatLong(any(), any(), any(), any());
+        doReturn(dbRsus).when(mockRsuService).getRsusByGeometry(any());
         doReturn(new String[] { "1234" }).when(mockDataFrameService).getItisCodesForDataFrameId(any());
         when(mockOdeService.submitTimQuery(isA(WydotRsu.class), isA(Integer.class))).thenReturn(new TimQuery());
         when(mockOdeService.findFirstAvailableIndexWithRsuIndex(any())).thenReturn(1);
@@ -470,7 +450,7 @@ public class TimGenerationHelperTest {
         // Assert
         Assertions.assertEquals(0, exceptions.size());
         verify(mockRsuService).getFullRsusTimIsOn(any());
-        verify(mockRsuService).getRsusByLatLong(any(), any(), any(), any());
+        verify(mockRsuService).getRsusByGeometry(any());
         verify(mockRsuService).getActiveRsuTimIndexes(any());
         verify(mockDataFrameService).getItisCodesForDataFrameId(any());
         verify(mockOdeService).submitTimQuery(isA(WydotRsu.class), isA(Integer.class));
@@ -479,6 +459,7 @@ public class TimGenerationHelperTest {
         verify(mockOdeService).sendNewTimToRsu(any());
         verifyNoInteractions(mockPathNodeXYService, mockRegionService, mockSdwService);
 
+        verify(mockMilepostService).getMilepostCache(any());
         verify(mockMilepostService).getMilepostsByStartEndPointDirection(any());
         verify(mockMilepostReduction).applyMilepostReductionAlgorithm(any(), any());
         verifyNoMoreInteractions(mockMilepostService, mockMilepostReduction, mockDataFrameService, mockRsuService,
@@ -514,6 +495,7 @@ public class TimGenerationHelperTest {
 
         verifyNoInteractions(mockPathNodeXYService);
         verify(mockMilepostService).getMilepostsByStartEndPointDirection(any());
+        verify(mockMilepostService).getMilepostCache(any());
         verify(mockMilepostReduction).applyMilepostReductionAlgorithm(any(), any());
         verifyNoMoreInteractions(mockMilepostService, mockMilepostReduction, mockDataFrameService, mockRsuService,
                 mockOdeService, mockActiveTimHoldingService);
@@ -547,6 +529,7 @@ public class TimGenerationHelperTest {
         verify(mockOdeService).updateTimOnSdw(any());
 
         verify(mockMilepostService).getMilepostsByStartEndPointDirection(any());
+        verify(mockMilepostService).getMilepostCache(any());
         verify(mockMilepostReduction).applyMilepostReductionAlgorithm(any(), any());
         verifyNoMoreInteractions(mockMilepostService, mockMilepostReduction, mockDataFrameService, mockRsuService,
                 mockOdeService, mockActiveTimHoldingService);
@@ -601,7 +584,6 @@ public class TimGenerationHelperTest {
         tum.setRoute("I 80");
         tum.setSatRecordId("satRecordId");
         tum.setStartDateTime("");
-        TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
 
         // Given a TIM with a durationTime of an hour
         var originalStartTime = Instant.parse("2021-01-01T00:00:00.000Z");
@@ -611,7 +593,7 @@ public class TimGenerationHelperTest {
 
         doReturn(new String[] { "1234" }).when(mockDataFrameService).getItisCodesForDataFrameId(any());
         doReturn("").when(mockOdeService).updateTimOnSdw(any());
-        doReturn(60).when(mockUtility).getMinutesDurationBetweenTwoDates(anyString(), anyString());
+        doReturn(60).when(mockUtility).getMinutesDurationBetweenTwoDates("2021-01-01T00:00:00.000Z", "2021-01-01T01:00:00.000Z");
 
         doReturn(new Coordinate(BigDecimal.valueOf(1), BigDecimal.valueOf(2))).when(mockUtility).calculateAnchorCoordinate(any(), any());
 
@@ -700,6 +682,7 @@ public class TimGenerationHelperTest {
 
         verify(mockMilepostService).getMilepostsByStartEndPointDirection(any());
         verify(mockMilepostReduction).applyMilepostReductionAlgorithm(any(), any());
+        verify(mockMilepostService).getMilepostCache(any());
         verifyNoMoreInteractions(mockMilepostService, mockMilepostReduction, mockDataFrameService, mockRsuService,
                 mockOdeService, mockActiveTimHoldingService);
     }
@@ -731,6 +714,7 @@ public class TimGenerationHelperTest {
         verifyNoInteractions(mockPathNodeXYService);
 
         verify(mockMilepostService).getMilepostsByStartEndPointDirection(any());
+        verify(mockMilepostService).getMilepostCache(any());
         verify(mockMilepostReduction).applyMilepostReductionAlgorithm(any(), any());
         verifyNoMoreInteractions(mockMilepostService, mockMilepostReduction, mockDataFrameService, mockRsuService,
                 mockOdeService, mockActiveTimHoldingService);
@@ -803,6 +787,7 @@ public class TimGenerationHelperTest {
         verifyNoInteractions(mockDataFrameService, mockPathNodeXYService, mockRegionService, mockRsuService,
                 mockOdeService, mockActiveTimHoldingService, mockSdwService);
         verify(mockMilepostService).getMilepostsByStartEndPointDirection(any());
+        verify(mockMilepostService).getMilepostCache(any());
         verifyNoMoreInteractions(mockMilepostService, mockMilepostReduction);
 
     }
@@ -839,6 +824,7 @@ public class TimGenerationHelperTest {
         Assertions.assertEquals(new ResubmitTimException(activeTimId, exMsg), ex);
         verify(mockDataFrameService).getItisCodesForDataFrameId(any());
         verify(mockMilepostService, times(2)).getMilepostsByStartEndPointDirection(any());
+        verify(mockMilepostService, times(2)).getMilepostCache(any());
         verify(mockMilepostReduction).applyMilepostReductionAlgorithm(any(), any());
         verifyNoMoreInteractions(mockMilepostService, mockMilepostReduction, mockDataFrameService);
         verifyNoInteractions(mockPathNodeXYService, mockRegionService, mockSdwService, mockOdeService,
@@ -874,6 +860,7 @@ public class TimGenerationHelperTest {
         Assertions.assertEquals(new ResubmitTimException(activeTimId, exMsg), ex);
         verify(mockDataFrameService).getItisCodesForDataFrameId(any());
         verify(mockMilepostService).getMilepostsByStartEndPointDirection(any());
+        verify(mockMilepostService).getMilepostCache(any());
         verify(mockMilepostReduction).applyMilepostReductionAlgorithm(any(), any());
         verifyNoMoreInteractions(mockMilepostService, mockMilepostReduction, mockDataFrameService);
         verifyNoInteractions(mockPathNodeXYService, mockRegionService, mockSdwService, mockOdeService,
@@ -913,6 +900,7 @@ public class TimGenerationHelperTest {
         Assertions.assertEquals(new ResubmitTimException(activeTimId, exMsg), ex);
         verify(mockDataFrameService).getItisCodesForDataFrameId(any());
         verify(mockMilepostService, times(2)).getMilepostsByStartEndPointDirection(any());
+        verify(mockMilepostService, times(2)).getMilepostCache(any());
         verify(mockMilepostReduction).applyMilepostReductionAlgorithm(any(), any());
         verifyNoMoreInteractions(mockMilepostService, mockMilepostReduction, mockDataFrameService);
         verifyNoInteractions(mockPathNodeXYService, mockRegionService, mockSdwService, mockOdeService,
@@ -929,8 +917,6 @@ public class TimGenerationHelperTest {
         List<Milepost> mps = new ArrayList<Milepost>();
         mps.add(new Milepost());
         doReturn(mps).when(mockMilepostReduction).applyMilepostReductionAlgorithm(any(), any());
-        String[] rsuRoutes = new String[] { "I 80" };
-        doReturn(rsuRoutes).when(mockConfig).getRsuRoutes();
         doReturn(new String[] { "1234" }).when(mockDataFrameService).getItisCodesForDataFrameId(any());
 
         doReturn(new Coordinate(BigDecimal.valueOf(1), BigDecimal.valueOf(2))).when(mockUtility).calculateAnchorCoordinate(any(), any());
@@ -946,7 +932,7 @@ public class TimGenerationHelperTest {
         var rsu = new WydotRsu();
         rsu.setRsuTarget("10.10.10.10");
         dbRsus.add(rsu);
-        doReturn(dbRsus).when(mockRsuService).getRsusByLatLong(any(), any(), any(), any());
+        doReturn(dbRsus).when(mockRsuService).getRsusByGeometry(any());
         when(mockOdeService.submitTimQuery(isA(WydotRsu.class), isA(Integer.class))).thenReturn(new TimQuery());
         when(mockOdeService.findFirstAvailableIndexWithRsuIndex(any())).thenReturn(1);
 
@@ -956,7 +942,7 @@ public class TimGenerationHelperTest {
         // Assert
         Assertions.assertEquals(0, exceptions.size());
         verify(mockRsuService).getFullRsusTimIsOn(any());
-        verify(mockRsuService).getRsusByLatLong(any(), any(), any(), any());
+        verify(mockRsuService).getRsusByGeometry(any());
         verify(mockRsuService).getActiveRsuTimIndexes(any());
         verify(mockDataFrameService, times(2)).getItisCodesForDataFrameId(any());
         verify(mockOdeService).submitTimQuery(isA(WydotRsu.class), isA(Integer.class));
@@ -966,6 +952,7 @@ public class TimGenerationHelperTest {
         verifyNoInteractions(mockPathNodeXYService, mockRegionService, mockSdwService);
 
         verify(mockMilepostService, times(2)).getMilepostsByStartEndPointDirection(any());
+        verify(mockMilepostService, times(2)).getMilepostCache(any());
         verify(mockMilepostReduction, times(2)).applyMilepostReductionAlgorithm(any(), any());
         verifyNoMoreInteractions(mockMilepostService, mockMilepostReduction, mockDataFrameService, mockRsuService,
                 mockOdeService, mockActiveTimHoldingService);
@@ -981,8 +968,6 @@ public class TimGenerationHelperTest {
         List<Milepost> mps = new ArrayList<Milepost>();
         mps.add(new Milepost());
         doReturn(mps).when(mockMilepostReduction).applyMilepostReductionAlgorithm(any(), any());
-        String[] rsuRoutes = new String[] { "I 80" };
-        doReturn(rsuRoutes).when(mockConfig).getRsuRoutes();
         doReturn(new String[] { "1234" }).when(mockDataFrameService).getItisCodesForDataFrameId(any());
 
         var validationResults = getValidationResults();
@@ -996,7 +981,7 @@ public class TimGenerationHelperTest {
         var rsu = new WydotRsu();
         rsu.setRsuTarget("10.10.10.10");
         dbRsus.add(rsu);
-        doReturn(dbRsus).when(mockRsuService).getRsusByLatLong(any(), any(), any(), any());
+        doReturn(dbRsus).when(mockRsuService).getRsusByGeometry(any());
         when(mockOdeService.submitTimQuery(isA(WydotRsu.class), isA(Integer.class))).thenReturn(new TimQuery());
         when(mockOdeService.findFirstAvailableIndexWithRsuIndex(any())).thenReturn(1);
 
@@ -1008,7 +993,7 @@ public class TimGenerationHelperTest {
         // Assert
         Assertions.assertEquals(0, exceptions.size());
         verify(mockRsuService).getFullRsusTimIsOn(any());
-        verify(mockRsuService).getRsusByLatLong(any(), any(), any(), any());
+        verify(mockRsuService).getRsusByGeometry(any());
         verify(mockRsuService).getActiveRsuTimIndexes(any());
         verify(mockDataFrameService, times(2)).getItisCodesForDataFrameId(any());
         verify(mockOdeService).submitTimQuery(isA(WydotRsu.class), isA(Integer.class));
@@ -1018,6 +1003,7 @@ public class TimGenerationHelperTest {
         verifyNoInteractions(mockPathNodeXYService, mockRegionService, mockSdwService);
 
         verify(mockMilepostService, times(2)).getMilepostsByStartEndPointDirection(any());
+        verify(mockMilepostService, times(2)).getMilepostCache(any());
         verify(mockMilepostReduction, times(2)).applyMilepostReductionAlgorithm(any(), any());
         verifyNoMoreInteractions(mockMilepostService, mockMilepostReduction, mockDataFrameService, mockRsuService,
                 mockOdeService, mockActiveTimHoldingService);
@@ -1033,8 +1019,6 @@ public class TimGenerationHelperTest {
         List<Milepost> mps = new ArrayList<Milepost>();
         mps.add(new Milepost());
         doReturn(mps).when(mockMilepostReduction).applyMilepostReductionAlgorithm(any(), any());
-        String[] rsuRoutes = new String[] { "I 80" };
-        doReturn(rsuRoutes).when(mockConfig).getRsuRoutes();
         doReturn(new String[] { "1234" }).when(mockDataFrameService).getItisCodesForDataFrameId(any());
 
         var validationResults = getValidationResults();
@@ -1046,7 +1030,7 @@ public class TimGenerationHelperTest {
         var rsu = new WydotRsu();
         rsu.setRsuTarget("10.10.10.10");
         dbRsus.add(rsu);
-        doReturn(dbRsus).when(mockRsuService).getRsusByLatLong(any(), any(), any(), any());
+        doReturn(dbRsus).when(mockRsuService).getRsusByGeometry(any());
         when(mockOdeService.submitTimQuery(isA(WydotRsu.class), isA(Integer.class))).thenReturn(new TimQuery());
         when(mockOdeService.findFirstAvailableIndexWithRsuIndex(any())).thenReturn(1);
 
@@ -1058,7 +1042,7 @@ public class TimGenerationHelperTest {
         // Assert
         Assertions.assertEquals(0, exceptions.size());
         verify(mockRsuService).getFullRsusTimIsOn(any());
-        verify(mockRsuService).getRsusByLatLong(any(), any(), any(), any());
+        verify(mockRsuService).getRsusByGeometry(any());
         verify(mockRsuService).getActiveRsuTimIndexes(any());
         verify(mockDataFrameService).getItisCodesForDataFrameId(any());
         verify(mockOdeService).submitTimQuery(isA(WydotRsu.class), isA(Integer.class));
@@ -1068,6 +1052,7 @@ public class TimGenerationHelperTest {
         verifyNoInteractions(mockPathNodeXYService, mockRegionService, mockSdwService);
 
         verify(mockMilepostService).getMilepostsByStartEndPointDirection(any());
+        verify(mockMilepostService).getMilepostCache(any());
         verify(mockMilepostReduction).applyMilepostReductionAlgorithm(any(), any());
         verifyNoMoreInteractions(mockMilepostService, mockMilepostReduction, mockDataFrameService, mockRsuService,
                 mockOdeService, mockActiveTimHoldingService);
@@ -1083,8 +1068,6 @@ public class TimGenerationHelperTest {
         List<Milepost> mps = new ArrayList<Milepost>();
         mps.add(new Milepost());
         doReturn(mps).when(mockMilepostReduction).applyMilepostReductionAlgorithm(any(), any());
-        String[] rsuRoutes = new String[] { "I 80" };
-        doReturn(rsuRoutes).when(mockConfig).getRsuRoutes();
         doReturn(new String[] { "1234" }).when(mockDataFrameService).getItisCodesForDataFrameId(any());
 
         var validationResults = getValidationResults();
@@ -1112,6 +1095,7 @@ public class TimGenerationHelperTest {
         verifyNoInteractions(mockPathNodeXYService, mockRegionService, mockSdwService);
 
         verify(mockMilepostService).getMilepostsByStartEndPointDirection(any());
+        verify(mockMilepostService).getMilepostCache(any());
         verify(mockMilepostReduction).applyMilepostReductionAlgorithm(any(), any());
         verifyNoMoreInteractions(mockMilepostService, mockMilepostReduction, mockDataFrameService, mockRsuService,
                 mockOdeService, mockActiveTimHoldingService);

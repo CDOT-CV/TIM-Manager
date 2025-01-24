@@ -216,8 +216,7 @@ public class ActiveTimServiceTest extends TestBase<ActiveTimService> {
         query += " atim.START_LATITUDE, atim.START_LONGITUDE, atim.END_LATITUDE, atim.END_LONGITUDE";
         query += " from active_tim atim";
         query += " inner join tim_rsu on atim.tim_id = tim_rsu.tim_id";
-        query += " inner join rsu on tim_rsu.rsu_id = rsu.rsu_id";
-        query += " inner join rsu_view on rsu.deviceid = rsu_view.deviceid";
+        query += " inner join rsus on tim_rsu.rsu_id = rsus.rsu_id";
         query += " where sat_record_id is null";
         query += " and ipv4_address = 'ipv4Address' and client_id = 'clientId'";
         query += " and atim.direction = 'direction'";
