@@ -129,7 +129,7 @@ public class RsuService {
         return date.format(rsuDateTimeFormatter);
     }
 
-    private RSU getRSU(String rsuIpv4Address) throws Exception {
+    RSU getRSU(String rsuIpv4Address) throws Exception {
         // Need to grab firmware type, username, password.
         Connection connection = null;
 		Statement statement = null;
