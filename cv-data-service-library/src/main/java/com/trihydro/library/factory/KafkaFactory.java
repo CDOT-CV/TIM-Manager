@@ -2,9 +2,8 @@ package com.trihydro.library.factory;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import java.util.Properties;
-
-import com.trihydro.library.helpers.Utility;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.kafka.clients.consumer.Consumer;
@@ -14,13 +13,24 @@ import org.apache.kafka.clients.producer.Producer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import com.google.common.base.Strings;
+import com.trihydro.library.helpers.Utility;
+
 @Component
 public class KafkaFactory {
-    private Utility utility;
+    private final Utility utility;
+    private final String kafkaType;
+    private final Properties kafkaProperties;
 
     @Autowired
-    public KafkaFactory(Utility _utility) {
+    public KafkaFactory(Utility _utility) throws IllegalArgumentException {
         utility = _utility;
+        kafkaType = Optional.ofNullable(System.getenv("KAFKA_TYPE")).orElse("LOCAL");
+        if ("CONFLUENT".equalsIgnoreCase(kafkaType)) {
+            kafkaProperties = addConfluentProperties(new Properties());
+        } else {
+            kafkaProperties = new Properties();
+        }
     }
 
     /**
@@ -109,6 +119,8 @@ public class KafkaFactory {
             props.put("max.poll.records", maxPollRecords.intValue());
         }
 
+        props.putAll(kafkaProperties);
+
         var consumer = new KafkaConsumer<String, String>(props);
         consumer.subscribe(topics);
 
@@ -131,6 +143,27 @@ public class KafkaFactory {
         props.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer");
         props.put("value.serializer", "org.apache.kafka.common.serialization.StringSerializer");
 
-        return new KafkaProducer<String, String>(props);
+        props.putAll(kafkaProperties);
+
+        return new KafkaProducer<>(props);
+    }
+
+    private Properties addConfluentProperties(Properties props) {
+        String username = System.getenv("CONFLUENT_KEY");
+        String password = System.getenv("CONFLUENT_SECRET");
+
+        if (Strings.isNullOrEmpty(username) || Strings.isNullOrEmpty(password)) {
+            throw new IllegalArgumentException("CONFLUENT_KEY and CONFLUENT_SECRET must be set in the environment");
+        }
+
+        String auth = "org.apache.kafka.common.security.plain.PlainLoginModule required " +
+        "username=\"" + username + "\" " +
+        "password=\"" + password + "\";";
+        props.put("sasl.jaas.config", auth);
+        props.put("ssl.endpoint.identification.algorithm", "https");
+        props.put("security.protocol", "SASL_SSL");
+        props.put("sasl.mechanism", "PLAIN");
+
+        return props;
     }
 }
