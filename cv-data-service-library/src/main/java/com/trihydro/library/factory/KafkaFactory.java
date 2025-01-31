@@ -2,7 +2,6 @@ package com.trihydro.library.factory;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.Optional;
 import java.util.Properties;
 
 import org.apache.commons.lang3.StringUtils;
@@ -11,21 +10,26 @@ import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.Producer;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
 import com.google.common.base.Strings;
 import com.trihydro.library.helpers.Utility;
 
 @Component
+@ConfigurationProperties("data-service-library.kafka")
 public class KafkaFactory {
     private final Utility utility;
-    private final String kafkaType;
+    private String kafkaType;
+    private String confluentKey;
+    private String confluentSecret;
     private final Properties kafkaProperties;
 
     @Autowired
     public KafkaFactory(Utility _utility) throws IllegalArgumentException {
         utility = _utility;
-        kafkaType = Optional.ofNullable(System.getenv("KAFKA_TYPE")).orElse("LOCAL");
+        kafkaType = getKafkaType();
+
         if ("CONFLUENT".equalsIgnoreCase(kafkaType)) {
             kafkaProperties = addConfluentProperties(new Properties());
         } else {
@@ -148,9 +152,9 @@ public class KafkaFactory {
         return new KafkaProducer<>(props);
     }
 
-    private Properties addConfluentProperties(Properties props) {
-        String username = System.getenv("CONFLUENT_KEY");
-        String password = System.getenv("CONFLUENT_SECRET");
+    Properties addConfluentProperties(Properties props) {
+        String username = getConfluentKey();
+        String password = getConfluentSecret();
 
         if (Strings.isNullOrEmpty(username) || Strings.isNullOrEmpty(password)) {
             throw new IllegalArgumentException("CONFLUENT_KEY and CONFLUENT_SECRET must be set in the environment");
@@ -165,5 +169,29 @@ public class KafkaFactory {
         props.put("sasl.mechanism", "PLAIN");
 
         return props;
+    }
+
+    final String getKafkaType() {
+        return kafkaType;
+    }
+
+    public String getConfluentKey() {
+        return confluentKey;
+    }
+
+    public void setConfluentKey(String confluentKey) {
+        this.confluentKey = confluentKey;
+    }
+
+    public String getConfluentSecret() {
+        return confluentSecret;
+    }
+
+    public void setConfluentSecret(String confluentSecret) {
+        this.confluentSecret = confluentSecret;
+    }
+
+    public void setKafkaType(String kafkaType) {
+        this.kafkaType = kafkaType;
     }
 }
