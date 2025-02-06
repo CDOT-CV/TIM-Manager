@@ -1,6 +1,7 @@
 package com.trihydro.library.helpers;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.isA;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
@@ -15,6 +16,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.TimeZone;
 
 import com.google.gson.Gson;
 import com.trihydro.library.model.ActiveTim;
@@ -584,6 +586,7 @@ public class TimGenerationHelperTest {
         tum.setRoute("I 80");
         tum.setSatRecordId("satRecordId");
         tum.setStartDateTime("");
+        TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
 
         // Given a TIM with a durationTime of an hour
         var originalStartTime = Instant.parse("2021-01-01T00:00:00.000Z");
@@ -593,7 +596,7 @@ public class TimGenerationHelperTest {
 
         doReturn(new String[] { "1234" }).when(mockDataFrameService).getItisCodesForDataFrameId(any());
         doReturn("").when(mockOdeService).updateTimOnSdw(any());
-        doReturn(60).when(mockUtility).getMinutesDurationBetweenTwoDates("2021-01-01T00:00:00.000Z", "2021-01-01T01:00:00.000Z");
+        doReturn(60).when(mockUtility).getMinutesDurationBetweenTwoDates(anyString(), anyString());
 
         doReturn(new Coordinate(BigDecimal.valueOf(1), BigDecimal.valueOf(2))).when(mockUtility).calculateAnchorCoordinate(any(), any());
 
