@@ -130,7 +130,6 @@ public class RsuService {
     }
 
     RSU getRSU(String rsuIpv4Address) throws Exception {
-        // Need to grab firmware type, username, password.
         Connection connection = null;
 		Statement statement = null;
 		ResultSet rs = null;
@@ -141,10 +140,8 @@ public class RsuService {
 			connection = dbInteractions.getConnectionPool();
 
 			statement = connection.createStatement();
-
-			// The inner subqueries leave us with a list of tim_ids that aren't associated
-			// with any valid itis codes. Select the active_tims with
-			// those tim_ids
+            
+            // select RSU username, password, and firmware type
             String selectStatement = "select rc.username, rc.password, sp.nickname FROM rsus " +
                                 "JOIN rsu_credentials AS rc " + //
                                 "ON rsus.snmp_credential_id = rc.credential_id " + //
