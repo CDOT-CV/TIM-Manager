@@ -82,4 +82,24 @@ public class MilepostService extends CvDataServiceLibrary {
 		ParameterizedTypeReference<Void> responseType = new ParameterizedTypeReference<Void>() {};
 		restTemplateProvider.GetRestTemplate().exchange(url, HttpMethod.GET, entity, responseType);
 	}
+	
+	/**
+	 * Retrieves a buffer of mileposts for a given path from the CDOT upstream service.
+	 *
+	 * @param routeId the ID of the route for which the buffer is to be retrieved
+	 * @param desiredDistanceInMiles the desired distance in miles for the buffer
+	 * @param pathMileposts the list of mileposts representing the path
+	 * @return a list of mileposts representing the buffer for the given path
+	 */
+	public List<Milepost> getBufferForPath(String routeId, double desiredDistanceInMiles, List<Milepost> pathMileposts) {
+		String url = String.format("%s/cdot-upstream-path/get-buffer-for-path/%s/%s", config.getCvRestService(), routeId, desiredDistanceInMiles);
+		HttpHeaders headers = new HttpHeaders();
+		headers.setContentType(MediaType.APPLICATION_JSON);
+		HttpEntity<List<Milepost>> entity = new HttpEntity<>(pathMileposts, headers);
+		ParameterizedTypeReference<List<Milepost>> responseType = new ParameterizedTypeReference<List<Milepost>>() {
+		};
+		ResponseEntity<List<Milepost>> response = restTemplateProvider.GetRestTemplate().exchange(url, HttpMethod.POST,
+				entity, responseType);
+		return response.getBody();
+	}
 }
