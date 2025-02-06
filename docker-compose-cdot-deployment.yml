@@ -120,6 +120,7 @@ services:
       CONFIG_ENVIRONMENT_NAME: ${ENVIRONMENT_NAME}
       CONFIG_MAIL_HOST: ${MAIL_HOST}
       CONFIG_MAIL_PORT: ${MAIL_PORT}
+      LOGGING_LEVEL_ROOT: ${CONTROLLER_LOGGING_LEVEL_ROOT}
     logging:
       options:
         max-size: "20m"
