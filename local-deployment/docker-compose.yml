@@ -196,6 +196,7 @@ services:
       CONFIG_ENVIRONMENT_NAME: local
       CONFIG_MAIL_HOST: 172.0.0.1
       CONFIG_MAIL_PORT: 123
+      LOGGING_LEVEL_ROOT: INFO
     logging:
       options:
         max-size: "20m"
