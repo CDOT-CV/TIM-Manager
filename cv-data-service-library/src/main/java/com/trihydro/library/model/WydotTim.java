@@ -130,17 +130,4 @@ public class WydotTim {
 			return false;
 		}
 	}
-
-	public String getGeometryString() {
-		if (this.geometry!= null && this.geometry.size() > 0) {
-            StringBuilder sb = new StringBuilder();
-			sb.append("[");
-            for (Coordinate coord : this.geometry) {
-                sb.append("{\"latitude\": ").append(coord.getLatitude()).append(", ").append("\"longitude\": ").append(coord.getLongitude()).append("}, ");
-            }
-            return sb.toString().trim();
-        } else {
-            return "";
-        }
-	}
 }
