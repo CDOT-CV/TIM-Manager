@@ -363,13 +363,17 @@ public class MilepostController extends BaseController {
 			statement = connection.createStatement();
 			rs = statement.executeQuery("SELECT client_id FROM active_tim WHERE marked_for_deletion = False");
 
-			// convert result to milepost objects
+			List<String> activeTimIds = new ArrayList<>();
 			while (rs.next()) {
 				String tim_id = rs.getString("CLIENT_ID");
-				if (!timIDs.contains(tim_id)) {
-					milepostCache.remove(tim_id);
-				}
+				activeTimIds.add(tim_id);
 			}
+			// remove all active TIM IDs from the list of milepost cache TIM IDs
+			timIDs.removeAll(activeTimIds);
+			for (String timID : timIDs) {
+				milepostCache.remove(timID);
+			}
+
 		} catch (SQLException e) {
 			e.printStackTrace();
 		} finally {
