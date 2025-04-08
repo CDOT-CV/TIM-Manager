@@ -1,5 +1,6 @@
 SET client_encoding TO 'UTF8';
-
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+CREATE EXTENSION IF NOT EXISTS postgis;
 
 
 -- not part of a dependency relationship --
@@ -513,3 +514,192 @@ ALTER TABLE region_list ALTER COLUMN X_OFFSET SET NOT NULL;
 ALTER TABLE region_list ALTER COLUMN Y_OFFSET SET NOT NULL;
 ALTER TABLE region_list ALTER COLUMN Z_OFFSET SET NOT NULL;
 ALTER TABLE region_list ADD CONSTRAINT fk_old_region_region_list FOREIGN KEY (old_region_id) REFERENCES old_region(old_region_id) ON DELETE NO ACTION NOT DEFERRABLE INITIALLY IMMEDIATE;
+
+-- RSU-Specific Tables
+
+CREATE SEQUENCE rsu_organization_rsu_organization_id_seq
+   INCREMENT 1
+   START 1
+   MINVALUE 1
+   MAXVALUE 2147483647
+   CACHE 1;
+
+CREATE TABLE IF NOT EXISTS rsu_organization
+(
+   rsu_organization_id integer NOT NULL DEFAULT nextval('rsu_organization_rsu_organization_id_seq'::regclass),
+   rsu_id integer NOT NULL,
+   organization_id integer NOT NULL,
+   CONSTRAINT rsu_organization_pkey PRIMARY KEY (rsu_organization_id),
+   CONSTRAINT fk_rsu_id FOREIGN KEY (rsu_id)
+      REFERENCES rsus (rsu_id) MATCH SIMPLE
+      ON UPDATE NO ACTION
+      ON DELETE NO ACTION,
+   CONSTRAINT fk_organization_id FOREIGN KEY (organization_id)
+      REFERENCES organizations (organization_id) MATCH SIMPLE
+      ON UPDATE NO ACTION
+      ON DELETE NO ACTION
+);
+
+CREATE SEQUENCE manufacturers_manufacturer_id_seq
+   INCREMENT 1
+   START 1
+   MINVALUE 1
+   MAXVALUE 2147483647
+   CACHE 1;
+
+CREATE TABLE IF NOT EXISTS manufacturers
+(
+   manufacturer_id integer NOT NULL DEFAULT nextval('manufacturers_manufacturer_id_seq'::regclass),
+   name character varying(128) COLLATE pg_catalog.default NOT NULL,
+   CONSTRAINT manufacturers_pkey PRIMARY KEY (manufacturer_id),
+   CONSTRAINT manufacturers_name UNIQUE (name)
+);
+
+CREATE SEQUENCE rsu_models_rsu_model_id_seq
+   INCREMENT 1
+   START 1
+   MINVALUE 1
+   MAXVALUE 2147483647
+   CACHE 1;
+
+CREATE TABLE IF NOT EXISTS rsu_models
+(
+   rsu_model_id integer NOT NULL DEFAULT nextval('rsu_models_rsu_model_id_seq'::regclass),
+   name character varying(128) COLLATE pg_catalog.default NOT NULL,
+   supported_radio character varying(128) COLLATE pg_catalog.default NOT NULL,
+   manufacturer integer NOT NULL,
+   CONSTRAINT rsu_models_pkey PRIMARY KEY (rsu_model_id),
+   CONSTRAINT rsu_models_name UNIQUE (name),
+   CONSTRAINT fk_manufacturer FOREIGN KEY (manufacturer)
+      REFERENCES manufacturers (manufacturer_id) MATCH SIMPLE
+      ON UPDATE NO ACTION
+      ON DELETE NO ACTION
+);
+
+CREATE SEQUENCE rsu_credentials_credential_id_seq
+   INCREMENT 1
+   START 1
+   MINVALUE 1
+   MAXVALUE 2147483647
+   CACHE 1;
+
+CREATE TABLE IF NOT EXISTS rsu_credentials
+(
+   credential_id integer NOT NULL DEFAULT nextval('rsu_credentials_credential_id_seq'::regclass),
+   username character varying(128) COLLATE pg_catalog.default NOT NULL,
+   password character varying(128) COLLATE pg_catalog.default NOT NULL,
+   nickname character varying(128) COLLATE pg_catalog.default NOT NULL,
+   CONSTRAINT rsu_credentials_pkey PRIMARY KEY (credential_id),
+   CONSTRAINT rsu_credentials_nickname UNIQUE (nickname)
+);
+
+CREATE SEQUENCE snmp_credentials_snmp_credential_id_seq
+   INCREMENT 1
+   START 1
+   MINVALUE 1
+   MAXVALUE 2147483647
+   CACHE 1;
+
+CREATE TABLE IF NOT EXISTS snmp_credentials
+(
+   snmp_credential_id integer NOT NULL DEFAULT nextval('snmp_credentials_snmp_credential_id_seq'::regclass),
+   username character varying(128) COLLATE pg_catalog.default NOT NULL,
+   password character varying(128) COLLATE pg_catalog.default NOT NULL,
+   encrypt_password character varying(128) COLLATE pg_catalog.default,
+   nickname character varying(128) COLLATE pg_catalog.default NOT NULL,
+   CONSTRAINT snmp_credentials_pkey PRIMARY KEY (snmp_credential_id),
+   CONSTRAINT snmp_credentials_nickname UNIQUE (nickname)
+);
+
+CREATE SEQUENCE snmp_protocols_snmp_protocol_id_seq
+   INCREMENT 1
+   START 1
+   MINVALUE 1
+   MAXVALUE 2147483647
+   CACHE 1;
+
+CREATE TABLE IF NOT EXISTS snmp_protocols
+(
+   snmp_protocol_id integer NOT NULL DEFAULT nextval('snmp_protocols_snmp_protocol_id_seq'::regclass),
+   protocol_code character varying(128) COLLATE pg_catalog.default NOT NULL,
+   nickname character varying(128) COLLATE pg_catalog.default NOT NULL,
+   CONSTRAINT snmp_protocols_pkey PRIMARY KEY (snmp_protocol_id),
+   CONSTRAINT snmp_protocols_nickname UNIQUE (nickname)
+);
+
+CREATE SEQUENCE firmware_images_firmware_id_seq
+   INCREMENT 1
+   START 1
+   MINVALUE 1
+   MAXVALUE 2147483647
+   CACHE 1;
+
+CREATE TABLE IF NOT EXISTS firmware_images
+(
+   firmware_id integer NOT NULL DEFAULT nextval('firmware_images_firmware_id_seq'::regclass),
+   name character varying(128) COLLATE pg_catalog.default NOT NULL,
+   model integer NOT NULL,
+   install_package character varying(128) COLLATE pg_catalog.default NOT NULL,
+   version character varying(128) COLLATE pg_catalog.default NOT NULL,
+   CONSTRAINT firmware_images_pkey PRIMARY KEY (firmware_id),
+   CONSTRAINT firmware_images_name UNIQUE (name),
+   CONSTRAINT firmware_images_install_package UNIQUE (install_package),
+   CONSTRAINT firmware_images_version UNIQUE (version),
+   CONSTRAINT fk_model FOREIGN KEY (model)
+      REFERENCES rsu_models (rsu_model_id) MATCH SIMPLE
+      ON UPDATE NO ACTION
+      ON DELETE NO ACTION
+);
+
+CREATE SEQUENCE rsus_rsu_id_seq
+   INCREMENT 1
+   START 1
+   MINVALUE 1
+   MAXVALUE 2147483647
+   CACHE 1;
+
+CREATE TABLE IF NOT EXISTS rsus
+(
+   rsu_id integer NOT NULL DEFAULT nextval('rsus_rsu_id_seq'::regclass),
+   geography geography NOT NULL,
+   milepost double precision NOT NULL,
+   ipv4_address inet NOT NULL,
+   serial_number character varying(128) COLLATE pg_catalog.default NOT NULL,
+   iss_scms_id character varying(128) COLLATE pg_catalog.default NOT NULL,
+   primary_route character varying(128) COLLATE pg_catalog.default NOT NULL,
+   model integer NOT NULL,
+   credential_id integer NOT NULL,
+   snmp_credential_id integer NOT NULL,
+   snmp_protocol_id integer NOT NULL,
+   firmware_version integer,
+   target_firmware_version integer,
+   CONSTRAINT rsu_pkey PRIMARY KEY (rsu_id),
+   CONSTRAINT rsu_ipv4_address UNIQUE (ipv4_address),
+   CONSTRAINT rsu_milepost_primary_route UNIQUE (milepost, primary_route),
+   CONSTRAINT rsu_serial_number UNIQUE (serial_number),
+   CONSTRAINT rsu_iss_scms_id UNIQUE (iss_scms_id),
+   CONSTRAINT fk_model FOREIGN KEY (model)
+      REFERENCES rsu_models (rsu_model_id) MATCH SIMPLE
+      ON UPDATE NO ACTION
+      ON DELETE NO ACTION,
+   CONSTRAINT fk_credential_id FOREIGN KEY (credential_id)
+      REFERENCES rsu_credentials (credential_id) MATCH SIMPLE
+      ON UPDATE NO ACTION
+      ON DELETE NO ACTION,
+   CONSTRAINT fk_snmp_credential_id FOREIGN KEY (snmp_credential_id)
+      REFERENCES snmp_credentials (snmp_credential_id) MATCH SIMPLE
+      ON UPDATE NO ACTION
+      ON DELETE NO ACTION,
+   CONSTRAINT fk_snmp_protocol_id FOREIGN KEY (snmp_protocol_id)
+      REFERENCES snmp_protocols (snmp_protocol_id) MATCH SIMPLE
+      ON UPDATE NO ACTION
+      ON DELETE NO ACTION,
+   CONSTRAINT fk_firmware_version FOREIGN KEY (firmware_version)
+      REFERENCES firmware_images (firmware_id) MATCH SIMPLE
+      ON UPDATE NO ACTION
+      ON DELETE NO ACTION,
+   CONSTRAINT fk_target_firmware_version FOREIGN KEY (target_firmware_version)
+      REFERENCES firmware_images (firmware_id) MATCH SIMPLE
+      ON UPDATE NO ACTION
+      ON DELETE NO ACTION
+);
