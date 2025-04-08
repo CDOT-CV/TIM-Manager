@@ -14,8 +14,8 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.sql.Statement;
 import java.util.List;
 
 import com.trihydro.library.helpers.DbInteractions;
@@ -193,14 +193,14 @@ public class RsuServiceTest {
         SnmpProtocol snmpProtocol = SnmpProtocol.NTCIP1218;
 
         Connection mockConnection = mock(Connection.class);
-        Statement mockStatement = mock(Statement.class);
+        PreparedStatement mockStatement = mock(PreparedStatement.class);
         ResultSet mockResultSet = mock(ResultSet.class);
         RsuService spyUut = spy(uut);
         DbInteractions mockDbInteractions = mock(DbInteractions.class);
 
         when(mockDbInteractions.getConnectionPool()).thenReturn(mockConnection);
-        when(mockConnection.createStatement()).thenReturn(mockStatement);
-        when(mockStatement.executeQuery(anyString())).thenReturn(mockResultSet);
+        when(mockConnection.prepareStatement(any())).thenReturn(mockStatement);
+        when(mockStatement.executeQuery()).thenReturn(mockResultSet);
         when(mockResultSet.next()).thenReturn(true).thenReturn(false);
         when(mockResultSet.getString("username")).thenReturn(username);
         when(mockResultSet.getString("password")).thenReturn(password);
@@ -229,15 +229,15 @@ public class RsuServiceTest {
         String rsuIpv4Address = "192.168.1.1";
 
         Connection mockConnection = mock(Connection.class);
-        Statement mockStatement = mock(Statement.class);
+        PreparedStatement mockStatement = mock(PreparedStatement.class);
         ResultSet mockResultSet = mock(ResultSet.class);
         DbInteractions mockDbInteractions = mock(DbInteractions.class);
 
         RsuService spyUut = spy(uut);
 
         when(mockDbInteractions.getConnectionPool()).thenReturn(mockConnection);
-        when(mockConnection.createStatement()).thenReturn(mockStatement);
-        when(mockStatement.executeQuery(anyString())).thenReturn(mockResultSet);
+        when(mockConnection.prepareStatement(any())).thenReturn(mockStatement);
+        when(mockStatement.executeQuery()).thenReturn(mockResultSet);
         when(mockResultSet.next()).thenReturn(false);
 
         spyUut.dbInteractions = mockDbInteractions;
