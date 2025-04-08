@@ -20,7 +20,7 @@ public class WydotTim {
 	@ApiModelProperty(required = true)
 	private String clientId;
 	@ApiModelProperty(required = false)
-    protected List<Coordinate> geometry;
+    private List<Coordinate> geometry;
 	@ApiModelProperty(required = false)
 	private Integer bearing;
 
