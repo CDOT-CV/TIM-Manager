@@ -84,7 +84,6 @@ public class RsuController extends BaseController {
 			connection = dbInteractions.getConnectionPool();
 			statement = connection.createStatement();
 
-			// select all RSUs that are labeled as 'Existing' in the WYDOT view
 			rs = statement.executeQuery(
 					"select rsus.rsu_id, rsu_credentials.username as update_username, " +
 					"rsu_credentials.password as update_password, ST_X(ST_AsText(rsus.geography)) " + 
