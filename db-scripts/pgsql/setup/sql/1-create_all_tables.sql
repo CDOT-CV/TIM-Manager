@@ -430,22 +430,6 @@ ALTER TABLE old_region ALTER COLUMN CIRCLE_UNITS SET NOT NULL;
 ALTER TABLE old_region ADD CONSTRAINT fk_shape_point FOREIGN KEY (shape_point_id) REFERENCES shape_point(shape_point_id) ON DELETE NO ACTION NOT DEFERRABLE INITIALLY IMMEDIATE;
 
 
-CREATE TABLE IF NOT EXISTS tim_rsu (
-	tim_rsu_id bigint NOT NULL,
-	rsu_id bigint NOT NULL,
-	tim_id bigint NOT NULL,
-	rsu_index bigint
-) ;
-ALTER TABLE tim_rsu ADD UNIQUE (rsu_id,tim_id,rsu_index);
-ALTER TABLE tim_rsu ADD PRIMARY KEY (tim_rsu_id);
-ALTER TABLE tim_rsu ALTER COLUMN TIM_RSU_ID SET NOT NULL;
-ALTER TABLE tim_rsu ALTER COLUMN RSU_ID SET NOT NULL;
-ALTER TABLE tim_rsu ALTER COLUMN TIM_ID SET NOT NULL;
-ALTER TABLE tim_rsu ADD CONSTRAINT sys_c0021538 FOREIGN KEY (rsu_id) REFERENCES rsus(rsu_id) ON DELETE CASCADE NOT DEFERRABLE INITIALLY IMMEDIATE;
-
-ALTER TABLE tim_rsu ADD CONSTRAINT sys_c0021539 FOREIGN KEY (tim_id) REFERENCES tim(tim_id) ON DELETE CASCADE NOT DEFERRABLE INITIALLY IMMEDIATE;
-
-
 -- dependent level 3 (dependent on level 2 tables and possibly level 1/level 0 tables) --
 CREATE TABLE IF NOT EXISTS data_frame_itis_code (
 	data_frame_itis_code_id bigint NOT NULL,
@@ -516,29 +500,6 @@ ALTER TABLE region_list ALTER COLUMN Z_OFFSET SET NOT NULL;
 ALTER TABLE region_list ADD CONSTRAINT fk_old_region_region_list FOREIGN KEY (old_region_id) REFERENCES old_region(old_region_id) ON DELETE NO ACTION NOT DEFERRABLE INITIALLY IMMEDIATE;
 
 -- RSU-Specific Tables
-
-CREATE SEQUENCE rsu_organization_rsu_organization_id_seq
-   INCREMENT 1
-   START 1
-   MINVALUE 1
-   MAXVALUE 2147483647
-   CACHE 1;
-
-CREATE TABLE IF NOT EXISTS rsu_organization
-(
-   rsu_organization_id integer NOT NULL DEFAULT nextval('rsu_organization_rsu_organization_id_seq'::regclass),
-   rsu_id integer NOT NULL,
-   organization_id integer NOT NULL,
-   CONSTRAINT rsu_organization_pkey PRIMARY KEY (rsu_organization_id),
-   CONSTRAINT fk_rsu_id FOREIGN KEY (rsu_id)
-      REFERENCES rsus (rsu_id) MATCH SIMPLE
-      ON UPDATE NO ACTION
-      ON DELETE NO ACTION,
-   CONSTRAINT fk_organization_id FOREIGN KEY (organization_id)
-      REFERENCES organizations (organization_id) MATCH SIMPLE
-      ON UPDATE NO ACTION
-      ON DELETE NO ACTION
-);
 
 CREATE SEQUENCE manufacturers_manufacturer_id_seq
    INCREMENT 1
@@ -700,6 +661,60 @@ CREATE TABLE IF NOT EXISTS rsus
       ON DELETE NO ACTION,
    CONSTRAINT fk_target_firmware_version FOREIGN KEY (target_firmware_version)
       REFERENCES firmware_images (firmware_id) MATCH SIMPLE
+      ON UPDATE NO ACTION
+      ON DELETE NO ACTION
+);
+
+CREATE TABLE IF NOT EXISTS tim_rsu (
+	tim_rsu_id bigint NOT NULL,
+	rsu_id bigint NOT NULL,
+	tim_id bigint NOT NULL,
+	rsu_index bigint
+) ;
+ALTER TABLE tim_rsu ADD UNIQUE (rsu_id,tim_id,rsu_index);
+ALTER TABLE tim_rsu ADD PRIMARY KEY (tim_rsu_id);
+ALTER TABLE tim_rsu ALTER COLUMN TIM_RSU_ID SET NOT NULL;
+ALTER TABLE tim_rsu ALTER COLUMN RSU_ID SET NOT NULL;
+ALTER TABLE tim_rsu ALTER COLUMN TIM_ID SET NOT NULL;
+ALTER TABLE tim_rsu ADD CONSTRAINT sys_c0021538 FOREIGN KEY (rsu_id) REFERENCES rsus(rsu_id) ON DELETE CASCADE NOT DEFERRABLE INITIALLY IMMEDIATE;
+
+ALTER TABLE tim_rsu ADD CONSTRAINT sys_c0021539 FOREIGN KEY (tim_id) REFERENCES tim(tim_id) ON DELETE CASCADE NOT DEFERRABLE INITIALLY IMMEDIATE;
+
+CREATE SEQUENCE public.organizations_organization_id_seq
+   INCREMENT 1
+   START 1
+   MINVALUE 1
+   MAXVALUE 2147483647
+   CACHE 1;
+
+CREATE TABLE IF NOT EXISTS public.organizations
+(
+   organization_id integer NOT NULL DEFAULT nextval('organizations_organization_id_seq'::regclass),
+   name character varying(128) COLLATE pg_catalog.default NOT NULL,
+   email character varying(128) COLLATE pg_catalog.default,
+   CONSTRAINT organizations_pkey PRIMARY KEY (organization_id),
+   CONSTRAINT organizations_name UNIQUE (name)
+);
+
+CREATE SEQUENCE rsu_organization_rsu_organization_id_seq
+   INCREMENT 1
+   START 1
+   MINVALUE 1
+   MAXVALUE 2147483647
+   CACHE 1;
+
+CREATE TABLE IF NOT EXISTS rsu_organization
+(
+   rsu_organization_id integer NOT NULL DEFAULT nextval('rsu_organization_rsu_organization_id_seq'::regclass),
+   rsu_id integer NOT NULL,
+   organization_id integer NOT NULL,
+   CONSTRAINT rsu_organization_pkey PRIMARY KEY (rsu_organization_id),
+   CONSTRAINT fk_rsu_id FOREIGN KEY (rsu_id)
+      REFERENCES rsus (rsu_id) MATCH SIMPLE
+      ON UPDATE NO ACTION
+      ON DELETE NO ACTION,
+   CONSTRAINT fk_organization_id FOREIGN KEY (organization_id)
+      REFERENCES organizations (organization_id) MATCH SIMPLE
       ON UPDATE NO ACTION
       ON DELETE NO ACTION
 );
