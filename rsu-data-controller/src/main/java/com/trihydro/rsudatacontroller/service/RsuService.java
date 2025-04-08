@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -129,58 +130,26 @@ public class RsuService {
         return date.format(rsuDateTimeFormatter);
     }
 
-    RSU getRSU(String rsuIpv4Address) throws Exception {
-        Connection connection = null;
-		Statement statement = null;
-		ResultSet rs = null;
-        RSU rsu = null;
-        
-
-		try {
-			connection = dbInteractions.getConnectionPool();
-
-			statement = connection.createStatement();
-            
-            // select RSU username, password, and firmware type
-            String selectStatement = "select rc.username, rc.password, sp.nickname FROM rsus " +
-                                "JOIN rsu_credentials AS rc " + //
-                                "ON rsus.snmp_credential_id = rc.credential_id " + //
-                                "JOIN snmp_protocols AS sp " + //
-                                "ON rsus.snmp_protocol_id = sp.snmp_protocol_id " + //
-                                "WHERE rsus.ipv4_address = '" + rsuIpv4Address + "'";
-
-			rs = statement.executeQuery(selectStatement);
-
-            // parse resultSet
-            while (rs.next()) {
+    protected RSU getRSU(String rsuIpv4Address) throws Exception {
+        // select RSU username, password, and firmware type
+        String SELECT_RSU_CREDENTIALS = "SELECT rc.username, rc.password, sp.nickname " +
+                "FROM rsus " +
+                "JOIN rsu_credentials AS rc ON rsus.snmp_credential_id = rc.credential_id " +
+                "JOIN snmp_protocols AS sp ON rsus.snmp_protocol_id = sp.snmp_protocol_id " +
+                "WHERE rsus.ipv4_address = ?";
+        try (Connection connection = dbInteractions.getConnectionPool();
+             PreparedStatement statement = connection.prepareStatement(SELECT_RSU_CREDENTIALS)) {
+            statement.setString(1, rsuIpv4Address); // Setting parameter to prevent injection.
+            try (ResultSet rs = statement.executeQuery()) {
+                if (!rs.next()) {
+                    utility.logWithDate("Unable to find RSU in database (RSU: " + rsuIpv4Address + ")");
+                    return null;
+                }
                 String rsuUsername = rs.getString("username");
                 String rsuPassword = rs.getString("password");
                 SnmpProtocol snmpProtocol = rs.getString("nickname").equals("NTCIP 1218") ? SnmpProtocol.NTCIP1218 : SnmpProtocol.FOURDOT1;
-                
-                rsu = new RSU(rsuIpv4Address, rsuUsername, rsuPassword, config.getSnmpRetries(), config.getSnmpTimeoutSeconds(), snmpProtocol);
+                return new RSU(rsuIpv4Address, rsuUsername, rsuPassword, config.getSnmpRetries(), config.getSnmpTimeoutSeconds(), snmpProtocol);
             }
-
-
-
-		} catch (SQLException e) {
-			e.printStackTrace();
-			return null;
-		} finally {
-			try {
-				// close prepared statement
-				if (statement != null)
-					statement.close();
-				// return connection back to pool
-				if (connection != null)
-					connection.close();
-				// close result set
-				if (rs != null)
-					rs.close();
-			} catch (SQLException e) {
-				e.printStackTrace();
-			}
-		}
-        
-        return rsu;
+        }
     }
 }
