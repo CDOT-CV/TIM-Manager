@@ -350,18 +350,14 @@ public class MilepostController extends BaseController {
 		return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Milepost cache not found for timID: " + timID);
 	}
 
-	@RequestMapping(method = RequestMethod.GET, value="/clear-milepost-cache")
+	@RequestMapping(method = RequestMethod.GET, value = "/clear-milepost-cache")
 	public ResponseEntity<String> clearMilepostCache() {
 		utility.logWithDate("Clearing milepost cache");
 		List<String> timIDs = new ArrayList<>(milepostCache.keySet());
-		Connection connection = null;
-		Statement statement = null;
-		ResultSet rs = null;
 
-		try {
-			connection = dbInteractions.getConnectionPool();
-			statement = connection.createStatement();
-			rs = statement.executeQuery("SELECT client_id FROM active_tim WHERE marked_for_deletion = False");
+		try (Connection connection = dbInteractions.getConnectionPool();
+				Statement statement = connection.createStatement(); 
+				ResultSet rs = statement.executeQuery("SELECT client_id FROM active_tim WHERE marked_for_deletion = False");) {
 
 			List<String> activeTimIds = new ArrayList<>();
 			while (rs.next()) {
@@ -374,25 +370,18 @@ public class MilepostController extends BaseController {
 				milepostCache.remove(timID);
 			}
 
+			if (statement != null)
+				statement.close();
+			// return connection back to pool
+			if (connection != null)
+				connection.close();
+                // close result set
+
 		} catch (SQLException e) {
 			e.printStackTrace();
-		} finally {
-			try {
-				// close prepared statement
-				if (statement != null)
-					statement.close();
-				// return connection back to pool
-				if (connection != null)
-					connection.close();
-				// close result set
-				if (rs != null)
-					rs.close();
-			} catch (SQLException e) {
-				e.printStackTrace();
-			}
 		}
-        return ResponseEntity.ok("Milepost cache cleared successfully");
-    }
+		return ResponseEntity.ok("Milepost cache cleared successfully");
+	}
 
 	/**
 	 * Rewrite of getMilepostsByStartEndPoint used in testing to cut time on geojson
