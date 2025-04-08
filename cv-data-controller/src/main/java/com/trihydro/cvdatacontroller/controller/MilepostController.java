@@ -350,37 +350,33 @@ public class MilepostController extends BaseController {
 		return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Milepost cache not found for timID: " + timID);
 	}
 
-	@RequestMapping(method = RequestMethod.GET, value = "/clear-milepost-cache")
+	@RequestMapping(method = RequestMethod.GET, value="/clear-milepost-cache")
 	public ResponseEntity<String> clearMilepostCache() {
 		utility.logWithDate("Clearing milepost cache");
 		List<String> timIDs = new ArrayList<>(milepostCache.keySet());
-
-		try (Connection connection = dbInteractions.getConnectionPool();
-				Statement statement = connection.createStatement(); 
-				ResultSet rs = statement.executeQuery("SELECT client_id FROM active_tim WHERE marked_for_deletion = False");) {
-
-			List<String> activeTimIds = new ArrayList<>();
-			while (rs.next()) {
-				String tim_id = rs.getString("CLIENT_ID");
-				activeTimIds.add(tim_id);
-			}
-			// remove all active TIM IDs from the list of milepost cache TIM IDs
-			timIDs.removeAll(activeTimIds);
-			for (String timID : timIDs) {
-				milepostCache.remove(timID);
-			}
-
-			if (statement != null)
-				statement.close();
-			// return connection back to pool
-			if (connection != null)
-				connection.close();
-                // close result set
-
-		} catch (SQLException e) {
-			e.printStackTrace();
+		List<String> activeTimIds = getActiveTimIds();
+		// remove all active TIM IDs from the list of milepost cache TIM IDs
+		timIDs.removeAll(activeTimIds);
+		for (String timID : timIDs) {
+			milepostCache.remove(timID);
 		}
 		return ResponseEntity.ok("Milepost cache cleared successfully");
+	}
+
+	private List<String> getActiveTimIds() {
+		List<String> activeTimIds = new ArrayList<>();
+		String sql = "SELECT client_id FROM active_tim WHERE marked_for_deletion = False";
+		try (Connection connection = dbInteractions.getConnectionPool();
+			 Statement statement = connection.createStatement();
+			 ResultSet rs = statement.executeQuery(sql)) {
+			while (rs.next()) {
+				String timId = rs.getString("CLIENT_ID");
+				activeTimIds.add(timId);
+			}
+		} catch (SQLException e) {
+			utility.logWithDate("Error retrieving active TIM IDs " + e.toString()); // Improved logging
+		}
+		return activeTimIds;
 	}
 
 	/**
