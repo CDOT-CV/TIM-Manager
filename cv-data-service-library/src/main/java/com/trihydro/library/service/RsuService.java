@@ -210,12 +210,15 @@ public class RsuService extends CvDataServiceLibrary {
 	}
 
 	public List<WydotRsu> getRsusByGeometry(List<Coordinate> geometry) {
-		String coordinates = "LINESTRING(";
+		var coordinateBuilder = new StringBuilder("LINESTRING(");
+		
 		for (Coordinate coordinate : geometry) {
-            coordinates += coordinate.getLongitude() + " " + coordinate.getLatitude() + ",";
+			coordinateBuilder.append(coordinate.getLongitude()).append(" ").append(coordinate.getLatitude()).append(",");
         }
-		coordinates = coordinates.substring(0, coordinates.length() - 1) + ")";
-		List<WydotRsu> rsus = selectRsusByGeometry(coordinates);
+		coordinateBuilder.deleteCharAt(coordinateBuilder.length() - 1);
+		coordinateBuilder.append(")");
+		
+		List<WydotRsu> rsus = selectRsusByGeometry(coordinateBuilder.toString());
 		for (WydotRsu rsu : rsus) {
 			rsu.setRsuRetries(3);
 			rsu.setRsuTimeout(5000);
