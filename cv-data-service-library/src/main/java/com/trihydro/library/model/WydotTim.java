@@ -130,4 +130,18 @@ public class WydotTim {
 			return false;
 		}
 	}
+
+	public List<Milepost> toMileposts() {
+		var mileposts = new ArrayList<Milepost>();
+		for (Coordinate coordinate : this.getGeometry()) {
+			Milepost milepost = new Milepost();
+			milepost.setLatitude(coordinate.getLatitude());
+			milepost.setLongitude(coordinate.getLongitude());
+			milepost.setDirection(this.getDirection());
+			milepost.setCommonName(this.getRoute());
+			milepost.setMilepost(0.0);
+			mileposts.add(milepost);
+		}
+		return mileposts;
+	}
 }

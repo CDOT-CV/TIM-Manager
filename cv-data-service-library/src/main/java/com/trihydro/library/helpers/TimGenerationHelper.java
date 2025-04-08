@@ -315,15 +315,7 @@ public class TimGenerationHelper {
         utility.logWithDate("Fetching mileposts for regular TIM with client id: " + wydotTim.getClientId());
         if (wydotTim.getEndPoint() != null) {
                 if (wydotTim.getGeometry() != null && wydotTim.getGeometry().size() > 1) {
-                    for (Coordinate coordinate : wydotTim.getGeometry()) {
-                        Milepost milepost = new Milepost();
-                        milepost.setLatitude(coordinate.getLatitude());
-                        milepost.setLongitude(coordinate.getLongitude());
-                        milepost.setDirection(wydotTim.getDirection());
-                        milepost.setCommonName(wydotTim.getRoute());
-                        milepost.setMilepost(0.0);
-                        allMps.add(milepost);
-                    }
+                    allMps.addAll(wydotTim.toMileposts());
                     milepostService.setMilepostCache(allMps, wydotTim.getClientId());
                 } else {
                     // Check to see if milepost array exists in cache

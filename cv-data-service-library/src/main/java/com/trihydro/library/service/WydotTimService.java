@@ -163,20 +163,15 @@ public class WydotTimService {
 
         // get mileposts from cache if they exist
         milepostsAll = milepostService.getMilepostCache(wydotTim.getClientId());
-        if (milepostsAll != null && milepostsAll.size() > 0) {
+        if (milepostsAll != null && !milepostsAll.isEmpty()) {
             return milepostsAll;
         }
 
         if (wydotTim.getGeometry() != null && wydotTim.getGeometry().size() > 1) {
-            for (Coordinate coordinate : wydotTim.getGeometry()) {
-                Milepost milepost = new Milepost();
-                milepost.setLatitude(coordinate.getLatitude());
-                milepost.setLongitude(coordinate.getLongitude());
-                milepost.setDirection(wydotTim.getDirection());
-                milepost.setCommonName(wydotTim.getRoute());
-                milepost.setMilepost(0.0);
-                milepostsAll.add(milepost);
+            if (milepostsAll == null) {
+                milepostsAll = new ArrayList<>();
             }
+            milepostsAll.addAll(wydotTim.toMileposts());
         } else if (wydotTim.getEndPoint() != null && wydotTim.getEndPoint().getLatitude() != null
                 && wydotTim.getEndPoint().getLongitude() != null) {
             milepostsAll = milepostService.getMilepostsByStartEndPointDirection(wydotTim);
