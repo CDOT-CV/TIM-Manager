@@ -5,7 +5,7 @@ import java.util.List;
 import com.trihydro.library.model.Milepost;
 import com.trihydro.library.model.MilepostBuffer;
 import com.trihydro.library.model.WydotTim;
-import com.trihydro.library.model.MilepostCacheBody;
+import com.trihydro.library.model.SetMilepostCacheRequest;
 
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpEntity;
@@ -46,8 +46,8 @@ public class MilepostService extends CvDataServiceLibrary {
 		String url = String.format("%s/set-milepost-cache", config.getCvRestService());
 		HttpHeaders headers = new HttpHeaders();
 		headers.setContentType(MediaType.APPLICATION_JSON);
-		MilepostCacheBody body = new MilepostCacheBody(mileposts, timID);
-		HttpEntity<MilepostCacheBody> entity = new HttpEntity<MilepostCacheBody>(body, headers);
+		SetMilepostCacheRequest body = new SetMilepostCacheRequest(mileposts, timID);
+		HttpEntity<SetMilepostCacheRequest> entity = new HttpEntity<SetMilepostCacheRequest>(body, headers);
 		ResponseEntity<String> response = restTemplateProvider.GetRestTemplate().exchange(url, HttpMethod.POST, entity,
 				String.class);
 		return response.getBody();

@@ -2,11 +2,11 @@ package com.trihydro.library.model;
 
 import java.util.List;
 
-public class MilepostCacheBody {
-    private List<Milepost> mileposts;
-    private String timID;
+public class SetMilepostCacheRequest {
+    private final List<Milepost> mileposts;
+    private final String timID;
     
-    public MilepostCacheBody(List<Milepost> mileposts, String timID) {
+    public SetMilepostCacheRequest(List<Milepost> mileposts, String timID) {
         this.mileposts = mileposts;
         this.timID = timID;
     }

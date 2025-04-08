@@ -19,7 +19,7 @@ import com.trihydro.cvdatacontroller.services.MilepostService;
 import com.trihydro.library.model.Milepost;
 import com.trihydro.library.model.MilepostBuffer;
 import com.trihydro.library.model.WydotTim;
-import com.trihydro.library.model.MilepostCacheBody;
+import com.trihydro.library.model.SetMilepostCacheRequest;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -312,7 +312,7 @@ public class MilepostController extends BaseController {
 	}
 
 	@RequestMapping(method = RequestMethod.POST, value="/set-milepost-cache")
-	public ResponseEntity<String> setMilepostCache(@RequestBody MilepostCacheBody milepostCacheBody) {
+	public ResponseEntity<String> setMilepostCache(@RequestBody SetMilepostCacheRequest milepostCacheBody) {
 		
 		utility.logWithDate("Setting milepost cache for timID: " + milepostCacheBody.getTimID());
 
