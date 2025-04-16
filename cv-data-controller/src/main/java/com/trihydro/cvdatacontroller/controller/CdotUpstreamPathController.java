@@ -176,16 +176,25 @@ public class CdotUpstreamPathController extends BaseController {
     }
     BigDecimal latitude = milepost.getLatitude().setScale(14, RoundingMode.HALF_UP);
     BigDecimal longitude = milepost.getLongitude().setScale(14, RoundingMode.HALF_UP);
+    // Roughly a 1-mile starting buffer
+    BigDecimal latDifference = new BigDecimal(0.015);
+    BigDecimal lonDifference = new BigDecimal(0.015);
+    int closestIndex = -1;
     for (int i = 0; i < mileposts.size(); i++) {
       Milepost currentMilepost = mileposts.get(i);
       BigDecimal currentLatitude = currentMilepost.getLatitude().setScale(14, RoundingMode.HALF_UP);
       BigDecimal currentLongitude = currentMilepost.getLongitude().setScale(14,
           RoundingMode.HALF_UP);
-      if (latitude.equals(currentLatitude) && longitude.equals(currentLongitude)) {
-        return i;
+
+      // If the current milepost is closer, update the closest index
+      if (latDifference.compareTo(latitude.subtract(currentLatitude).abs()) > 0
+          && lonDifference.compareTo(longitude.subtract(currentLongitude).abs()) > 0) {
+        latDifference = latitude.subtract(currentLatitude).abs();
+        lonDifference = longitude.subtract(currentLongitude).abs();
+        closestIndex = i;
       }
     }
-    return -1;
+    return closestIndex;
   }
 
   private String convertMilepostsToGeojsonString(List<Milepost> mileposts) {
