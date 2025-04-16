@@ -3,6 +3,7 @@ package com.trihydro.odewrapper.controller;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
@@ -12,6 +13,7 @@ import com.trihydro.library.helpers.TimGenerationHelper;
 import com.trihydro.library.helpers.Utility;
 import com.trihydro.library.model.ActiveTim;
 import com.trihydro.library.model.ContentEnum;
+import com.trihydro.library.model.Milepost;
 import com.trihydro.library.service.ActiveTimService;
 import com.trihydro.library.service.RestTemplateProvider;
 import com.trihydro.library.service.TimTypeService;
@@ -43,6 +45,7 @@ import us.dot.its.jpo.ode.plugin.j2735.timstorage.FrameType.TravelerInfoType;
 public class WydotTimIncidentController extends WydotTimBaseController {
 
     private final String type = "I";
+    List<WydotTimIncident> timsToSend = new ArrayList<>();
 
     @Autowired
     public WydotTimIncidentController(BasicConfiguration _basicConfiguration, WydotTimService _wydotTimService,
@@ -63,8 +66,6 @@ public class WydotTimIncidentController extends WydotTimBaseController {
         String post = gson.toJson(timIncidentList);
         utility.logWithDate(post, this.getClass());
 
-        List<WydotTimIncident> timsToSend = new ArrayList<>();
-
         List<ControllerResult> resultList = new ArrayList<>();
         ControllerResult resultTim;
 
@@ -73,13 +74,12 @@ public class WydotTimIncidentController extends WydotTimBaseController {
 
             resultTim = validateInputIncident(wydotTim);
 
-            if (!resultTim.getResultMessages().isEmpty()) {
-                resultList.add(resultTim);
-                continue;
+            if (wydotTim.getDirection().equalsIgnoreCase("i")) {
+                makeIncreasingTims(wydotTim);
             }
-
-            // make tims
-            timsToSend.add(wydotTim);
+            else {
+                makeDecreasingTims(wydotTim);
+            }
 
             resultTim.getResultMessages().add("success");
             resultList.add(resultTim);
@@ -89,6 +89,57 @@ public class WydotTimIncidentController extends WydotTimBaseController {
 
         String responseMessage = gson.toJson(resultList);
         return ResponseEntity.status(HttpStatus.OK).body(responseMessage);
+    }
+
+    public void makeIncreasingTims(WydotTimIncident wydotTim) {
+        // i - add buffer for point TIMs
+        WydotTimIncident timOneWay = wydotTim.copy();
+        timOneWay.setDirection("I");
+
+        addTimsToSend(timOneWay, false);
+
+        makeBufferTims(timOneWay);
+    }
+
+    public void makeDecreasingTims(WydotTimIncident wydotTim) {
+        // d - add buffer for point TIMs
+        WydotTimIncident timOneWay = wydotTim.copy();
+        timOneWay.setDirection("D");
+
+        addTimsToSend(timOneWay, false);
+
+        makeBufferTims(timOneWay);
+    }
+
+    private void addTimsToSend(WydotTimIncident tim, boolean isBuffer) {
+        for (String itisCodeEntry : tim.getItisCodes()) {
+            // CTW Update requires that individual TIMs are created for each ITIS ordering
+            List<String> itisCodes = Arrays.asList(itisCodeEntry.split(" "));
+
+            // only generate appropriate TIMs for geometry list (buffer, workZone)
+            String lastItisCode = itisCodes.get(itisCodes.size() - 1);
+            boolean isBufferTim = bufferTimITISCodes.contains(Integer.valueOf(lastItisCode));
+            if (isBuffer && !isBufferTim) {
+                continue;
+            } else if (!isBuffer && isBufferTim) {
+                continue;
+            }
+
+            WydotTimIncident timToSend = tim.copy();
+            timToSend.setItisCodes(itisCodes);
+            String clientIdWithItis = tim.getClientId() + '-' + itisCodeEntry.replace(' ', '-');
+            timToSend.setClientId(clientIdWithItis);
+            timsToSend.add(timToSend);
+        }
+    }
+
+    public void makeBufferTims(WydotTimIncident wydotTim) {
+        // get mileposts for buffer
+        List<Milepost> bufferMps = milepostService.getBufferForPath(wydotTim.getRoute().replace('-', '_'), 1.0, wydotTim.toMileposts());
+        wydotTim.setGeometry(milepostToGeometry(bufferMps));
+        wydotTim.setClientId(wydotTim.getClientId() + "%BUFF");
+
+        addTimsToSend(wydotTim, true);
     }
 
     @RequestMapping(value = "/incident-tim", method = RequestMethod.PUT, headers = "Accept=application/json")
@@ -103,7 +154,6 @@ public class WydotTimIncidentController extends WydotTimBaseController {
 
         List<ControllerResult> resultList = new ArrayList<>();
         ControllerResult resultTim;
-        List<WydotTimIncident> timsToSend = new ArrayList<>();
 
         // delete TIMs
         for (WydotTimIncident wydotTim : timIncidentList.getTimIncidentList()) {
@@ -152,7 +202,7 @@ public class WydotTimIncidentController extends WydotTimBaseController {
         utility.logWithDate(dateFormat.format(date) + " - Delete Incident TIM", this.getClass());
 
         // expire and clear TIM
-        wydotTimService.clearTimsById("I", incidentId, null);
+        wydotTimService.clearTimsById("I", incidentId, null, true);
 
         String responseMessage = "success";
         return ResponseEntity.status(HttpStatus.OK).body(responseMessage);
