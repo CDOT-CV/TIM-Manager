@@ -164,8 +164,8 @@ public abstract class WydotTimBaseController {
         if (tim.getHighway() == null || !routeSupported(tim.getHighway())) {
             resultMessages.add("route not supported");
         } else {
-            tim.setRoute(tim.getHighway());
-            result.setRoute(tim.getHighway());
+            tim.setRoute(tim.getRoute());
+            result.setRoute(tim.getRoute());
         }
 
         // if direction is not i/d/b fail
@@ -175,13 +175,6 @@ public abstract class WydotTimBaseController {
         }
         if (tim.getIncidentId() == null) {
             resultMessages.add("Null value for incidentId");
-        }
-        if (tim.getStartPoint() == null || !tim.getStartPoint().isValid()) {
-            resultMessages.add("Invalid startPoint");
-        }
-        // endPoint may be null here, so check if not null that it is valid
-        if (tim.getEndPoint() != null && !tim.getEndPoint().isValid()) {
-            resultMessages.add("Invalid endPoint");
         }
 
         // set itis codes
