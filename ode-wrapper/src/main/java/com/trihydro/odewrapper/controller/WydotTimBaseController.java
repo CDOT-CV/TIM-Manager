@@ -11,7 +11,6 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.TimeZone;
@@ -30,6 +29,7 @@ import com.trihydro.library.model.WydotTim;
 import com.trihydro.library.model.WydotTimRw;
 import com.trihydro.library.model.WydotTravelerInputData;
 import com.trihydro.library.service.ActiveTimService;
+import com.trihydro.library.service.MilepostService;
 import com.trihydro.library.service.RestTemplateProvider;
 import com.trihydro.library.service.TimTypeService;
 import com.trihydro.library.service.WydotTimService;
@@ -55,20 +55,22 @@ public abstract class WydotTimBaseController {
     protected WydotTimService wydotTimService;
     protected TimTypeService timTypeService;
     private TimType timType = null;
-    private SetItisCodes setItisCodes;
+    private final SetItisCodes setItisCodes;
     protected ActiveTimService activeTimService;
     protected RestTemplateProvider restTemplateProvider;
     MilepostReduction milepostReduction;
     protected Utility utility;
     protected TimGenerationHelper timGenerationHelper;
+    protected MilepostService milepostService;
 
     protected static Gson gson = new Gson();
     private List<TimType> timTypes;
+    protected final List<Integer> bufferTimITISCodes;
 
     public WydotTimBaseController(BasicConfiguration _basicConfiguration, WydotTimService _wydotTimService,
             TimTypeService _timTypeService, SetItisCodes _setItisCodes, ActiveTimService _activeTimService,
             RestTemplateProvider _restTemplateProvider, MilepostReduction _milepostReduction, Utility _utility,
-            TimGenerationHelper _timGenerationHelper) {
+            TimGenerationHelper _timGenerationHelper, MilepostService _milepostService) {
         configuration = _basicConfiguration;
         wydotTimService = _wydotTimService;
         timTypeService = _timTypeService;
@@ -78,6 +80,9 @@ public abstract class WydotTimBaseController {
         milepostReduction = _milepostReduction;
         utility = _utility;
         timGenerationHelper = _timGenerationHelper;
+        milepostService = _milepostService;
+        // closed-ahead, blocked-ahead, and ahead ITIS codes
+        bufferTimITISCodes = List.of(771, 776, 13569);
     }
 
     protected String getStartTime() {
@@ -104,7 +109,7 @@ public abstract class WydotTimBaseController {
     protected ControllerResult validateInputParking(WydotTimParking tim) {
 
         ControllerResult result = new ControllerResult();
-        List<String> resultMessages = new ArrayList<String>();
+        List<String> resultMessages = new ArrayList<>();
 
         // get route number
         if (tim.getDirection() != null)
@@ -134,7 +139,7 @@ public abstract class WydotTimBaseController {
 
         // set itis codes
         List<String> itisCodes = setItisCodes.setItisCodesParking(tim);
-        if (itisCodes.size() == 0)
+        if (itisCodes.isEmpty())
             resultMessages.add("No ITIS codes found");
         result.setItisCodes(itisCodes);
         tim.setItisCodes(itisCodes);
@@ -146,7 +151,7 @@ public abstract class WydotTimBaseController {
     public ControllerResult validateInputIncident(WydotTimIncident tim) {
 
         ControllerResult result = new ControllerResult();
-        List<String> resultMessages = new ArrayList<String>();
+        List<String> resultMessages = new ArrayList<>();
 
         // get route number
         if (tim.getDirection() != null)
@@ -180,8 +185,8 @@ public abstract class WydotTimBaseController {
         }
 
         // set itis codes
-        List<String> itisCodes = setItisCodes.setItisCodesIncident(tim);
-        if (itisCodes.size() == 0)
+        List<String> itisCodes = setItisCodes.setItisCodes(tim);
+        if (itisCodes.isEmpty())
             resultMessages.add("No ITIS codes found");
         result.setItisCodes(itisCodes);
         tim.setItisCodes(itisCodes);
@@ -281,8 +286,8 @@ public abstract class WydotTimBaseController {
         }
 
         // set itis codes
-        List<String> itisCodes = setItisCodes.setItisCodesRw(tim);
-        if (itisCodes.size() == 0)
+        List<String> itisCodes = setItisCodes.setItisCodes(tim);
+        if (itisCodes.isEmpty())
             resultMessages.add("No ITIS codes found");
         result.setItisCodes(itisCodes);
         tim.setItisCodes(itisCodes);
@@ -386,7 +391,7 @@ public abstract class WydotTimBaseController {
     protected ControllerResult validateInputVsl(WydotTimVsl tim) {
 
         ControllerResult result = new ControllerResult();
-        List<String> resultMessages = new ArrayList<String>();
+        List<String> resultMessages = new ArrayList<>();
 
         // get route number
         if (tim.getDirection() != null)
@@ -423,7 +428,7 @@ public abstract class WydotTimBaseController {
 
         // set itis codes
         List<String> itisCodes = setItisCodes.setItisCodesVsl(tim);
-        if (itisCodes.size() == 0)
+        if (itisCodes.isEmpty())
             resultMessages.add("No ITIS codes found");
         result.setItisCodes(itisCodes);
         tim.setItisCodes(itisCodes);
@@ -655,7 +660,7 @@ public abstract class WydotTimBaseController {
         List<Milepost> milepostsAll = wydotTimService.getAllMilepostsForTim(wydotTim);
 
         // Expire existing tims
-        List<Long> existingTimIds = new ArrayList<Long>();
+        List<Long> existingTimIds = new ArrayList<>();
         for (ActiveTim existingTim : existingTims) {
             existingTimIds.add(existingTim.getActiveTimId());
         }
@@ -727,4 +732,12 @@ public abstract class WydotTimBaseController {
         anchor.setDirection(firstPoint.getDirection());
         return anchor;
     }
+
+    public List<Coordinate> milepostToGeometry(List<Milepost> mileposts) {
+		var timGeometry = new ArrayList<Coordinate>();
+		for (Milepost milepost : mileposts) {
+			timGeometry.add(new Coordinate(milepost.getLatitude(), milepost.getLongitude()));
+		}
+		return timGeometry;
+	}
 }
