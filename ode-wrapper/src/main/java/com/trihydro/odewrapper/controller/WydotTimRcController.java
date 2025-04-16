@@ -31,6 +31,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.trihydro.library.service.MilepostService;
+
 import io.swagger.annotations.Api;
 import us.dot.its.jpo.ode.plugin.j2735.timstorage.FrameType.TravelerInfoType;
 
@@ -46,9 +48,9 @@ public class WydotTimRcController extends WydotTimBaseController {
     public WydotTimRcController(BasicConfiguration _basicConfiguration, WydotTimService _wydotTimService,
             TimTypeService _timTypeService, SetItisCodes _setItisCodes, ActiveTimService _activeTimService,
             RestTemplateProvider _restTemplateProvider, MilepostReduction _milepostReduction, Utility _utility,
-            TimGenerationHelper _timGenerationHelper) {
+            TimGenerationHelper _timGenerationHelper, MilepostService _milepostService) {
         super(_basicConfiguration, _wydotTimService, _timTypeService, _setItisCodes, _activeTimService,
-                _restTemplateProvider, _milepostReduction, _utility, _timGenerationHelper);
+                _restTemplateProvider, _milepostReduction, _utility, _timGenerationHelper, _milepostService);
         configuration = _basicConfiguration;
     }
 
@@ -159,13 +161,11 @@ public class WydotTimRcController extends WydotTimBaseController {
 
     public void processRequestAsync(List<WydotTim> wydotTims) {
         // An Async task always executes in new thread
-        new Thread(new Runnable() {
-            public void run() {
-                var startTime = getStartTime();
-                for (WydotTim tim : wydotTims) {
-                    processRequest(tim, getTimType(type), startTime, null, null, ContentEnum.advisory,
-                            TravelerInfoType.advisory);
-                }
+        new Thread(() -> {
+            var startTime = getStartTime();
+            for (WydotTim tim : wydotTims) {
+                processRequest(tim, getTimType(type), startTime, null, null, ContentEnum.advisory,
+                        TravelerInfoType.advisory);
             }
         }).start();
     }
