@@ -127,7 +127,7 @@ public class WydotTimIncidentController extends WydotTimBaseController {
 
             WydotTimIncident timToSend = tim.copy();
             timToSend.setItisCodes(itisCodes);
-            String clientIdWithItis = tim.getClientId() + '-' + itisCodeEntry.replace(' ', '-');
+            String clientIdWithItis = tim.getClientId() + '-' + tim.getDirection() + '-' + itisCodeEntry.replace(' ', '-');
             timToSend.setClientId(clientIdWithItis);
             timsToSend.add(timToSend);
         }
