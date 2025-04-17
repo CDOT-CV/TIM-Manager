@@ -1,6 +1,7 @@
 package com.trihydro.odewrapper.helpers;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import com.trihydro.library.helpers.Utility;
@@ -260,6 +261,15 @@ public class SetItisCodes {
         itisCodes.add("8739"); // Pounds
 
         return itisCodes;
+    }
+
+    public static String getItisCodeAbbreviation(String itisCodes) {
+        List<String> words = Arrays.asList(itisCodes.split(" "));
+        if (words.size() < 3) {
+            return itisCodes.replace(" ", "-");
+        }
+
+        return words.stream().map(word -> word.substring(0, 1)).reduce("", String::concat);
     }
 
     /**
