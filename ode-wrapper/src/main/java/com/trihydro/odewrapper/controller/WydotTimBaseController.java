@@ -401,12 +401,6 @@ public abstract class WydotTimBaseController {
                 && !tim.getDirection().equalsIgnoreCase("b")) {
             resultMessages.add("direction not supported");
         }
-        if (tim.getStartPoint() == null || !tim.getStartPoint().isValid()) {
-            resultMessages.add("Invalid startPoint");
-        }
-        if (tim.getEndPoint() == null || !tim.getEndPoint().isValid()) {
-            resultMessages.add("Invalid endPoint");
-        }
         if (tim.getRoute() == null) {
             resultMessages.add("Null value for route");
         }
@@ -416,11 +410,11 @@ public abstract class WydotTimBaseController {
         if (tim.getDeviceId() == null) {
             resultMessages.add("Null value for deviceId");
         } else {
-            tim.setClientId(tim.getDeviceId());
+            tim.setClientId(tim.getClientId());
         }
 
         // set itis codes
-        List<String> itisCodes = setItisCodes.setItisCodesVsl(tim);
+        List<String> itisCodes = setItisCodes.setItisCodes(tim);
         if (itisCodes.isEmpty())
             resultMessages.add("No ITIS codes found");
         result.setItisCodes(itisCodes);
