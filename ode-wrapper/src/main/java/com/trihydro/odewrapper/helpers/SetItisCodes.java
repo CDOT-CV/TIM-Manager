@@ -105,30 +105,6 @@ public class SetItisCodes {
         return text;
     }
 
-    public List<String> setItisCodesVsl(WydotTimVsl wydotTim) {
-
-        List<String> items = new ArrayList<>();
-
-        // speed limit itis code
-        ItisCode speedLimit = getItisCodes().stream().filter(x -> x.getDescription().equals("speed limit")).findFirst()
-                .orElse(null);
-        if (speedLimit != null) {
-            items.add(speedLimit.getItisCode().toString());
-        }
-
-        // number e.g 50, convert to ITIS code
-        Integer speed = wydotTim.getSpeed() + 12544;
-        items.add(speed.toString());
-
-        // mph itis code
-        ItisCode mph = getItisCodes().stream().filter(x -> x.getDescription().equals("mph")).findFirst().orElse(null);
-        if (mph != null) {
-            items.add(mph.getItisCode().toString());
-        }
-
-        return items;
-    }
-
     public List<String> setItisCodesParking(WydotTimParking wydotTim) {
 
         // check to see if code exists
