@@ -353,12 +353,12 @@ public class MilepostController extends BaseController {
 	@RequestMapping(method = RequestMethod.GET, value="/clear-milepost-cache")
 	public ResponseEntity<String> clearMilepostCache() {
 		utility.logWithDate("Clearing milepost cache");
-		List<String> timIDs = new ArrayList<>(milepostCache.keySet());
-		List<String> activeTimIds = getActiveTimIds();
+		List<String> clientIDs = new ArrayList<>(milepostCache.keySet());
+		List<String> activeTimClientIds = getActiveTimIds();
 		// remove all active TIM IDs from the list of milepost cache TIM IDs
-		timIDs.removeAll(activeTimIds);
-		for (String timID : timIDs) {
-			milepostCache.remove(timID);
+		clientIDs.removeAll(activeTimClientIds);
+		for (String clientID : clientIDs) {
+			milepostCache.remove(clientID);
 		}
 		return ResponseEntity.ok("Milepost cache cleared successfully");
 	}
