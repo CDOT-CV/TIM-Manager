@@ -39,11 +39,11 @@ public class RsuService {
     protected DbInteractions dbInteractions;
 
     @Autowired
-    public void InjectDependencies(ProcessFactory processFactory, BasicConfiguration config, DbInteractions _dbInteractions, Utility utility) {
+    public void InjectDependencies(ProcessFactory processFactory, BasicConfiguration config, DbInteractions dbInteractions, Utility utility) {
         this.processFactory = processFactory;
         this.config = config;
         this.utility = utility;
-        this.dbInteractions = _dbInteractions;
+        this.dbInteractions = dbInteractions;
     }
 
     /**
