@@ -164,7 +164,7 @@ ALTER TABLE computed_lane ALTER COLUMN OFFSET_SMALL_Y SET NOT NULL;
 ALTER TABLE computed_lane ALTER COLUMN OFFSET_LARGE_Y SET NOT NULL;
 
 
-CREATE TABLE status_log (
+CREATE TABLE IF NOT EXISTS status_log (
 	log_id bigint NOT NULL,
 	status_time timestamp NOT NULL,
 	entity_id integer NOT NULL,
@@ -279,7 +279,7 @@ ALTER TABLE data_list ALTER COLUMN LANE_ANGLE SET NOT NULL;
 ALTER TABLE data_list ADD CONSTRAINT fk_node_xy_data_list FOREIGN KEY (node_xy_id) REFERENCES node_xy(node_xy_id) ON DELETE NO ACTION NOT DEFERRABLE INITIALLY IMMEDIATE;
 
 
-CREATE TABLE incident_action_lut (
+CREATE TABLE IF NOT EXISTS incident_action_lut (
 	description varchar(60),
 	code varchar(10),
 	itis_code_id bigint,
