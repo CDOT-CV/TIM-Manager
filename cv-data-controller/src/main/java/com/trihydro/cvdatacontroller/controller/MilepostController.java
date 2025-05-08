@@ -314,13 +314,13 @@ public class MilepostController extends BaseController {
 	@RequestMapping(method = RequestMethod.POST, value="/set-milepost-cache")
 	public ResponseEntity<String> setMilepostCache(@RequestBody SetMilepostCacheRequest milepostCacheBody) {
 		
-		utility.logWithDate("Setting milepost cache for timID: " + milepostCacheBody.getTimID());
-
-		if (milepostCacheBody.getMileposts().size() == 0 || milepostCacheBody.getTimID() == null) {
+		if (milepostCacheBody.getMileposts().isEmpty() || milepostCacheBody.getTimID() == null) {
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid Request: please provide a valid milepost list and timID");
 		}
 		if (milepostCache.containsKey(milepostCacheBody.getTimID())) {
-			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Milepost cache already exists for timID: " + milepostCacheBody.getTimID());
+			utility.logWithDate("Updating milepost cache for timID: " + milepostCacheBody.getTimID());
+		} else {
+			utility.logWithDate("Setting milepost cache for timID: " + milepostCacheBody.getTimID());
 		}
 		milepostCache.put(milepostCacheBody.getTimID(), milepostCacheBody.getMileposts());
 		return ResponseEntity.ok("Milepost cache set successfully for timID: " + milepostCacheBody.getTimID());
@@ -354,7 +354,7 @@ public class MilepostController extends BaseController {
 	public ResponseEntity<String> clearMilepostCache() {
 		utility.logWithDate("Clearing milepost cache");
 		List<String> clientIDs = new ArrayList<>(milepostCache.keySet());
-		List<String> activeTimClientIds = getActiveTimIds();
+		List<String> activeTimClientIds = getActiveTimClientIds();
 		// remove all active TIM IDs from the list of milepost cache TIM IDs
 		clientIDs.removeAll(activeTimClientIds);
 		for (String clientID : clientIDs) {
@@ -363,7 +363,7 @@ public class MilepostController extends BaseController {
 		return ResponseEntity.ok("Milepost cache cleared successfully");
 	}
 
-	private List<String> getActiveTimIds() {
+	private List<String> getActiveTimClientIds() {
 		List<String> activeTimIds = new ArrayList<>();
 		String sql = "SELECT client_id FROM active_tim WHERE marked_for_deletion = False";
 		try (Connection connection = dbInteractions.getConnectionPool();
