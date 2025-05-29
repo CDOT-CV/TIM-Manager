@@ -1,27 +1,26 @@
 package com.trihydro.cvdatacontroller.controller;
 
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.trihydro.library.model.WydotRsu;
-import com.trihydro.library.model.WydotRsuTim;
-
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+
+import com.trihydro.library.model.WydotRsu;
+import com.trihydro.library.model.WydotRsuTim;
 
 public class RsuControllerTest extends TestBase<RsuController> {
 
     @Test
     public void SelectAllRsus_SUCCESS() throws SQLException {
         // Arrange
-        String selectStatement = "select * from rsu inner join rsu_view on rsu.deviceid = rsu_view.deviceid order by milepost asc";
+        String selectStatement = "select rsu_id, ST_X(ST_AsText(geography)) as longitude, ST_Y(ST_AsText(geography)) as latitude, ipv4_address, primary_route, milepost from rsus order by milepost asc";
 
         // Act
         ResponseEntity<List<WydotRsu>> data = uut.SelectAllRsus();
@@ -33,7 +32,7 @@ public class RsuControllerTest extends TestBase<RsuController> {
         verify(mockRs).getString("IPV4_ADDRESS");
         verify(mockRs).getBigDecimal("LATITUDE");
         verify(mockRs).getBigDecimal("LONGITUDE");
-        verify(mockRs).getString("ROUTE");
+        verify(mockRs).getString("PRIMARY_ROUTE");
         verify(mockRs).getDouble("MILEPOST");
         verify(mockStatement).close();
         verify(mockConnection).close();
@@ -43,7 +42,7 @@ public class RsuControllerTest extends TestBase<RsuController> {
     @Test
     public void SelectAllRsus_FAIL() throws SQLException {
         // Arrange
-        String selectStatement = "select * from rsu inner join rsu_view on rsu.deviceid = rsu_view.deviceid order by milepost asc";
+        String selectStatement = "select rsu_id, ST_X(ST_AsText(geography)) as longitude, ST_Y(ST_AsText(geography)) as latitude, ipv4_address, primary_route, milepost from rsus order by milepost asc";
         doThrow(new SQLException()).when(mockRs).getInt("RSU_ID");
         // Act
         ResponseEntity<List<WydotRsu>> data = uut.SelectAllRsus();
@@ -57,48 +56,14 @@ public class RsuControllerTest extends TestBase<RsuController> {
     }
 
     @Test
-    public void SelectActiveRsus_SUCCESS() throws SQLException {
-        // Arrange
-        String selectStatement = "select rsu.*, rsu_view.latitude, rsu_view.longitude, rsu_view.ipv4_address from rsu inner join rsu_view on rsu.deviceid = rsu_view.deviceid where rsu_view.status = 'Existing'";
-
-        // Act
-        ResponseEntity<List<WydotRsu>> data = uut.SelectActiveRsus();
-
-        // Assert
-        Assertions.assertEquals(HttpStatus.OK, data.getStatusCode());
-        verify(mockStatement).executeQuery(selectStatement);
-        verify(mockRs).getString("IPV4_ADDRESS");
-        verify(mockRs).getBigDecimal("LATITUDE");
-        verify(mockRs).getBigDecimal("LONGITUDE");
-        verify(mockStatement).close();
-        verify(mockConnection).close();
-        verify(mockRs).close();
-    }
-
-    @Test
-    public void SelectActiveRsus_FAIL() throws SQLException {
-        // Arrange
-        String selectStatement = "select rsu.*, rsu_view.latitude, rsu_view.longitude, rsu_view.ipv4_address from rsu inner join rsu_view on rsu.deviceid = rsu_view.deviceid where rsu_view.status = 'Existing'";
-        doThrow(new SQLException()).when(mockRs).getString("IPV4_ADDRESS");
-
-        // Act
-        ResponseEntity<List<WydotRsu>> data = uut.SelectActiveRsus();
-
-        // Assert
-        Assertions.assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, data.getStatusCode());
-        verify(mockStatement).executeQuery(selectStatement);
-        verify(mockStatement).close();
-        verify(mockConnection).close();
-        verify(mockRs).close();
-    }
-
-    @Test
     public void GetFullRsusTimIsOn_SUCCESS() throws SQLException {
         // Arrange
         Long timId = -1l;
-        String selectStatement = "select rsu.*, tim_rsu.rsu_index, rsu_view.latitude, rsu_view.longitude, rsu_view.ipv4_address ";
-        selectStatement += "from rsu inner join rsu_view on rsu.deviceid = rsu_view.deviceid ";
-        selectStatement += "inner join tim_rsu on tim_rsu.rsu_id = rsu.rsu_id where tim_rsu.tim_id = " + timId;
+        String selectStatement = "select rsus.rsu_id, rsu_credentials.username as update_username, " + 
+        "rsu_credentials.password as update_password, ST_X(ST_AsText(rsus.geography)) as longitude, " + 
+        "ST_Y(ST_AsText(rsus.geography)) as latitude, rsus.ipv4_address, tim_rsu.rsu_index from rsus " + 
+        "inner join rsu_credentials on rsu_credentials.credential_id = rsus.credential_id inner join " + 
+        "tim_rsu on tim_rsu.rsu_id = rsus.rsu_id where tim_rsu.tim_id = " + timId;
 
         // Act
         ResponseEntity<List<WydotRsuTim>> data = uut.GetFullRsusTimIsOn(timId);
@@ -121,8 +86,11 @@ public class RsuControllerTest extends TestBase<RsuController> {
     public void GetFullRsusTimIsOn_FAIL() throws SQLException {
         // Arrange
         Long timId = -1l;
-        String selectStatement = "select rsu.*, tim_rsu.rsu_index, rsu_view.latitude, rsu_view.longitude, rsu_view.ipv4_address from rsu inner join rsu_view on rsu.deviceid = rsu_view.deviceid inner join tim_rsu on tim_rsu.rsu_id = rsu.rsu_id where tim_rsu.tim_id = "
-                + timId;
+        String selectStatement = "select rsus.rsu_id, rsu_credentials.username as update_username, " + 
+        "rsu_credentials.password as update_password, ST_X(ST_AsText(rsus.geography)) as longitude, " + 
+        "ST_Y(ST_AsText(rsus.geography)) as latitude, rsus.ipv4_address, tim_rsu.rsu_index from rsus " + 
+        "inner join rsu_credentials on rsu_credentials.credential_id = rsus.credential_id inner join " + 
+        "tim_rsu on tim_rsu.rsu_id = rsus.rsu_id where tim_rsu.tim_id = " + timId;
         doThrow(new SQLException()).when(mockRs).getString("IPV4_ADDRESS");
 
         // Act
@@ -140,8 +108,9 @@ public class RsuControllerTest extends TestBase<RsuController> {
     public void SelectRsusByRoute_SUCCESS() throws SQLException {
         // Arrange
         String route = "I80";
-        String selectStatement = "select * from rsu inner join rsu_view on rsu.deviceid = rsu_view.deviceid where rsu_view.route like '%"
-                + route + "%' and rsu_view.status = 'Existing' order by milepost asc";
+        String selectStatement = "select rsu_id, ST_X(ST_AsText(geography)) as longitude, " + 
+        "ST_Y(ST_AsText(geography)) as latitude, ipv4_address, primary_route, milepost from rsus " + 
+        "where primary_route like %'%" + route + "%'";
         // Act
         ResponseEntity<ArrayList<WydotRsu>> data = uut.SelectRsusByRoute(route);
 
@@ -163,8 +132,9 @@ public class RsuControllerTest extends TestBase<RsuController> {
     public void SelectRsusByRoute_FAIL() throws SQLException {
         // Arrange
         String route = "I80";
-        String selectStatement = "select * from rsu inner join rsu_view on rsu.deviceid = rsu_view.deviceid where rsu_view.route like '%"
-                + route + "%' and rsu_view.status = 'Existing' order by milepost asc";
+        String selectStatement = "select rsu_id, ST_X(ST_AsText(geography)) as longitude, " + 
+        "ST_Y(ST_AsText(geography)) as latitude, ipv4_address, primary_route, milepost from rsus " + 
+        "where primary_route like %'%" + route + "%'";
         doThrow(new SQLException()).when(mockRs).getInt("RSU_ID");
         // Act
         ResponseEntity<ArrayList<WydotRsu>> data = uut.SelectRsusByRoute(route);

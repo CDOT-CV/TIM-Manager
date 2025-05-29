@@ -4,23 +4,35 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
 
-import com.trihydro.library.helpers.Utility;
-
 import org.apache.commons.lang3.StringUtils;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.Producer;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
-@Component
-public class KafkaFactory {
-    private Utility utility;
+import com.google.common.base.Strings;
+import com.trihydro.library.helpers.Utility;
 
-    @Autowired
-    public KafkaFactory(Utility _utility) {
+@Component
+@ConfigurationProperties("data-service-library.kafka")
+public class KafkaFactory {
+    private final Utility utility;
+    private String kafkaType;
+    private String confluentKey;
+    private String confluentSecret;
+    private final Properties kafkaProperties;
+
+    public KafkaFactory(Utility _utility) throws IllegalArgumentException {
         utility = _utility;
+        kafkaType = getKafkaType();
+
+        if ("CONFLUENT".equalsIgnoreCase(kafkaType)) {
+            kafkaProperties = addConfluentProperties(new Properties());
+        } else {
+            kafkaProperties = new Properties();
+        }
     }
 
     /**
@@ -109,6 +121,8 @@ public class KafkaFactory {
             props.put("max.poll.records", maxPollRecords.intValue());
         }
 
+        props.putAll(kafkaProperties);
+
         var consumer = new KafkaConsumer<String, String>(props);
         consumer.subscribe(topics);
 
@@ -131,6 +145,51 @@ public class KafkaFactory {
         props.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer");
         props.put("value.serializer", "org.apache.kafka.common.serialization.StringSerializer");
 
-        return new KafkaProducer<String, String>(props);
+        props.putAll(kafkaProperties);
+
+        return new KafkaProducer<>(props);
+    }
+
+    Properties addConfluentProperties(Properties props) {
+        String username = getConfluentKey();
+        String password = getConfluentSecret();
+
+        if (Strings.isNullOrEmpty(username) || Strings.isNullOrEmpty(password)) {
+            throw new IllegalArgumentException("CONFLUENT_KEY and CONFLUENT_SECRET must be set in the environment");
+        }
+
+        String auth = "org.apache.kafka.common.security.plain.PlainLoginModule required " +
+        "username=\"" + username + "\" " +
+        "password=\"" + password + "\";";
+        props.put("sasl.jaas.config", auth);
+        props.put("ssl.endpoint.identification.algorithm", "https");
+        props.put("security.protocol", "SASL_SSL");
+        props.put("sasl.mechanism", "PLAIN");
+
+        return props;
+    }
+
+    final String getKafkaType() {
+        return kafkaType;
+    }
+
+    public String getConfluentKey() {
+        return confluentKey;
+    }
+
+    public void setConfluentKey(String confluentKey) {
+        this.confluentKey = confluentKey;
+    }
+
+    public String getConfluentSecret() {
+        return confluentSecret;
+    }
+
+    public void setConfluentSecret(String confluentSecret) {
+        this.confluentSecret = confluentSecret;
+    }
+
+    public void setKafkaType(String kafkaType) {
+        this.kafkaType = kafkaType;
     }
 }
