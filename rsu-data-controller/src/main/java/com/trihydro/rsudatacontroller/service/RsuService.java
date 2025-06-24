@@ -6,8 +6,6 @@ import java.io.InputStreamReader;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -39,11 +37,11 @@ public class RsuService {
     protected DbInteractions dbInteractions;
 
     @Autowired
-    public void InjectDependencies(ProcessFactory processFactory, BasicConfiguration config, DbInteractions _dbInteractions, Utility utility) {
+    public void InjectDependencies(ProcessFactory processFactory, BasicConfiguration config, DbInteractions dbInteractions, Utility utility) {
         this.processFactory = processFactory;
         this.config = config;
         this.utility = utility;
-        this.dbInteractions = _dbInteractions;
+        this.dbInteractions = dbInteractions;
     }
 
     /**
