@@ -3,6 +3,7 @@ package com.trihydro.odewrapper.controller;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 
@@ -62,29 +63,34 @@ public class WydotTimRcController extends WydotTimBaseController {
 
         utility.logWithDate(dateFormat.format(date) + " - Create Update RC TIM", this.getClass());
         String post = gson.toJson(timRcList);
-        utility.logWithDate(post.toString(), this.getClass());
+        utility.logWithDate(post, this.getClass());
 
-        List<ControllerResult> resultList = new ArrayList<ControllerResult>();
-        List<ControllerResult> errList = new ArrayList<ControllerResult>();
-        ControllerResult resultTim = null;
-        List<WydotTim> timsToSend = new ArrayList<WydotTim>();
+        List<ControllerResult> resultList = new ArrayList<>();
+        List<ControllerResult> errList = new ArrayList<>();
+        ControllerResult resultTim;
+        List<WydotTim> timsToSend = new ArrayList<>();
 
         // build TIM
         for (WydotTimRc wydotTim : timRcList.getTimRcList()) {
 
             resultTim = validateInputRc(wydotTim);
 
-            // workaround for geometry start/end point population 
-            WydotTimRc wydotTimRc = wydotTim.copy();
-
-            if (resultTim.getResultMessages().size() > 0) {
+            if (!resultTim.getResultMessages().isEmpty()) {
                 resultList.add(resultTim);
                 errList.add(resultTim);
                 continue;
             }
 
-            // add TIM to list for processing later
-            timsToSend.add(wydotTimRc);
+            // Each ITIS string in the TIM corresponds to a single TIM to be sent to ODE
+            for (String itisCodeEntry : wydotTim.getItisCodes()) {
+                List<String> itisCodes = Arrays.asList(itisCodeEntry.split(" "));
+                WydotTimRc timToSend = wydotTim.copy();
+                timToSend.setItisCodes(itisCodes);
+                var itisCodeAbb = SetItisCodes.getItisCodeAbbreviation(itisCodeEntry);
+                String clientIdWithItis = wydotTim.getClientId() + '-' + wydotTim.getDirection() + '-' + itisCodeAbb;
+                timToSend.setClientId(clientIdWithItis);
+                timsToSend.add(timToSend);
+            }
 
             resultTim.getResultMessages().add("success");
             resultList.add(resultTim);
@@ -93,7 +99,7 @@ public class WydotTimRcController extends WydotTimBaseController {
         processRequestAsync(timsToSend);
 
         String responseMessage = gson.toJson(resultList);
-        if (errList.size() > 0) {
+        if (!errList.isEmpty()) {
             utility.logWithDate("Failed to send TIMs: " + gson.toJson(errList), this.getClass());
         }
         return ResponseEntity.status(HttpStatus.OK).body(responseMessage);

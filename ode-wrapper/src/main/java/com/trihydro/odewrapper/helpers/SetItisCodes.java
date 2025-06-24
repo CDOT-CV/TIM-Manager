@@ -64,39 +64,6 @@ public class SetItisCodes {
         return items;
     }
 
-    public List<String> setItisCodesRc(WydotTimRc wydotTim) {
-
-        List<String> items = new ArrayList<>();
-
-        if (wydotTim.getItisCodes() == null) {
-            return items;
-        }
-
-        ItisCode code;
-
-        for (String item : wydotTim.getItisCodes()) {
-
-            Integer itisCode = Integer.valueOf(item);
-
-            var alphaItis = getCustomAlphabetic(itisCode);
-            if (alphaItis != null) {
-                items.add(alphaItis);
-                continue;
-            }
-            // map "closed" itis code
-            if (itisCode == 769) {
-                code = getItisCodes().stream().filter(x -> x.getItisCode().equals(770)).findFirst().orElse(null);
-            } else {
-                code = getItisCodes().stream().filter(x -> x.getItisCode().equals(itisCode)).findFirst().orElse(null);
-            }
-
-            if (code != null)
-                items.add(code.getItisCode().toString());
-        }
-
-        return items;
-    }
-
     public String getCustomAlphabetic(Integer itisCode) {
         String text = null;
         var en = CustomItisEnum.valueOf(itisCode);
