@@ -486,7 +486,7 @@ public class ActiveTimControllerTest extends TestBase<ActiveTimController> {
         // Arrange
         String clientId = "clientId";
         String selectStatement = "select * from active_tim where CLIENT_ID like '" + clientId
-                + "\\%BUFF_-%' ESCAPE '\\'";
+                + "\\%BUFF-%' ESCAPE '\\'";
 
         // Act
         ResponseEntity<List<ActiveTim>> data = uut.GetBufferTimsByClientId(clientId);
@@ -518,7 +518,7 @@ public class ActiveTimControllerTest extends TestBase<ActiveTimController> {
         // Arrange
         String clientId = "clientId";
         String selectStatement = "select * from active_tim where CLIENT_ID like '" + clientId
-                + "\\%BUFF_-%' ESCAPE '\\'";
+                + "\\%BUFF-%' ESCAPE '\\'";
 
         doThrow(new SQLException()).when(mockRs).getLong("ACTIVE_TIM_ID");
 

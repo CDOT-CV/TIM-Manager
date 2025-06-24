@@ -70,7 +70,7 @@ public class SetItisCodesTest {
         itisCodes.add("1309");
         tim.setItisCodes(itisCodes);
         // Act
-        var result = uut.setItisCodesRc(tim);
+        var result = uut.setItisCodes(tim);
 
         // Assert
         Assertions.assertEquals(2, result.size());
@@ -86,7 +86,7 @@ public class SetItisCodesTest {
         itisCodes.add("13");
         tim.setItisCodes(itisCodes);
         // Act
-        var result = uut.setItisCodesRc(tim);
+        var result = uut.setItisCodes(tim);
 
         // Assert
         Assertions.assertEquals(0, result.size());
@@ -102,7 +102,7 @@ public class SetItisCodesTest {
         itisCodes.add("769");
         tim.setItisCodes(itisCodes);
         // Act
-        var result = uut.setItisCodesRc(tim);
+        var result = uut.setItisCodes(tim);
 
         // Assert
         Assertions.assertEquals(2, result.size());
@@ -119,7 +119,7 @@ public class SetItisCodesTest {
         itisCodes.add(String.valueOf(CustomItisEnum.blowOver.getValue()));
         tim.setItisCodes(itisCodes);
         // Act
-        var result = uut.setItisCodesRc(tim);
+        var result = uut.setItisCodes(tim);
 
         // Assert
         Assertions.assertEquals(2, result.size());
