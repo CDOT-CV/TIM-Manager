@@ -676,7 +676,7 @@ public abstract class WydotTimBaseController {
 
         // create TIM
         WydotTravelerInputData timToSend = wydotTimService.createTim(wydotTim, timType.getType(), startDateTime,
-                endDateTime, content, frameType, allMileposts, reducedMileposts, anchor);
+                endDateTime, content, frameType, allMileposts, reducedMileposts, anchor, configuration.getDotGnisId());
 
         if (timToSend == null) {
             return;
@@ -704,7 +704,7 @@ public abstract class WydotTimBaseController {
 
     /**
      * This method returns the anchor point for the given mileposts.
-     * 
+     *
      * @param firstPoint  The first milepost.
      * @param secondPoint The second milepost.
      * @return The anchor point as a Milepost.
