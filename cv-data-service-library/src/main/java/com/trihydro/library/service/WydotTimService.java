@@ -150,6 +150,9 @@ public class WydotTimService {
         // Set PacketId as an 18-character hex string: DOT GNIS ID + random hex suffix
         Random rand = new Random();
         StringBuffer sb = new StringBuffer();
+        if (dotGnisId.equals("000000")) {
+            utility.logWithDate("WARNING: DOT GNIS ID is set to default value of 000000. This is not a valid GNIS ID and should be changed in the configuration.");
+        }
         sb.append(dotGnisId);
         while (sb.length() < 18) {
             sb.append(Integer.toHexString(rand.nextInt()));

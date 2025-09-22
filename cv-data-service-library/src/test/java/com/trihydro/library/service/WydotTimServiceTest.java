@@ -343,6 +343,33 @@ public class WydotTimServiceTest {
     }
 
     @Test
+    public void createTim_SetsRandomPacketIdUnsetGNISId() {
+        // Arrange
+        String timTypeStr = "A";
+        String startDateTime = "2023-01-01T00:00:00.000Z";
+        String endDateTime = "2023-01-01T01:00:00.000Z";
+        ContentEnum content = ContentEnum.workZone;
+        TravelerInfoType frameType = TravelerInfoType.advisory;
+        List<Milepost> allMileposts = new ArrayList<>();
+        List<Milepost> reducedMileposts = new ArrayList<>();
+        Milepost anchor = new Milepost();
+        String dotGnisId = "000000";
+
+        WydotTravelerInputData timToSend = getMockWydotTravelerInputDataWithDataFrame();
+
+        when(mockCreateBaseTimUtil.buildTim(any(), any(), any(), any(), any(), any(), any())).thenReturn(timToSend);
+
+        // Act
+        WydotTravelerInputData result = uut.createTim(new WydotTim(), timTypeStr, startDateTime, endDateTime, content, frameType, allMileposts, reducedMileposts, anchor, dotGnisId);
+
+        // Assert
+        assertNotNull(result.getTim().getPacketID());
+        assertEquals(18, result.getTim().getPacketID().length());
+        assertTrue(result.getTim().getPacketID().matches("[0-9A-F]+"));
+        verify(mockUtility).logWithDate("WARNING: DOT GNIS ID is set to default value of 000000. This is not a valid GNIS ID and should be changed in the configuration.");
+    }
+
+    @Test
     public void getAllMilepostsForTim_EndPointNotNull() {
         // Arrange
         WydotTim wydotTim = new WydotTim();
