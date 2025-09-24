@@ -68,7 +68,7 @@ public class WydotTimVslControllerTest {
 		itisCodes.add(ic);
 		List<String> itisCodesIncident = new ArrayList<>();
 		itisCodesIncident.add("531");
-		lenient().doReturn(itisCodesIncident).when(mockSetItisCodes).setItisCodesVsl(any());
+		lenient().doReturn(itisCodesIncident).when(mockSetItisCodes).setItisCodes(any());
 		lenient().doReturn(itisCodes).when(mockSetItisCodes).getItisCodes();
 
 		lenient().doNothing().when(uut).processRequestAsync(any());

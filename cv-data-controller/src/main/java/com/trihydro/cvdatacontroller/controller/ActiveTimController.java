@@ -513,7 +513,7 @@ public class ActiveTimController extends BaseController {
 			connection = dbInteractions.getConnectionPool();
 			statement = connection.createStatement();
 			String query = "select * from active_tim where CLIENT_ID like '" + clientId
-					+ "\\%BUFF_-%' ESCAPE '\\'";
+					+ "\\%BUFF-%' ESCAPE '\\'";
 
 			rs = statement.executeQuery(query);
 			activeTims = getActiveTimFromRS(rs, false);

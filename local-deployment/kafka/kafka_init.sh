@@ -13,6 +13,7 @@ echo 'Creating kafka topics'
 /opt/bitnami/kafka/bin/kafka-topics.sh --create --if-not-exists  --topic "topic.OdeBsmJson" --bootstrap-server kafka:9092 --replication-factor 1 --partitions 1
 /opt/bitnami/kafka/bin/kafka-topics.sh --create --if-not-exists  --topic "topic.FilteredOdeBsmJson" --bootstrap-server kafka:9092 --replication-factor 1 --partitions 1
 /opt/bitnami/kafka/bin/kafka-topics.sh --create --if-not-exists  --topic "topic.OdeTimJson" --bootstrap-server kafka:9092 --replication-factor 1 --partitions 1
+/opt/bitnami/kafka/bin/kafka-topics.sh --create --if-not-exists  --topic "topic.OdeTimJsonTMCFiltered" --bootstrap-server kafka:9092 --replication-factor 1 --partitions 1
 /opt/bitnami/kafka/bin/kafka-topics.sh --create --if-not-exists  --topic "topic.OdeTimBroadcastJson" --bootstrap-server kafka:9092 --replication-factor 1 --partitions 1
 /opt/bitnami/kafka/bin/kafka-topics.sh --create --if-not-exists  --topic "topic.J2735TimBroadcastJson" --bootstrap-server kafka:9092 --replication-factor 1 --partitions 1
 /opt/bitnami/kafka/bin/kafka-topics.sh --create --if-not-exists  --topic "topic.OdeDriverAlertJson" --bootstrap-server kafka:9092 --replication-factor 1 --partitions 1

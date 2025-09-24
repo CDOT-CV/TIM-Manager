@@ -50,6 +50,7 @@ INSERT INTO itis_code (itis_code_id,description,category_id,itis_code) VALUES (3
 INSERT INTO itis_code (itis_code_id,description,category_id,itis_code) VALUES (4,E'Hazardous material spill',2,550);
 INSERT INTO itis_code (itis_code_id,description,category_id,itis_code) VALUES (5,E'Closed',2,770);
 INSERT INTO itis_code (itis_code_id,description,category_id,itis_code) VALUES (6,E'Closed for the season',2,774);
+INSERT INTO itis_code (itis_code_id,description,category_id,itis_code) VALUES (7,E'Closed to traffic',2,769);
 INSERT INTO itis_code (itis_code_id,description,category_id,itis_code) VALUES (8,E'Avalanche control activities',2,1042);
 INSERT INTO itis_code (itis_code_id,description,category_id,itis_code) VALUES (10,E'Herd of animals on roadway',2,1292);
 INSERT INTO itis_code (itis_code_id,description,category_id,itis_code) VALUES (11,E'Landslide',2,1310);
@@ -96,6 +97,7 @@ INSERT INTO itis_code (itis_code_id,description,category_id,itis_code) VALUES (4
 
 -- BOWR ITIS CODES (5127, 2563, 2569, 7682, 2577, 8739 and 11589-11607)
 INSERT INTO itis_code (itis_code_id,description,category_id,itis_code) VALUES (26,E'Strong winds',2,5127);
+INSERT INTO itis_code (itis_code_id,description,category_id,itis_code) VALUES (27,E'Gusty winds',2, 5131);
 INSERT INTO itis_code (itis_code_id,description,category_id,itis_code) VALUES (428,E'Truck restriction',2,2563);
 INSERT INTO itis_code (itis_code_id,description,category_id,itis_code) VALUES (429,E'No high profile vehicles',2,2569);
 INSERT INTO itis_code (itis_code_id,description,category_id,itis_code) VALUES (430,E'Below',2,7682);
@@ -120,6 +122,54 @@ INSERT INTO itis_code (itis_code_id,description,category_id,itis_code) VALUES (4
 INSERT INTO itis_code (itis_code_id,description,category_id,itis_code) VALUES (449,E'60000',1,11605);
 INSERT INTO itis_code (itis_code_id,description,category_id,itis_code) VALUES (450,E'65000',1,11606);
 INSERT INTO itis_code (itis_code_id,description,category_id,itis_code) VALUES (451,E'70000',1,11607);
+
+-- Connecting the West ITIS Codes
+INSERT INTO itis_code (itis_code_id,description,category_id,itis_code) VALUES (500,E'May Exceed',2,7759);
+INSERT INTO itis_code (itis_code_id,description,category_id,itis_code) VALUES (501,E'Dense Fog',2,5377);
+INSERT INTO itis_code (itis_code_id,description,category_id,itis_code) VALUES (502,E'Slippery',2,5897);
+INSERT INTO itis_code (itis_code_id,description,category_id,itis_code) VALUES (503,E'Ahead',2,13569);
+INSERT INTO itis_code (itis_code_id,description,category_id,itis_code) VALUES (504,E'Right Lane',3,8196);
+INSERT INTO itis_code (itis_code_id,description,category_id,itis_code) VALUES (505,E'Left Lane',3,8195);
+INSERT INTO itis_code (itis_code_id,description,category_id,itis_code) VALUES (506,E'Center Lane',3,8197);
+INSERT INTO itis_code (itis_code_id,description,category_id,itis_code) VALUES (507,E'Blocked Ahead',3,776);
+INSERT INTO itis_code (itis_code_id,description,category_id,itis_code) VALUES (508,E'Closed Ahead',3,771);
+INSERT INTO itis_code (itis_code_id,description,category_id,itis_code) VALUES (509,E'Right',3,13579);
+INSERT INTO itis_code (itis_code_id,description,category_id,itis_code) VALUES (510,E'Left',3,13580);
+INSERT INTO itis_code (itis_code_id,description,category_id,itis_code) VALUES (511,E'Lane',3,13588);
+INSERT INTO itis_code (itis_code_id,description,category_id,itis_code) VALUES (512,E'Right Shoulder',3,8208);
+INSERT INTO itis_code (itis_code_id,description,category_id,itis_code) VALUES (513,E'Left Shoulder',3,8209);
+INSERT INTO itis_code (itis_code_id,description,category_id,itis_code) VALUES (514,E'Both Directions of Travel',3,13593);
+INSERT INTO itis_code (itis_code_id,description,category_id,itis_code) VALUES (515,E'End',3,13583);
+INSERT INTO itis_code (itis_code_id,description,category_id,itis_code) VALUES (516,E'Reduced',1,12302);
+INSERT INTO itis_code (itis_code_id,description,category_id,itis_code) VALUES (517,E'Advice',2,7712);
+
+-- Small Number Values
+INSERT INTO itis_code (itis_code_id,description,category_id,itis_code) VALUES (530,E'0',1,12542);
+INSERT INTO itis_code (itis_code_id,description,category_id,itis_code) VALUES (531,E'1',1,12543);
+INSERT INTO itis_code (itis_code_id,description,category_id,itis_code) VALUES (532,E'2',1,12544);
+INSERT INTO itis_code (itis_code_id,description,category_id,itis_code) VALUES (533,E'3',1,12545);
+INSERT INTO itis_code (itis_code_id,description,category_id,itis_code) VALUES (534,E'4',1,12546);
+INSERT INTO itis_code (itis_code_id,description,category_id,itis_code) VALUES (535,E'5',1,12547);
+INSERT INTO itis_code (itis_code_id,description,category_id,itis_code) VALUES (536,E'6',1,12548);
+INSERT INTO itis_code (itis_code_id,description,category_id,itis_code) VALUES (537,E'7',1,12549);
+INSERT INTO itis_code (itis_code_id,description,category_id,itis_code) VALUES (538,E'8',1,12550);
+INSERT INTO itis_code (itis_code_id,description,category_id,itis_code) VALUES (539,E'9',1,12551);
+INSERT INTO itis_code (itis_code_id,description,category_id,itis_code) VALUES (540,E'10',1,12552);
+INSERT INTO itis_code (itis_code_id,description,category_id,itis_code) VALUES (541,E'15',1,12557);
+INSERT INTO itis_code (itis_code_id,description,category_id,itis_code) VALUES (542,E'20',1,12562);
+INSERT INTO itis_code (itis_code_id,description,category_id,itis_code) VALUES (543,E'25',1,12567);
+INSERT INTO itis_code (itis_code_id,description,category_id,itis_code) VALUES (544,E'30',1,12572);
+INSERT INTO itis_code (itis_code_id,description,category_id,itis_code) VALUES (545,E'35',1,12577);
+INSERT INTO itis_code (itis_code_id,description,category_id,itis_code) VALUES (546,E'40',1,12582);
+INSERT INTO itis_code (itis_code_id,description,category_id,itis_code) VALUES (547,E'45',1,12587);
+INSERT INTO itis_code (itis_code_id,description,category_id,itis_code) VALUES (548,E'50',1,12592);
+INSERT INTO itis_code (itis_code_id,description,category_id,itis_code) VALUES (549,E'55',1,12597);
+INSERT INTO itis_code (itis_code_id,description,category_id,itis_code) VALUES (550,E'60',1,12602);
+INSERT INTO itis_code (itis_code_id,description,category_id,itis_code) VALUES (551,E'65',1,12607);
+INSERT INTO itis_code (itis_code_id,description,category_id,itis_code) VALUES (552,E'70',1,12612);
+INSERT INTO itis_code (itis_code_id,description,category_id,itis_code) VALUES (553,E'75',1,12617);
+INSERT INTO itis_code (itis_code_id,description,category_id,itis_code) VALUES (554,E'80',1,12622);
+
 
 COMMIT;
 

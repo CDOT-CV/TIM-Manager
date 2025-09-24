@@ -73,7 +73,7 @@ public class WydotTimRcControllerTest {
 		itisCodes.add(ic);
 		List<String> itisCodesIncident = new ArrayList<>();
 		itisCodesIncident.add("531");
-		lenient().doReturn(itisCodesIncident).when(setItisCodes).setItisCodesRc(any());
+		lenient().doReturn(itisCodesIncident).when(setItisCodes).setItisCodes(any());
 		lenient().doReturn(itisCodes).when(setItisCodes).getItisCodes();
 
 		lenient().doReturn(true).when(uut).routeSupported(isA(String.class));
@@ -148,7 +148,7 @@ public class WydotTimRcControllerTest {
 		// Arrange
 		String rcJson = "{\"timRcList\": [{ \"route\": \"I80\", \"startPoint\": {\"latitude\": 41.161446, \"longitude\": -104.653162},\"endPoint\": {\"latitude\": 41.170465, \"longitude\": -104.085578},\"roadCode\": \"LARI80WQDHLD\", \"direction\":\"b\",\"advisory\": [11]} ]}";
 		TimRcList timRcList = gson.fromJson(rcJson, TimRcList.class);
-		lenient().doReturn(new ArrayList<>()).when(setItisCodes).setItisCodesRc(any());
+		lenient().doReturn(new ArrayList<>()).when(setItisCodes).setItisCodes(any());
 
 		// Act
 		ResponseEntity<String> data = uut.createUpdateRoadConditionsTim(timRcList);

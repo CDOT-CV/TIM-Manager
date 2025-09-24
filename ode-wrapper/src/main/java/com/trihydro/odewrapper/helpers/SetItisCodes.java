@@ -1,6 +1,7 @@
 package com.trihydro.odewrapper.helpers;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import com.trihydro.library.helpers.Utility;
@@ -63,39 +64,6 @@ public class SetItisCodes {
         return items;
     }
 
-    public List<String> setItisCodesRc(WydotTimRc wydotTim) {
-
-        List<String> items = new ArrayList<>();
-
-        if (wydotTim.getItisCodes() == null) {
-            return items;
-        }
-
-        ItisCode code;
-
-        for (String item : wydotTim.getItisCodes()) {
-
-            Integer itisCode = Integer.valueOf(item);
-
-            var alphaItis = getCustomAlphabetic(itisCode);
-            if (alphaItis != null) {
-                items.add(alphaItis);
-                continue;
-            }
-            // map "closed" itis code
-            if (itisCode == 769) {
-                code = getItisCodes().stream().filter(x -> x.getItisCode().equals(770)).findFirst().orElse(null);
-            } else {
-                code = getItisCodes().stream().filter(x -> x.getItisCode().equals(itisCode)).findFirst().orElse(null);
-            }
-
-            if (code != null)
-                items.add(code.getItisCode().toString());
-        }
-
-        return items;
-    }
-
     public String getCustomAlphabetic(Integer itisCode) {
         String text = null;
         var en = CustomItisEnum.valueOf(itisCode);
@@ -103,30 +71,6 @@ public class SetItisCodes {
             text = en.getStringValue();
         }
         return text;
-    }
-
-    public List<String> setItisCodesVsl(WydotTimVsl wydotTim) {
-
-        List<String> items = new ArrayList<String>();
-
-        // speed limit itis code
-        ItisCode speedLimit = getItisCodes().stream().filter(x -> x.getDescription().equals("speed limit")).findFirst()
-                .orElse(null);
-        if (speedLimit != null) {
-            items.add(speedLimit.getItisCode().toString());
-        }
-
-        // number e.g 50, convert to ITIS code
-        Integer speed = wydotTim.getSpeed() + 12544;
-        items.add(speed.toString());
-
-        // mph itis code
-        ItisCode mph = getItisCodes().stream().filter(x -> x.getDescription().equals("mph")).findFirst().orElse(null);
-        if (mph != null) {
-            items.add(mph.getItisCode().toString());
-        }
-
-        return items;
     }
 
     public List<String> setItisCodesParking(WydotTimParking wydotTim) {
@@ -209,54 +153,6 @@ public class SetItisCodes {
         return items;
     }
 
-    public List<String> setItisCodesIncident(WydotTimIncident wydotTim) {
-        List<String> items = new ArrayList<String>();
-
-        // action
-        IncidentChoice incidentAction = getIncidentActions().stream()
-                .filter(x -> x.getCode().equals(wydotTim.getAction())).findFirst().orElse(null);
-
-        // if action is not null and action itis code exists
-        if (incidentAction != null && incidentAction.getItisCodeId() != null) {
-            ItisCode actionItisCode = getItisCodes().stream()
-                    .filter(x -> x.getItisCodeId().equals(incidentAction.getItisCodeId())).findFirst().orElse(null);
-            if (actionItisCode != null) {
-                items.add(actionItisCode.getItisCode().toString());
-            }
-        }
-
-        // effect
-        IncidentChoice incidentEffect = getIncidentEffects().stream()
-                .filter(x -> x.getCode().equals(wydotTim.getEffect())).findFirst().orElse(null);
-
-        // if effect is not null and effect itis code exists
-        if (incidentEffect != null && incidentEffect.getItisCodeId() != null) {
-            ItisCode effectItisCode = getItisCodes().stream()
-                    .filter(x -> x.getItisCodeId().equals(incidentEffect.getItisCodeId())).findFirst().orElse(null);
-            if (effectItisCode != null) {
-                items.add(effectItisCode.getItisCode().toString());
-            }
-        }
-
-        // problem
-        IncidentChoice incidentProblem = getIncidentProblems().stream()
-                .filter(x -> x.getCode().equals(wydotTim.getProblem())).findFirst().orElse(null);
-
-        // if problem is not null and problem itis code exists
-        if (incidentProblem != null && incidentProblem.getItisCodeId() != null) {
-            ItisCode problemItisCode = getItisCodes().stream()
-                    .filter(x -> x.getItisCodeId().equals(incidentProblem.getItisCodeId())).findFirst().orElse(null);
-            if (problemItisCode != null) {
-                items.add(problemItisCode.getItisCode().toString());
-            }
-        }
-
-        if (items.size() == 0)
-            items.add("531");// 531 is "Incident"
-
-        return items;
-    }
-
     public List<IncidentChoice> getIncidentProblems() {
         if (incidentProblems != null)
             return incidentProblems;
@@ -284,7 +180,7 @@ public class SetItisCodes {
         }
     }
 
-    public List<String> setItisCodesRw(WydotTim wydotTim) {
+    public List<String> setItisCodes(WydotTim wydotTim) {
 
         List<String> items = new ArrayList<>();
 
@@ -296,6 +192,11 @@ public class SetItisCodes {
 
         for (String item : wydotTim.getItisCodes()) {
 
+            if (item.contains(" ")) {
+                // if the item contains a space it is a sequence of ITIS codes
+                items.add(item);
+                continue;
+            }
             Integer itisCode = Integer.valueOf(item);
 
             var alphaItis = getCustomAlphabetic(itisCode);
@@ -309,8 +210,6 @@ public class SetItisCodes {
             if (code != null)
                 items.add(code.getItisCode().toString());
         }
-
-        items.add("1025");
 
         return items;
     }
@@ -329,6 +228,15 @@ public class SetItisCodes {
         itisCodes.add("8739"); // Pounds
 
         return itisCodes;
+    }
+
+    public static String getItisCodeAbbreviation(String itisCodes) {
+        List<String> words = Arrays.asList(itisCodes.split(" "));
+        if (words.size() < 3) {
+            return itisCodes.replace(" ", "-");
+        }
+
+        return words.stream().map(word -> word.substring(0, 1)).reduce("", String::concat);
     }
 
     /**
