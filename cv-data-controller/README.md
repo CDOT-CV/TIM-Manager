@@ -27,14 +27,14 @@ The following instructions are intended to be executed from the root directory o
 
     Linux:
     ```bash
-    mv ./cv-data-controller/target/cv-data-controller-x.x.x-SNAPSHOT.jar ./cv-data-controller/
+    mv ./cv-data-controller/target/cv-data-controller-x.y.z-SNAPSHOT.jar ./cv-data-controller/
     ``` 
     Windows:
     ```windows
-    move .\cv-data-controller\target\cv-data-controller-x.x.x-SNAPSHOT.jar .\cv-data-controller\
+    move .\cv-data-controller\target\cv-data-controller-x.y.z-SNAPSHOT.jar .\cv-data-controller\
     ```
 
-    Replace `x.x.x` with the version number of the JAR file. If a JAR file already exists in the `cv-data-controller` directory, you may need to delete it first.
+    Replace `x.y.z` with the version number of the JAR file. If a JAR file already exists in the `cv-data-controller` directory, you may need to delete it first.
 
 1. Copy the sample.env to .env:
 
