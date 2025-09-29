@@ -1,7 +1,7 @@
 # CV Data Controller
 ![CV Data Controller Architecture Diagram](./docs/diagrams/cv-data-controller-architecture.drawio.png)
 
-The `cv-data-controller` module serves as the main interface for interacting with the WyoCV database and communicating with the ODE. It exposes a RESTful API, which is utilized by several modules, including ODE Wrapper, Cert Expiration, Tim Refresh, and ODE Data Logger. The API supports various HTTP methods: GET to retrieve data, PUT and POST to update data, and DELETE to remove data from the WyoCV database. Additionally, the controller includes a method for pushing data to the ODE.
+The `cv-data-controller` module serves as the main interface for interacting with the TIMM database and communicating with the ODE. It exposes a RESTful API, which is utilized by several modules, including ODE Wrapper, Cert Expiration, Tim Refresh, and ODE Data Logger. The API supports various HTTP methods: GET to retrieve data, PUT and POST to update data, and DELETE to remove data from the TIMM database. Additionally, the controller includes a method for pushing data to the ODE.
 
 ## Table of Contents
 - [Installation](#installation)
@@ -15,7 +15,7 @@ The `cv-data-controller` module serves as the main interface for interacting wit
 These instructions will get you a copy of the project up and running on your local machine for development and testing purposes. See [deployment](#deployment) for notes on how to deploy the project on a live system.
 
 ### Docker
-The following instructions are intended to be executed from the root directory of the WyoCV project:
+The following instructions are intended to be executed from the root directory of the TIMM project:
 1. Reopen the project in the provided dev container by clicking on the blue button in the bottom left corner of the window and selecting "Reopen in Container"
 1. Open a terminal in the dev container by clicking on the `Terminal` menu and selecting `New Terminal`
 1. Compile the project by running the following command:
@@ -81,7 +81,7 @@ To run the application using the provided launch configuration, follow these ste
 1. Click the green play button to start the application
 
 ## Deployment
-This application is deployed using Docker, and is part of the larger WyoCVApplication suite. The associated Dockerfile is configured for the development ODE environment. See the main [README](../README.md) for the project and associated [docker-compose](../docker-compose.yml), and [sample.env](../sample.env) file for further deployment configurations.
+This application is deployed using Docker, and is part of the larger TIM Manager. The associated Dockerfile is configured for the development ODE environment. See the main [README](../README.md) for the project and associated [docker-compose](../docker-compose.yml), and [sample.env](../sample.env) file for further deployment configurations.
 
 ## Configuration <a name = "configuration"></a>
 **SOME OF THESE PROPERTIES ARE SENSITIVE. DO NOT PUBLISH THEM TO VERSION CONTROL**
@@ -110,6 +110,10 @@ You may configure these values in `cv-data-controller/src/main/resources/applica
 | SERVER_SSL_KEY_STORE_PASSWORD | CONTROLLER_SERVER_SSL_KEY_STORE_PASSWORD | server.ssl.key-store-password | **PROD ONLY** Keystore password | pass |
 | SERVER_SSL_KEY_STORE_TYPE | CONTROLLER_SERVER_SSL_KEY_STORE_TYPE | server.ssl.keyStoreType | **PROD ONLY** Keystore type (JKS) | JKS |
 | SERVER_SSL_KEY_ALIAS | CONTROLLER_SERVER_SSL_KEY_ALIAS | server.ssl.keyAlias | **PROD ONLY** Alias for Keystore | example.alias |
+
+## Note on Neo4j Database
+The system expects a Neo4j database to be running and accessible at the address specified in the `application.properties` file or the `sample.env` file. The 
+database should be populated with the necessary data for the system to function properly. The database should be running before starting the application.
 
 ## Testing
 To run the unit tests, follow these steps:
