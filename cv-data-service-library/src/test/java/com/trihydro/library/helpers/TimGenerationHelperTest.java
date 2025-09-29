@@ -802,7 +802,7 @@ class TimGenerationHelperTest {
         verify(mockActiveTimHoldingService).insertActiveTimHolding(any());
         verify(mockMilepostService).getMilepostsByStartEndPointDirection(any());
         verify(mockMilepostReduction).applyMilepostReductionAlgorithm(any(), any());
-        verifyNoMoreInteractions(mockMilepostService, mockMilepostReduction, mockDataFrameService,
+        verifyNoMoreInteractions(mockMilepostReduction, mockDataFrameService,
             mockRsuService, mockOdeService, mockActiveTimHoldingService);
     }
 
@@ -827,7 +827,7 @@ class TimGenerationHelperTest {
         var ex = exceptions.get(0);
         Assertions.assertEquals(new ResubmitTimException(activeTimId, String.format("Unable to resubmit TIM, identical points found while calculating anchor point for Active_Tim %d", activeTimId)), ex);
         verifyNoInteractions(mockPathNodeXYService);
-        verifyNoMoreInteractions(mockMilepostService, mockMilepostReduction, mockDataFrameService,
+        verifyNoMoreInteractions(mockMilepostReduction, mockDataFrameService,
             mockRsuService, mockOdeService, mockActiveTimHoldingService);
     }
 
