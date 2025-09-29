@@ -7,6 +7,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -18,6 +19,7 @@ import com.trihydro.cvdatacontroller.services.MilepostService;
 import com.trihydro.library.model.Milepost;
 import com.trihydro.library.model.MilepostBuffer;
 import com.trihydro.library.model.WydotTim;
+import com.trihydro.library.model.SetMilepostCacheRequest;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -37,6 +39,7 @@ import springfox.documentation.annotations.ApiIgnore;
 public class MilepostController extends BaseController {
 
 	private MilepostService milepostService;
+	private final HashMap<String, List<Milepost>> milepostCache = new HashMap<>();
 
 	@Autowired
 	public void InjectDependencies(MilepostService _milepostService) {
@@ -306,6 +309,74 @@ public class MilepostController extends BaseController {
 				wydotTim.getRoute(), wydotTim.getStartPoint().getLatitude(), wydotTim.getStartPoint().getLongitude(),
 				wydotTim.getEndPoint().getLatitude(), wydotTim.getEndPoint().getLongitude(), wydotTim.getDirection());
 		return ResponseEntity.ok(data);
+	}
+
+	@RequestMapping(method = RequestMethod.POST, value="/set-milepost-cache")
+	public ResponseEntity<String> setMilepostCache(@RequestBody SetMilepostCacheRequest milepostCacheBody) {
+		
+		if (milepostCacheBody.getMileposts().isEmpty() || milepostCacheBody.getTimID() == null) {
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid Request: please provide a valid milepost list and timID");
+		}
+		if (milepostCache.containsKey(milepostCacheBody.getTimID())) {
+			utility.logWithDate("Updating milepost cache for timID: " + milepostCacheBody.getTimID());
+		} else {
+			utility.logWithDate("Setting milepost cache for timID: " + milepostCacheBody.getTimID());
+		}
+		milepostCache.put(milepostCacheBody.getTimID(), milepostCacheBody.getMileposts());
+		return ResponseEntity.ok("Milepost cache set successfully for timID: " + milepostCacheBody.getTimID());
+	}
+
+	@RequestMapping(method = RequestMethod.GET, value="/get-milepost-cache/{timID}")
+	public ResponseEntity<List<Milepost>> getMilepostCacheByTimID(@PathVariable String timID) {
+		List<Milepost> mileposts = new ArrayList<>();
+
+		if (milepostCache.containsKey(timID)) {
+			mileposts = milepostCache.get(timID);
+			utility.logWithDate("Found " + mileposts.size() + " mileposts in cache for timID: " + timID);
+			return ResponseEntity.ok(milepostCache.get(timID));
+		}
+
+		return ResponseEntity.ok(mileposts);
+	}
+
+	@RequestMapping(method = RequestMethod.DELETE, value="/delete-milepost-cache/{timID}")
+	public ResponseEntity<String> deleteMilepostCache(@PathVariable String timID) {
+		utility.logWithDate("Deleting milepost cache for timID: " + timID);
+
+		if (milepostCache.containsKey(timID)) {
+			milepostCache.remove(timID);
+			return ResponseEntity.ok("Milepost cache deleted successfully for timID: " + timID);
+		}
+		return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Milepost cache not found for timID: " + timID);
+	}
+
+	@RequestMapping(method = RequestMethod.GET, value="/clear-milepost-cache")
+	public ResponseEntity<String> clearMilepostCache() {
+		utility.logWithDate("Clearing milepost cache");
+		List<String> clientIDs = new ArrayList<>(milepostCache.keySet());
+		List<String> activeTimClientIds = getActiveTimClientIds();
+		// remove all active TIM IDs from the list of milepost cache TIM IDs
+		clientIDs.removeAll(activeTimClientIds);
+		for (String clientID : clientIDs) {
+			milepostCache.remove(clientID);
+		}
+		return ResponseEntity.ok("Milepost cache cleared successfully");
+	}
+
+	private List<String> getActiveTimClientIds() {
+		List<String> activeTimIds = new ArrayList<>();
+		String sql = "SELECT client_id FROM active_tim WHERE marked_for_deletion = False";
+		try (Connection connection = dbInteractions.getConnectionPool();
+			 Statement statement = connection.createStatement();
+			 ResultSet rs = statement.executeQuery(sql)) {
+			while (rs.next()) {
+				String timId = rs.getString("CLIENT_ID");
+				activeTimIds.add(timId);
+			}
+		} catch (SQLException e) {
+			utility.logWithDate("Error retrieving active TIM IDs " + e.toString()); // Improved logging
+		}
+		return activeTimIds;
 	}
 
 	/**

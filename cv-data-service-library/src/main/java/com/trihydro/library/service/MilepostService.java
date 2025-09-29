@@ -5,6 +5,7 @@ import java.util.List;
 import com.trihydro.library.model.Milepost;
 import com.trihydro.library.model.MilepostBuffer;
 import com.trihydro.library.model.WydotTim;
+import com.trihydro.library.model.SetMilepostCacheRequest;
 
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpEntity;
@@ -34,6 +35,67 @@ public class MilepostService extends CvDataServiceLibrary {
 		HttpHeaders headers = new HttpHeaders();
 		headers.setContentType(MediaType.APPLICATION_JSON);
 		HttpEntity<MilepostBuffer> entity = new HttpEntity<MilepostBuffer>(milepostBuffer, headers);
+		ParameterizedTypeReference<List<Milepost>> responseType = new ParameterizedTypeReference<List<Milepost>>() {
+		};
+		ResponseEntity<List<Milepost>> response = restTemplateProvider.GetRestTemplate().exchange(url, HttpMethod.POST,
+				entity, responseType);
+		return response.getBody();
+	}
+
+	public String setMilepostCache(List<Milepost> mileposts, String timID) {
+		String url = String.format("%s/set-milepost-cache", config.getCvRestService());
+		HttpHeaders headers = new HttpHeaders();
+		headers.setContentType(MediaType.APPLICATION_JSON);
+		SetMilepostCacheRequest body = new SetMilepostCacheRequest(mileposts, timID);
+		HttpEntity<SetMilepostCacheRequest> entity = new HttpEntity<SetMilepostCacheRequest>(body, headers);
+		ResponseEntity<String> response = restTemplateProvider.GetRestTemplate().exchange(url, HttpMethod.POST, entity,
+				String.class);
+		return response.getBody();
+	}
+
+	public List<Milepost> getMilepostCache(String timID) {
+		String url = String.format("%s/get-milepost-cache/%s", config.getCvRestService(), timID);
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        HttpEntity<String> entity = new HttpEntity<String>(null, headers);
+		ParameterizedTypeReference<List<Milepost>> responseType = new ParameterizedTypeReference<List<Milepost>>() {};
+		ResponseEntity<List<Milepost>> response = restTemplateProvider.GetRestTemplate().exchange(url, HttpMethod.GET,
+				entity, responseType);
+		return response.getBody();
+	}
+
+	public String deleteMilepostCache(String timID) {
+		String url = String.format("%s/delete-milepost-cache/%s", config.getCvRestService(), timID);
+		HttpHeaders headers = new HttpHeaders();
+		headers.setContentType(MediaType.APPLICATION_JSON);
+		HttpEntity<String> entity = new HttpEntity<String>(null, headers);
+		ResponseEntity<String> response = restTemplateProvider.GetRestTemplate().exchange(url, HttpMethod.DELETE, entity,
+				String.class);
+		return response.getBody();
+	}
+
+	public void clearMilepostCache() {
+		String url = String.format("%s/clear-milepost-cache/", config.getCvRestService());
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        HttpEntity<String> entity = new HttpEntity<String>(null, headers);
+		ParameterizedTypeReference<Void> responseType = new ParameterizedTypeReference<Void>() {};
+		restTemplateProvider.GetRestTemplate().exchange(url, HttpMethod.GET, entity, responseType);
+	}
+	
+	/**
+	 * Retrieves a buffer of mileposts for a given path from the CDOT upstream service.
+	 *
+	 * @param routeId the ID of the route for which the buffer is to be retrieved
+	 * @param desiredDistanceInMiles the desired distance in miles for the buffer
+	 * @param pathMileposts the list of mileposts representing the path
+	 * @return a list of mileposts representing the buffer for the given path
+	 */
+	public List<Milepost> getBufferForPath(String routeId, double desiredDistanceInMiles, List<Milepost> pathMileposts) {
+		String url = String.format("%s/cdot-upstream-path/get-buffer-for-path/%s/%s", config.getCvRestService(), routeId, desiredDistanceInMiles);
+		HttpHeaders headers = new HttpHeaders();
+		headers.setContentType(MediaType.APPLICATION_JSON);
+		HttpEntity<List<Milepost>> entity = new HttpEntity<>(pathMileposts, headers);
 		ParameterizedTypeReference<List<Milepost>> responseType = new ParameterizedTypeReference<List<Milepost>>() {
 		};
 		ResponseEntity<List<Milepost>> response = restTemplateProvider.GetRestTemplate().exchange(url, HttpMethod.POST,

@@ -356,9 +356,18 @@ public class TimGenerationHelper {
 
         log.info("Fetching mileposts for regular TIM with client id: {}", wydotTim.getClientId());
         if (wydotTim.getEndPoint() != null) {
-            allMps = milepostService.getMilepostsByStartEndPointDirection(wydotTim);
-            log.info("Found {} mileposts between {} and {}", allMps.size(),
-                gson.toJson(wydotTim.getStartPoint()), gson.toJson(wydotTim.getEndPoint()));
+                if (wydotTim.getGeometry() != null && wydotTim.getGeometry().size() > 1) {
+                    allMps.addAll(wydotTim.toMileposts());
+                    milepostService.setMilepostCache(allMps, wydotTim.getClientId());
+                } else {
+                    // Check to see if milepost array exists in cache
+                    allMps = milepostService.getMilepostCache(wydotTim.getClientId());
+                    if (allMps.isEmpty()) {
+                        allMps = milepostService.getMilepostsByStartEndPointDirection(wydotTim);
+                    }
+                }
+            utility.logWithDate(String.format("Found %d mileposts between %s and %s", allMps.size(),
+                    gson.toJson(wydotTim.getStartPoint()), gson.toJson(wydotTim.getEndPoint())));
         } else {
             // point incident
             MilepostBuffer mpb = new MilepostBuffer();
@@ -792,9 +801,8 @@ public class TimGenerationHelper {
                                                Long activeTimId, List<Milepost> reduced_mps) {
         List<ResubmitTimException> exceptions = new ArrayList<>();
         // try to send to RSU if not a sat TIM and along route with RSUs
-        if (StringUtils.isBlank(tum.getSatRecordId()) &&
-            Arrays.asList(config.getRsuRoutes()).contains(tum.getRoute())) {
-            var exMsg = updateAndSendRSU(timToSend, tum);
+        if (StringUtils.isBlank(tum.getSatRecordId())) {
+            var exMsg = updateAndSendRSU(timToSend, tum, reduced_mps);
             if (StringUtils.isNotBlank(exMsg)) {
                 exceptions.add(new ResubmitTimException(activeTimId, exMsg));
             }
@@ -1010,15 +1018,24 @@ public class TimGenerationHelper {
         return regionName;
     }
 
-    private String updateAndSendRSU(WydotTravelerInputData timToSend, TimUpdateModel aTim) {
+    private String updateAndSendRSU(WydotTravelerInputData timToSend, TimUpdateModel aTim, List<Milepost> mileposts) {
         String exMsg = "";
         List<WydotRsuTim> wydotRsus = rsuService.getFullRsusTimIsOn(aTim.getTimId());
         List<WydotRsu> dbRsus = new ArrayList<WydotRsu>();
         if (wydotRsus == null || wydotRsus.size() <= 0) {
             log.info("No RSUs found for active_tim_id {}", aTim.getActiveTimId());
 
-            dbRsus = rsuService.getRsusByLatLong(aTim.getDirection(), aTim.getStartPoint(),
-                aTim.getEndPoint(), aTim.getRoute());
+            if (mileposts != null && mileposts.size() > 0) {
+                // use milepost geometry to find RSUs
+                List<Coordinate> coords = new ArrayList<Coordinate>();
+                for (Milepost mp : mileposts) {
+                    coords.add(new Coordinate(mp.getLatitude(), mp.getLongitude()));
+                }
+                dbRsus = rsuService.getRsusByGeometry(coords);
+            } else {
+                dbRsus = rsuService.getRsusByLatLong(aTim.getDirection(), aTim.getStartPoint(), aTim.getEndPoint(),
+                aTim.getRoute());
+            }
 
             // if no RSUs found
             if (dbRsus.isEmpty()) {

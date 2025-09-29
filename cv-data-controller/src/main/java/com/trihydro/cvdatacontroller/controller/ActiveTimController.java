@@ -66,17 +66,17 @@ public class ActiveTimController extends BaseController {
         sqlNullHandler = _sqlNullHandler;
     }
 
-    /**
-     * Retrieve active TIMs that are expiring within 24 hours.
-     * <p>
-     * Note: TIMs with a start time more than 24 hours in the future
-     * or an end time less than 24 hours in the future are excluded.
-     *
-     * @return List of ActiveTim objects
-     */
-    @RequestMapping(value = "/expiring", method = RequestMethod.GET, produces = "application/json", headers = "Accept=application/json")
-    public ResponseEntity<List<TimUpdateModel>> GetExpiringActiveTims() {
-        List<TimUpdateModel> activeTims = new ArrayList<>();
+	/**
+	 * Retrieve active TIMs that are expiring within 24 hours.
+	 *
+	 * Note: TIMs with a start time more than 24 hours in the future
+	 * or an end time less than 24 hours in the future are excluded.
+	 *
+	 * @return List of ActiveTim objects
+	 */
+	@RequestMapping(value = "/expiring", method = RequestMethod.GET, produces = "application/json", headers = "Accept=application/json")
+	public ResponseEntity<List<TimUpdateModel>> GetExpiringActiveTims() {
+		List<TimUpdateModel> activeTims = new ArrayList<>();
 
         String selectStatement = "SELECT atim.*, tt.type as tim_type_name, tt.description as tim_type_description";
         selectStatement += ", t.msg_cnt, t.url_b, t.is_satellite, t.sat_record_id, t.packet_id";
@@ -284,12 +284,11 @@ public class ActiveTimController extends BaseController {
 
         List<Integer> indices = new ArrayList<>();
 
-        String selectStatement = "select tim_rsu.rsu_index from active_tim";
-        selectStatement += " inner join tim on active_tim.tim_id = tim.tim_id";
-        selectStatement += " inner join tim_rsu on tim_rsu.tim_id = tim.tim_id";
-        selectStatement += " inner join rsu on rsu.rsu_id = tim_rsu.rsu_id";
-        selectStatement += " inner join rsu_view on rsu.deviceid = rsu_view.deviceid";
-        selectStatement += " where rsu_view.ipv4_address = '" + rsuTarget + "'";
+			String selectStatement = "select tim_rsu.rsu_index from active_tim";
+			selectStatement += " inner join tim on active_tim.tim_id = tim.tim_id";
+			selectStatement += " inner join tim_rsu on tim_rsu.tim_id = tim.tim_id";
+			selectStatement += " inner join rsus on rsus.rsu_id = tim_rsu.rsu_id";
+			selectStatement += " where rsus.ipv4_address = '" + rsuTarget + "'";
 
         try (Connection connection = dbInteractions.getConnectionPool(); Statement statement = connection.createStatement(); ResultSet rs = statement.executeQuery(selectStatement)) {
             // convert to ActiveTim object
@@ -332,7 +331,8 @@ public class ActiveTimController extends BaseController {
     public ResponseEntity<List<ActiveTim>> GetBufferTimsByClientId(@PathVariable String clientId) {
         List<ActiveTim> activeTims = new ArrayList<>();
 
-        String query = "select * from active_tim where CLIENT_ID like '" + clientId + "\\%BUFF_-%' ESCAPE '\\'";
+        String query = "select * from active_tim where CLIENT_ID like '" + clientId
+                + "\\%BUFF-%' ESCAPE '\\'";
 
         try (Connection connection = dbInteractions.getConnectionPool(); Statement statement = connection.createStatement(); ResultSet rs = statement.executeQuery(query)) {
             activeTims = getActiveTimFromRS(rs, false);
@@ -671,12 +671,11 @@ public class ActiveTimController extends BaseController {
         List<ActiveTim> results = new ArrayList<ActiveTim>();
         ActiveTim activeTim = null;
 
-        String query = "select active_tim.*, rsu_view.ipv4_address, tim_rsu.rsu_index from active_tim";
+        String query = "select active_tim.*, rsus.ipv4_address, tim_rsu.rsu_index from active_tim";
         query += " inner join tim_rsu on active_tim.tim_id = tim_rsu.tim_id";
-        query += " inner join rsu on tim_rsu.rsu_id = rsu.rsu_id";
-        query += " inner join rsu_view on rsu.deviceid = rsu_view.deviceid";
+        query += " inner join rsus on tim_rsu.rsu_id = rsus.rsu_id";
         query += " where sat_record_id is null";
-        query += " order by rsu_view.ipv4_address, tim_rsu.rsu_index"; // Required by ValidateRsus
+        query += " order by rsus.ipv4_address, tim_rsu.rsu_index"; // Required by ValidateRsus
 
         try (Connection connection = dbInteractions.getConnectionPool(); Statement statement = connection.createStatement(); ResultSet rs = statement.executeQuery(query)) {
             // convert to ActiveTim object
@@ -728,9 +727,9 @@ public class ActiveTimController extends BaseController {
 
         String query = "select * from active_tim";
         query += " inner join tim_rsu on active_tim.tim_id = tim_rsu.tim_id";
-        query += " inner join rsu on tim_rsu.rsu_id = rsu.rsu_id";
-        query += " inner join rsu_view on rsu.deviceid = rsu_view.deviceid";
-        query += " where ipv4_address = '" + artqm.getIpv4() + "' and client_id = '" + artqm.getClientId() + "' and active_tim.direction = '" + artqm.getDirection() + "'";
+        query += " inner join rsus on tim_rsu.rsu_id = rsus.rsu_id";
+        query += " where ipv4_address = '" + artqm.getIpv4() + "' and client_id = '" + artqm.getClientId()
+                + "' and active_tim.direction = '" + artqm.getDirection() + "'";
 
         try (Connection connection = dbInteractions.getConnectionPool(); Statement statement = connection.createStatement(); ResultSet rs = statement.executeQuery(query)) {
             List<ActiveTim> activeTims = getActiveTimFromRS(rs, false);
@@ -1081,5 +1080,63 @@ public class ActiveTimController extends BaseController {
 		timUpdateModel.setDurationTime(rs.getInt("DURATION_TIME"));
 		timUpdateModel.setUrl(rs.getString("URL"));
 		return timUpdateModel;
+	}
+
+	public TimUpdateModel setPropertiesForActiveTim(ResultSet rs, TimUpdateModel activeTim) throws SQLException {
+		activeTim.setActiveTimId(rs.getLong("ACTIVE_TIM_ID"));
+		activeTim.setTimId(rs.getLong("TIM_ID"));
+		activeTim.setDirection(rs.getString("DIRECTION"));
+		activeTim.setStartDateTime(rs.getString("TIM_START"));
+		activeTim.setEndDateTime(rs.getString("TIM_END"));
+		activeTim.setExpirationDateTime(rs.getString("EXPIRATION_DATE"));
+		activeTim.setSatRecordId(rs.getString("SAT_RECORD_ID"));
+		activeTim.setClientId(rs.getString("CLIENT_ID"));
+		activeTim.setRoute(rs.getString("ROUTE"));
+
+		Coordinate startPoint = null;
+		Coordinate endPoint = null;
+		BigDecimal startLat = rs.getBigDecimal("START_LATITUDE");
+		BigDecimal startLon = rs.getBigDecimal("START_LONGITUDE");
+		if (!rs.wasNull()) {
+			startPoint = new Coordinate(startLat, startLon);
+		}
+		activeTim.setStartPoint(startPoint);
+
+		BigDecimal endLat = rs.getBigDecimal("END_LATITUDE");
+		BigDecimal endLon = rs.getBigDecimal("END_LONGITUDE");
+		if (!rs.wasNull()) {
+			endPoint = new Coordinate(endLat, endLon);
+		}
+		activeTim.setEndPoint(endPoint);
+
+		activeTim.setStartDate_Timestamp(rs.getTimestamp("TIM_START", UTCCalendar));
+		activeTim.setEndDate_Timestamp(rs.getTimestamp("TIM_END", UTCCalendar));
+
+		// Tim properties
+		activeTim.setMsgCnt(rs.getInt("MSG_CNT"));
+		activeTim.setUrlB(rs.getString("URL_B"));
+		activeTim.setPacketId(rs.getString("PACKET_ID"));
+
+		// Tim Type properties
+		activeTim.setTimTypeName(rs.getString("TIM_TYPE_NAME"));
+		activeTim.setTimTypeDescription(rs.getString("TIM_TYPE_DESCRIPTION"));
+
+		// Region Properties
+		activeTim.setRegionId(rs.getInt("REGION_ID"));
+		activeTim.setAnchorLat(rs.getBigDecimal("ANCHOR_LAT"));
+		activeTim.setAnchorLong(rs.getBigDecimal("ANCHOR_LONG"));
+
+		activeTim.setLaneWidth(rs.getBigDecimal("LANE_WIDTH"));
+		activeTim.setRegionDirection(rs.getString("REGION_DIRECTION"));
+		activeTim.setDirectionality(rs.getString("DIRECTIONALITY"));
+		activeTim.setClosedPath(rs.getBoolean("CLOSED_PATH"));
+		activeTim.setPathId(rs.getInt("PATH_ID"));
+		activeTim.setRegionDescription(rs.getString("REGION_DESCRIPTION"));
+
+		// DataFrame properties
+		activeTim.setDataFrameId(rs.getInt("DATA_FRAME_ID"));
+		activeTim.setDurationTime(rs.getInt("DURATION_TIME"));
+		activeTim.setUrl(rs.getString("URL"));
+		return activeTim;
 	}
 }

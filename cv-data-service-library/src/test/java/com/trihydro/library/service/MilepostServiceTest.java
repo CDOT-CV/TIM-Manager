@@ -19,7 +19,9 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 
 public class MilepostServiceTest extends BaseServiceTest {
@@ -88,5 +90,66 @@ public class MilepostServiceTest extends BaseServiceTest {
         verify(mockRestTemplate).exchange(url, HttpMethod.POST, entity, responseType);
         Assertions.assertEquals(1, data.size());
         Assertions.assertEquals(milepost, data.get(0));
+    }
+
+    @Test
+    public void getBufferForPath_Success() {
+        // prepare
+        String routeId = "routeId";
+        double desiredDistanceInMiles = 10.0;
+        Milepost milepost1 = new Milepost();
+        Milepost milepost2 = new Milepost();
+        List<Milepost> pathMileposts = new ArrayList<>();
+        pathMileposts.add(milepost1);
+        pathMileposts.add(milepost2);
+        Milepost bufferMilepost1 = new Milepost();
+        Milepost bufferMilepost2 = new Milepost();
+        List<Milepost> bufferMileposts = new ArrayList<>();
+        bufferMileposts.add(bufferMilepost1);
+        bufferMileposts.add(bufferMilepost2);
+        when(mockRespMilepostList.getBody()).thenReturn(bufferMileposts);
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        HttpEntity<List<Milepost>> entity = new HttpEntity<>(pathMileposts, headers);
+        String url = String.format("%s/cdot-upstream-path/get-buffer-for-path/%s/%s", baseUrl, routeId, desiredDistanceInMiles);
+        ParameterizedTypeReference<List<Milepost>> responseType = new ParameterizedTypeReference<List<Milepost>>() {
+        };
+        when(mockRestTemplate.exchange(url, HttpMethod.POST, entity, responseType)).thenReturn(mockRespMilepostList);
+
+        // execute
+        List<Milepost> data = uut.getBufferForPath(routeId, desiredDistanceInMiles, pathMileposts);
+
+        // verify
+        verify(mockRestTemplate).exchange(url, HttpMethod.POST, entity, responseType);
+        Assertions.assertEquals(2, data.size());
+        Assertions.assertEquals(bufferMilepost1, data.get(0));
+        Assertions.assertEquals(bufferMilepost2, data.get(1));
+    }
+
+    @Test
+    public void getBufferForPath_Failure_ResponseBodyNull() {
+        // prepare
+        String routeId = "routeId";
+        double desiredDistanceInMiles = 10.0;
+        Milepost milepost1 = new Milepost();
+        Milepost milepost2 = new Milepost();
+        List<Milepost> pathMileposts = new ArrayList<>();
+        pathMileposts.add(milepost1);
+        pathMileposts.add(milepost2);
+        when(mockRespMilepostList.getBody()).thenReturn(null);
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        HttpEntity<List<Milepost>> entity = new HttpEntity<>(pathMileposts, headers);
+        String url = String.format("%s/cdot-upstream-path/get-buffer-for-path/%s/%s", baseUrl, routeId, desiredDistanceInMiles);
+        ParameterizedTypeReference<List<Milepost>> responseType = new ParameterizedTypeReference<List<Milepost>>() {
+        };
+        when(mockRestTemplate.exchange(url, HttpMethod.POST, entity, responseType)).thenReturn(mockRespMilepostList);
+
+        // execute
+        List<Milepost> data = uut.getBufferForPath(routeId, desiredDistanceInMiles, pathMileposts);
+
+        // verify
+        verify(mockRestTemplate).exchange(url, HttpMethod.POST, entity, responseType);
+        Assertions.assertNull(data);
     }
 }

@@ -1,9 +1,6 @@
 package com.trihydro.cvdatacontroller.model;
 
-import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.context.annotation.Import;
-import org.springframework.stereotype.Component;
-
+import com.trihydro.library.helpers.CdotGisConnector;
 import com.trihydro.library.helpers.DbInteractions;
 import com.trihydro.library.helpers.EmailHelper;
 import com.trihydro.library.helpers.JavaMailSenderImplProvider;
@@ -11,13 +8,19 @@ import com.trihydro.library.helpers.SQLNullHandler;
 import com.trihydro.library.helpers.Utility;
 import com.trihydro.library.model.DbInteractionsProps;
 import com.trihydro.library.model.EmailProps;
+import com.trihydro.library.service.RestTemplateProvider;
 import com.trihydro.library.tables.LoggingTables;
 import com.trihydro.library.tables.TimDbTables;
+
+import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.context.annotation.Import;
+import org.springframework.stereotype.Component;
 
 @Component
 @ConfigurationProperties("config")
 @Import({ TimDbTables.class, SQLNullHandler.class, Utility.class, EmailHelper.class,
-        JavaMailSenderImplProvider.class, LoggingTables.class, DbInteractions.class })
+    JavaMailSenderImplProvider.class, LoggingTables.class, DbInteractions.class,
+    CdotGisConnector.class, RestTemplateProvider.class })
 public class DataControllerConfigProperties implements DbInteractionsProps, EmailProps {
     private String dbUrl;
     private String dbUsername;

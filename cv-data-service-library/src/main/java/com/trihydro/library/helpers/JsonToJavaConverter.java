@@ -11,6 +11,9 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import org.springframework.stereotype.Component;
+import java.util.Map;
+
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
@@ -30,6 +33,8 @@ import us.dot.its.jpo.ode.plugin.RoadSideUnit.RSU;
 import us.dot.its.jpo.ode.plugin.SNMP;
 import us.dot.its.jpo.ode.plugin.ServiceRequest;
 import us.dot.its.jpo.ode.plugin.SnmpProtocol;
+import us.dot.its.jpo.ode.plugin.j2735.J2735SpecialVehicleExtensions;
+import us.dot.its.jpo.ode.plugin.j2735.J2735SupplementalVehicleExtensions;
 import us.dot.its.jpo.ode.plugin.j2735.OdePosition3D;
 import us.dot.its.jpo.ode.plugin.j2735.OdeTravelerInformationMessage;
 import us.dot.its.jpo.ode.plugin.j2735.OdeTravelerInformationMessage.DataFrame.Region;
@@ -491,40 +496,34 @@ public class JsonToJavaConverter {
                 String item = null;
                 if (sequenceArrNode != null && sequenceArrNode.isArray()) {
                     for (final JsonNode objNode : sequenceArrNode) {
-                        if (objNode.get("item").get("itis") != null) {
+                        if (objNode.get("item").get("itis") != null)
                             item = mapper.treeToValue(objNode.get("item").get("itis"), String.class);
-                        } else if (objNode.get("item").get("text") != null) {
+                        else if (objNode.get("item").get("text") != null)
                             item = mapper.treeToValue(objNode.get("item").get("text"), String.class);
-                        } else {
-                            log.warn("'itis' or 'text' not found in item when converting TMC TIM");
-                        }
-                        if (!itemsList.contains(item)) {
+                        if (!itemsList.contains(item))
                             itemsList.add(item);
-                        }
                     }
                 }
 
                 // ADD NON ARRAY ELEMENT
                 if (sequenceArrNode != null && !sequenceArrNode.isArray()) {
-                    if (sequenceArrNode.get("item").get("itis") != null) {
+                    if (sequenceArrNode.get("item").get("itis") != null)
                         item = mapper.treeToValue(sequenceArrNode.get("item").get("itis"), String.class);
-                    } else if (sequenceArrNode.get("item").get("text") != null) {
+                    else if (sequenceArrNode.get("item").get("text") != null)
                         item = mapper.treeToValue(sequenceArrNode.get("item").get("text"), String.class);
-                    } else {
-                        log.warn("'itis' or 'text' not found in item when converting TMC TIM");
-                    }
 
                     itemsList.add(item);
                 }
 
                 // TravelerInfoType.valueOf();
                 JsonNode frameTypeNode = travelerDataFrame.get("frameType");
-                if (frameTypeNode != null && frameTypeNode.fieldNames().hasNext()) {
-                    TravelerInfoType frameType = TravelerInfoType.valueOf(frameTypeNode.fieldNames().next());
-                    dataFrame.setFrameType(frameType);
-                } else {
-                    log.warn("frameType not found in TravelerDataFrame when converting TMC TIM. Defaulting to 'advisory'");
-                    dataFrame.setFrameType(TravelerInfoType.advisory);
+                if (frameTypeNode != null) {
+                    if (frameTypeNode.fieldNames().hasNext()) {
+                        TravelerInfoType frameType = TravelerInfoType.valueOf(frameTypeNode.fieldNames().next());
+                        if (frameType != null) {
+                            dataFrame.setFrameType(frameType);
+                        }
+                    }
                 }
 
                 JsonNode startTimeNode = travelerDataFrame.get("startTime");
@@ -546,7 +545,9 @@ public class JsonToJavaConverter {
                 // it as a region
                 if (geographicalPathNode.isObject()) {
                     // single region
-                    regions.add(getRegion(geographicalPathNode));
+                    JsonNode regionNode = geographicalPathNode;
+                    Region region = getRegion(regionNode);
+                    regions.add(region);
                 } else if (geographicalPathNode.isArray()) {
                     // multiple regions
                     for (final JsonNode regionNode : geographicalPathNode) {

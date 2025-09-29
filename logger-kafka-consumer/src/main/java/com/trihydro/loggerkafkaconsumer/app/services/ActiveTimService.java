@@ -14,6 +14,9 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.TimeZone;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+
 import com.trihydro.library.helpers.SQLNullHandler;
 import com.trihydro.library.model.ActiveTim;
 import com.trihydro.library.model.Coordinate;
@@ -234,10 +237,9 @@ public class ActiveTimService extends BaseService {
         query += " atim.START_LATITUDE, atim.START_LONGITUDE, atim.END_LATITUDE, atim.END_LONGITUDE";
         query += " from active_tim atim";
         query += " inner join tim_rsu on atim.tim_id = tim_rsu.tim_id";
-        query += " inner join rsu on tim_rsu.rsu_id = rsu.rsu_id";
-        query += " inner join rsu_view on rsu.deviceid = rsu_view.deviceid";
+        query += " inner join rsus on tim_rsu.rsu_id = rsus.rsu_id";
         query += " where sat_record_id is null and ipv4_address = '" + ipv4Address + "' and client_id = '"
-            + clientId + "' and atim.direction = '" + direction + "'";
+                + clientId + "' and atim.direction = '" + direction + "'";
 
         try (
             Connection connection = dbInteractions.getConnectionPool();

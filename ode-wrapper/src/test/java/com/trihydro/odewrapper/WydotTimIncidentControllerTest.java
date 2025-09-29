@@ -63,7 +63,7 @@ public class WydotTimIncidentControllerTest {
 		itisCodes.add(ic);
 		List<String> itisCodesIncident = new ArrayList<>();
 		itisCodesIncident.add("531");
-		lenient().doReturn(itisCodesIncident).when(setItisCodes).setItisCodesIncident(any());
+		lenient().doReturn(itisCodesIncident).when(setItisCodes).setItisCodes(any());
 		lenient().doReturn(itisCodes).when(setItisCodes).getItisCodes();
 
 		lenient().doNothing().when(uut).makeTimsAsync(any());

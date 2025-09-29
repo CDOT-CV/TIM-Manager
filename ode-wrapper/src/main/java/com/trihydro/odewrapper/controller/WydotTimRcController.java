@@ -4,6 +4,7 @@ import com.trihydro.library.exceptionhandlers.IdenticalPointsExceptionHandler;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 
@@ -32,6 +33,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.trihydro.library.service.MilepostService;
+
 import io.swagger.annotations.Api;
 import us.dot.its.jpo.ode.plugin.j2735.timstorage.FrameType.TravelerInfoType;
 
@@ -47,9 +50,9 @@ public class WydotTimRcController extends WydotTimBaseController {
     public WydotTimRcController(BasicConfiguration _basicConfiguration, WydotTimService _wydotTimService,
             TimTypeService _timTypeService, SetItisCodes _setItisCodes, ActiveTimService _activeTimService,
             RestTemplateProvider _restTemplateProvider, MilepostReduction _milepostReduction, Utility _utility,
-            TimGenerationHelper _timGenerationHelper, IdenticalPointsExceptionHandler identicalPointsExceptionHandler) {
+            TimGenerationHelper _timGenerationHelper, MilepostService _milepostService, IdenticalPointsExceptionHandler identicalPointsExceptionHandler) {
         super(_basicConfiguration, _wydotTimService, _timTypeService, _setItisCodes, _activeTimService,
-                _restTemplateProvider, _milepostReduction, _utility, _timGenerationHelper, identicalPointsExceptionHandler);
+                _restTemplateProvider, _milepostReduction, _utility, _timGenerationHelper, _milepostService, identicalPointsExceptionHandler);
         configuration = _basicConfiguration;
     }
 
@@ -61,26 +64,34 @@ public class WydotTimRcController extends WydotTimBaseController {
 
         utility.logWithDate(dateFormat.format(date) + " - Create Update RC TIM", this.getClass());
         String post = gson.toJson(timRcList);
-        utility.logWithDate(post.toString(), this.getClass());
+        utility.logWithDate(post, this.getClass());
 
-        List<ControllerResult> resultList = new ArrayList<ControllerResult>();
-        List<ControllerResult> errList = new ArrayList<ControllerResult>();
-        ControllerResult resultTim = null;
-        List<WydotTim> timsToSend = new ArrayList<WydotTim>();
+        List<ControllerResult> resultList = new ArrayList<>();
+        List<ControllerResult> errList = new ArrayList<>();
+        ControllerResult resultTim;
+        List<WydotTim> timsToSend = new ArrayList<>();
 
         // build TIM
         for (WydotTimRc wydotTim : timRcList.getTimRcList()) {
 
             resultTim = validateInputRc(wydotTim);
 
-            if (resultTim.getResultMessages().size() > 0) {
+            if (!resultTim.getResultMessages().isEmpty()) {
                 resultList.add(resultTim);
                 errList.add(resultTim);
                 continue;
             }
 
-            // add TIM to list for processing later
-            timsToSend.add(wydotTim);
+            // Each ITIS string in the TIM corresponds to a single TIM to be sent to ODE
+            for (String itisCodeEntry : wydotTim.getItisCodes()) {
+                List<String> itisCodes = Arrays.asList(itisCodeEntry.split(" "));
+                WydotTimRc timToSend = wydotTim.copy();
+                timToSend.setItisCodes(itisCodes);
+                var itisCodeAbb = SetItisCodes.getItisCodeAbbreviation(itisCodeEntry);
+                String clientIdWithItis = wydotTim.getClientId() + '-' + wydotTim.getDirection() + '-' + itisCodeAbb;
+                timToSend.setClientId(clientIdWithItis);
+                timsToSend.add(timToSend);
+            }
 
             resultTim.getResultMessages().add("success");
             resultList.add(resultTim);
@@ -89,7 +100,7 @@ public class WydotTimRcController extends WydotTimBaseController {
         processRequestAsync(timsToSend);
 
         String responseMessage = gson.toJson(resultList);
-        if (errList.size() > 0) {
+        if (!errList.isEmpty()) {
             utility.logWithDate("Failed to send TIMs: " + gson.toJson(errList), this.getClass());
         }
         return ResponseEntity.status(HttpStatus.OK).body(responseMessage);
@@ -149,18 +160,19 @@ public class WydotTimRcController extends WydotTimBaseController {
         }
 
         String responseMessage = gson.toJson(resultList);
+        if (errList.size() > 0) {
+            utility.logWithDate("Failed to send TIMs: " + gson.toJson(errList), this.getClass());
+        }
         return ResponseEntity.status(HttpStatus.OK).body(responseMessage);
     }
 
     public void processRequestAsync(List<WydotTim> wydotTims) {
         // An Async task always executes in new thread
-        new Thread(new Runnable() {
-            public void run() {
-                var startTime = getStartTime();
-                for (WydotTim tim : wydotTims) {
-                    processRequest(tim, getTimType(type), startTime, null, null, ContentEnum.advisory,
-                            TravelerInfoType.advisory);
-                }
+        new Thread(() -> {
+            var startTime = getStartTime();
+            for (WydotTim tim : wydotTims) {
+                processRequest(tim, getTimType(type), startTime, null, null, ContentEnum.advisory,
+                        TravelerInfoType.advisory);
             }
         }).start();
     }
