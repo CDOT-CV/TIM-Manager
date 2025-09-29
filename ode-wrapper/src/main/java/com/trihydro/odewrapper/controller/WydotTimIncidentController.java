@@ -3,10 +3,7 @@ package com.trihydro.odewrapper.controller;
 import com.trihydro.library.exceptionhandlers.IdenticalPointsExceptionHandler;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
+import java.util.*;
 
 import com.trihydro.library.helpers.MilepostReduction;
 import com.trihydro.library.helpers.TimGenerationHelper;

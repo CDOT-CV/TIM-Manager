@@ -352,7 +352,7 @@ public class TimGenerationHelper {
     }
 
     private List<Milepost> getAllMps(WydotTim wydotTim) {
-        List<Milepost> allMps;
+        List<Milepost> allMps = new ArrayList<>();
 
         log.info("Fetching mileposts for regular TIM with client id: {}", wydotTim.getClientId());
         if (wydotTim.getEndPoint() != null) {
