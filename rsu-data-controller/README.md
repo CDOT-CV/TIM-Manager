@@ -35,14 +35,14 @@ The following instructions are intended to be executed from the root directory o
 
     Linux:
     ```bash
-    mv ./rsu-data-controller/target/rsu-data-controller-x.x.x-SNAPSHOT.jar ./rsu-data-controller/
+    mv ./rsu-data-controller/target/rsu-data-controller-x.y.z-SNAPSHOT.jar ./rsu-data-controller/
     ```
     Windows:
     ```windows
-    move .\rsu-data-controller\target\rsu-data-controller-x.x.x-SNAPSHOT.jar .\rsu-data-controller\
+    move .\rsu-data-controller\target\rsu-data-controller-x.y.z-SNAPSHOT.jar .\rsu-data-controller\
     ```
 
-    Replace `x.x.x` with the version number of the JAR file. If a JAR file already exists in the `rsu-data-controller` directory, you may need to delete it first.
+    Replace `x.y.z` with the version number of the JAR file. If a JAR file already exists in the `rsu-data-controller` directory, you may need to delete it first.
 
 1. Copy the sample.env to .env:
 
