@@ -11,6 +11,7 @@ import java.util.Random;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpEntity;
@@ -55,6 +56,7 @@ import us.dot.its.jpo.ode.plugin.j2735.OdeTravelerInformationMessage.DataFrame;
 import us.dot.its.jpo.ode.plugin.j2735.timstorage.FrameType.TravelerInfoType;
 
 @Component
+@Slf4j
 public class WydotTimService {
 
     protected EmailProps emailProps;
@@ -151,7 +153,7 @@ public class WydotTimService {
         Random rand = new Random();
         StringBuffer sb = new StringBuffer();
         if (dotGnisId.equals("000000")) {
-            utility.logWithDate("WARNING: DOT GNIS ID is set to default value of 000000. This is not a valid GNIS ID and should be changed in the configuration.");
+            log.warn("DOT GNIS ID is set to default value of 000000. This is not a valid GNIS ID and should be changed in the configuration.");
         }
         sb.append(dotGnisId);
         while (sb.length() < 18) {

@@ -366,7 +366,6 @@ public class WydotTimServiceTest {
         assertNotNull(result.getTim().getPacketID());
         assertEquals(18, result.getTim().getPacketID().length());
         assertTrue(result.getTim().getPacketID().matches("[0-9A-F]+"));
-        verify(mockUtility).logWithDate("WARNING: DOT GNIS ID is set to default value of 000000. This is not a valid GNIS ID and should be changed in the configuration.");
     }
 
     @Test
