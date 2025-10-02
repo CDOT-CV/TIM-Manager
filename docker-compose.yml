@@ -33,7 +33,7 @@ services:
     ports:
       - "7777:7777"
     volumes:
-      - /home/wyocvadmin/wyocv/ode-wrapper:/keystore
+      - /home/timmadmin/timm/ode-wrapper:/keystore
     logging:
       options:
         max-size: "20m"
@@ -137,8 +137,9 @@ services:
       SERVER_SSL_KEY_STORE_PASSWORD: ${CONTROLLER_SERVER_SSL_KEY_STORE_PASSWORD}
       SERVER_SSL_KEY_STORE_TYPE: ${CONTROLLER_SERVER_SSL_KEY_STORE_TYPE}
       SERVER_SSL_KEY_ALIAS: ${CONTROLLER_SERVER_SSL_KEY_ALIAS}
+      LOGGING_LEVEL_ROOT: ${CONTROLLER_LOGGING_LEVEL_ROOT}
     volumes:
-      - /home/wyocvadmin/wyocv/cv-data-controller:/keystore
+      - /home/timmadmin/timm/cv-data-controller:/keystore
     logging:
       options:
         max-size: "20m"
@@ -157,6 +158,11 @@ services:
       CONFIG_SNMP_AUTH_PASSPHRASE: ${RSUCONTROLLER_CONFIG_SNMP_AUTH_PASSPHRASE}
       CONFIG_SNMP_AUTH_PROTOCOL: ${RSUCONTROLLER_CONFIG_SNMP_AUTH_PROTOCOL}
       CONFIG_SNMP_SECURITY_LEVEL: ${RSUCONTROLLER_CONFIG_SNMP_SECURITY_LEVEL}
+      DB_URL: ${RSUCONTROLLER_DB_URL}
+      DB_USERNAME: ${RSUCONTROLLER_DB_USERNAME}
+      DB_PASSWORD: ${RSUCONTROLLER_DB_PASSWORD}
+      MAXIMUM_POOL_SIZE: ${RSUCONTROLLER_MAXIMUM_POOL_SIZE}
+      CONNECTION_TIMEOUT: ${RSUCONTROLLER_CONNECTION_TIMEOUT}
     logging:
       options:
         max-size: "20m"

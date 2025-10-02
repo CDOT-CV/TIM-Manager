@@ -1,15 +1,14 @@
 package com.trihydro.loggerkafkaconsumer.app.services;
 
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.verify;
-
 import java.sql.SQLException;
 import java.util.ArrayList;
 
-import com.trihydro.library.model.WydotRsu;
-
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.verify;
+
+import com.trihydro.library.model.WydotRsu;
 
 public class RsuServiceTest extends TestBase<RsuService> {
 
@@ -23,7 +22,8 @@ public class RsuServiceTest extends TestBase<RsuService> {
         // Assert
         Assertions.assertEquals(1, data.size());
         verify(mockStatement).executeQuery(
-                "select * from rsu inner join rsu_view on rsu.deviceid = rsu_view.deviceid order by milepost asc");
+                "select rsu_id, ST_X(ST_AsText(geography)) as longitude, ST_Y(ST_AsText(geography)) " + 
+                "as latitude, ipv4_address, primary_route, milepost from rsus order by milepost asc");
         verify(mockRs).getInt("RSU_ID");
         verify(mockRs).getString("IPV4_ADDRESS");
         verify(mockRs).getBigDecimal("LATITUDE");
@@ -45,7 +45,8 @@ public class RsuServiceTest extends TestBase<RsuService> {
         // Assert
         Assertions.assertEquals(0, data.size());
         verify(mockStatement).executeQuery(
-                "select * from rsu inner join rsu_view on rsu.deviceid = rsu_view.deviceid order by milepost asc");
+            "select rsu_id, ST_X(ST_AsText(geography)) as longitude, ST_Y(ST_AsText(geography)) " + 
+            "as latitude, ipv4_address, primary_route, milepost from rsus order by milepost asc");
         verify(mockStatement).close();
         verify(mockRs).close();
         verify(mockConnection).close();

@@ -9,9 +9,9 @@ public class WydotTim {
 
 	@ApiModelProperty(value = "Expected values are I, D, B", required = true)
 	private String direction;
-	@ApiModelProperty(required = true)
+	@ApiModelProperty(required = false)
 	private Coordinate startPoint;
-	@ApiModelProperty(required = true)
+	@ApiModelProperty(required = false)
 	private Coordinate endPoint;
 	@ApiModelProperty(value = "The common name for the selected route", required = true)
 	private String route;
@@ -19,6 +19,10 @@ public class WydotTim {
 	private List<String> itisCodes;
 	@ApiModelProperty(required = true)
 	private String clientId;
+	@ApiModelProperty(required = false)
+    private List<Coordinate> geometry;
+	@ApiModelProperty(required = false)
+	private Integer bearing;
 
 	public WydotTim() {
 
@@ -34,6 +38,16 @@ public class WydotTim {
 		if (o.itisCodes != null)
 			this.itisCodes = new ArrayList<>(o.itisCodes);
 		this.clientId = o.clientId;
+		if (o.geometry != null) {
+			this.geometry = new ArrayList<>(o.geometry);
+			// If geometry is present and has more than one point, set start and end points
+			if (o.geometry.size() > 1) {
+				this.startPoint = new Coordinate(o.geometry.get(0).getLatitude(), o.geometry.get(0).getLongitude());
+				this.endPoint = new Coordinate(o.geometry.get(o.geometry.size() - 1).getLatitude(), o.geometry.get(o.geometry.size() - 1).getLongitude());
+			}
+		}
+		if (o.bearing != null)
+		    this.bearing = o.bearing;
 	}
 
 	public WydotTim copy() {
@@ -86,5 +100,48 @@ public class WydotTim {
 
 	public void setRoute(String route) {
 		this.route = route;
+	}
+
+	public List<Coordinate> getGeometry() {
+        return this.geometry;
+    }
+
+	public void setGeometry(List<Coordinate> geometry) {
+        this.geometry = geometry;
+    }
+
+	public Integer getBearing() {
+		return this.bearing;
+	}
+
+	public void setBearing(Integer bearing) {
+		this.bearing = bearing;
+	}
+
+	public boolean isGeometryValid() {
+		if (this.geometry != null && this.geometry.size() > 0) {
+			for (Coordinate coord : this.geometry) {
+				if (!coord.isValid()) {
+					return false;
+				}
+			}
+			return true;
+		} else {
+			return false;
+		}
+	}
+
+	public List<Milepost> toMileposts() {
+		var mileposts = new ArrayList<Milepost>();
+		for (Coordinate coordinate : this.getGeometry()) {
+			Milepost milepost = new Milepost();
+			milepost.setLatitude(coordinate.getLatitude());
+			milepost.setLongitude(coordinate.getLongitude());
+			milepost.setDirection(this.getDirection());
+			milepost.setCommonName(this.getRoute());
+			milepost.setMilepost(0.0);
+			mileposts.add(milepost);
+		}
+		return mileposts;
 	}
 }

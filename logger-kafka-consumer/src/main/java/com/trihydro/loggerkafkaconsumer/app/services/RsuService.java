@@ -26,7 +26,9 @@ public class RsuService extends BaseService {
 
 			// select all RSUs from RSU table
 			rs = statement.executeQuery(
-					"select * from rsu inner join rsu_view on rsu.deviceid = rsu_view.deviceid order by milepost asc");
+					"select rsu_id, ST_X(ST_AsText(geography)) as longitude, " + 
+					"ST_Y(ST_AsText(geography)) as latitude, ipv4_address, primary_route, " + 
+					"milepost from rsus order by milepost asc");
 
 			while (rs.next()) {
 				WydotRsu rsu = new WydotRsu();

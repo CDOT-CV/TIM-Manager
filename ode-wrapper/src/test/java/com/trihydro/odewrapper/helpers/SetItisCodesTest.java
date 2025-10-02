@@ -65,12 +65,12 @@ public class SetItisCodesTest {
         // Arrange
         setup();
         WydotTimRc tim = new WydotTimRc();
-        Integer[] itisCodes = new Integer[2];
-        itisCodes[0] = 4868;
-        itisCodes[1] = 1309;
-        tim.setAdvisory(itisCodes);
+        ArrayList<String> itisCodes = new ArrayList();
+        itisCodes.add("4868");
+        itisCodes.add("1309");
+        tim.setItisCodes(itisCodes);
         // Act
-        var result = uut.setItisCodesRc(tim);
+        var result = uut.setItisCodes(tim);
 
         // Assert
         Assertions.assertEquals(2, result.size());
@@ -81,12 +81,12 @@ public class SetItisCodesTest {
         // Arrange
         setup();
         WydotTimRc tim = new WydotTimRc();
-        Integer[] itisCodes = new Integer[2];
-        itisCodes[0] = 0;
-        itisCodes[1] = 13;
-        tim.setAdvisory(itisCodes);
+        ArrayList<String> itisCodes = new ArrayList<>();
+        itisCodes.add("0");
+        itisCodes.add("13");
+        tim.setItisCodes(itisCodes);
         // Act
-        var result = uut.setItisCodesRc(tim);
+        var result = uut.setItisCodes(tim);
 
         // Assert
         Assertions.assertEquals(0, result.size());
@@ -97,12 +97,12 @@ public class SetItisCodesTest {
         // Arrange
         setup();
         WydotTimRc tim = new WydotTimRc();
-        Integer[] itisCodes = new Integer[2];
-        itisCodes[0] = 4868;
-        itisCodes[1] = 769;
-        tim.setAdvisory(itisCodes);
+        ArrayList<String> itisCodes = new ArrayList<>();
+        itisCodes.add("4868");
+        itisCodes.add("769");
+        tim.setItisCodes(itisCodes);
         // Act
-        var result = uut.setItisCodesRc(tim);
+        var result = uut.setItisCodes(tim);
 
         // Assert
         Assertions.assertEquals(2, result.size());
@@ -114,12 +114,12 @@ public class SetItisCodesTest {
         // Arrange
         setup();
         WydotTimRc tim = new WydotTimRc();
-        Integer[] itisCodes = new Integer[2];
-        itisCodes[0] = 4868;
-        itisCodes[1] = CustomItisEnum.blowOver.getValue();
-        tim.setAdvisory(itisCodes);
+        ArrayList<String> itisCodes = new ArrayList<>();
+        itisCodes.add("4868");
+        itisCodes.add(String.valueOf(CustomItisEnum.blowOver.getValue()));
+        tim.setItisCodes(itisCodes);
         // Act
-        var result = uut.setItisCodesRc(tim);
+        var result = uut.setItisCodes(tim);
 
         // Assert
         Assertions.assertEquals(2, result.size());
