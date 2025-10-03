@@ -29,6 +29,7 @@ services:
       SERVER_SSL_KEY_STORE_PASSWORD: ${WRAPPER_SERVER_SSL_KEY_STORE_PASSWORD}
       SERVER_SSL_KEY_STORE_TYPE: ${WRAPPER_SERVER_SSL_KEY_STORE_TYPE}
       SERVER_SSL_KEY_ALIAS: ${WRAPPER_SERVER_SSL_KEY_ALIAS}
+      LOGGING_LEVEL_COM_TRIHYDRO: ${LOGGING_LEVEL_COM_TRIHYDRO}
     ports:
       - "7777:7777"
     volumes:
@@ -79,6 +80,8 @@ services:
       CONFIG_DEFAULT_LANE_WIDTH: ${TASKS_CONFIG_DEFAULT_LANE_WIDTH}
       CONFIG_RSU_ROUTES: ${TASKS_CONFIG_RSU_ROUTES}
       CONFIG_POINT_INCIDENT_BUFFER_MILES: ${TASKS_CONFIG_POINT_INCIDENT_BUFFER_MILES}
+      CONFIG_CLEANUP_STALE_ACTIVE_TIM_HOLDING_RECORDS_PERIOD_MINUTES: ${TASKS_CONFIG_CLEANUP_STALE_ACTIVE_TIM_HOLDING_RECORDS_PERIOD_MINUTES}
+      LOGGING_LEVEL_COM_TRIHYDRO: ${LOGGING_LEVEL_COM_TRIHYDRO}
     logging:
       options:
         max-size: "20m"
@@ -107,6 +110,7 @@ services:
       CONFIG_ENVIRONMENT_NAME: ${ENVIRONMENT_NAME}
       CONFIG_MAIL_HOST: ${MAIL_HOST}
       CONFIG_MAIL_PORT: ${MAIL_PORT}
+      LOGGING_LEVEL_COM_TRIHYDRO: ${LOGGING_LEVEL_COM_TRIHYDRO}
     logging:
       options:
         max-size: "20m"
@@ -136,7 +140,7 @@ services:
       SERVER_SSL_KEY_STORE_PASSWORD: ${CONTROLLER_SERVER_SSL_KEY_STORE_PASSWORD}
       SERVER_SSL_KEY_STORE_TYPE: ${CONTROLLER_SERVER_SSL_KEY_STORE_TYPE}
       SERVER_SSL_KEY_ALIAS: ${CONTROLLER_SERVER_SSL_KEY_ALIAS}
-      LOGGING_LEVEL_ROOT: ${CONTROLLER_LOGGING_LEVEL_ROOT}
+      LOGGING_LEVEL_COM_TRIHYDRO: ${LOGGING_LEVEL_COM_TRIHYDRO}
     volumes:
       - /home/timmadmin/timm/cv-data-controller:/keystore
     logging:
@@ -162,6 +166,7 @@ services:
       DB_PASSWORD: ${RSUCONTROLLER_DB_PASSWORD}
       MAXIMUM_POOL_SIZE: ${RSUCONTROLLER_MAXIMUM_POOL_SIZE}
       CONNECTION_TIMEOUT: ${RSUCONTROLLER_CONNECTION_TIMEOUT}
+      LOGGING_LEVEL_COM_TRIHYDRO: ${LOGGING_LEVEL_COM_TRIHYDRO}
     logging:
       options:
         max-size: "20m"
@@ -184,6 +189,7 @@ services:
       MONGOLOGGER_ENVIRONMENT_NAME: ${ENVIRONMENT_NAME}
       MONGOLOGGER_MAIL_HOST: ${MAIL_HOST}
       MONGOLOGGER_MAIL_PORT: ${MAIL_PORT}
+      LOGGING_LEVEL_COM_TRIHYDRO: ${LOGGING_LEVEL_COM_TRIHYDRO}
     logging:
       options:
         max-size: "20m"
@@ -206,6 +212,7 @@ services:
       MONGOLOGGER_ENVIRONMENT_NAME: ${ENVIRONMENT_NAME}
       MONGOLOGGER_MAIL_HOST: ${MAIL_HOST}
       MONGOLOGGER_MAIL_PORT: ${MAIL_PORT}
+      LOGGING_LEVEL_COM_TRIHYDRO: ${LOGGING_LEVEL_COM_TRIHYDRO}
     logging:
       options:
         max-size: "20m"
@@ -228,6 +235,7 @@ services:
       MONGOLOGGER_ENVIRONMENT_NAME: ${ENVIRONMENT_NAME}
       MONGOLOGGER_MAIL_HOST: ${MAIL_HOST}
       MONGOLOGGER_MAIL_PORT: ${MAIL_PORT}
+      LOGGING_LEVEL_COM_TRIHYDRO: ${LOGGING_LEVEL_COM_TRIHYDRO}
     logging:
       options:
         max-size: "20m"
@@ -248,6 +256,7 @@ services:
       CV_REST_SERVICE: ${LOGGER_CV_REST_SERVICE}
       PRODUCER_TOPIC: ${DBCONSUMER_DEPOSIT_TOPIC}
       ENV: ${LOGGER_ENV}
+      LOGGING_LEVEL_COM_TRIHYDRO: ${LOGGING_LEVEL_COM_TRIHYDRO}
     logging:
       options:
         max-size: "20m"
@@ -273,25 +282,7 @@ services:
       MAIL_HOST: ${MAIL_HOST}
       MAIL_PORT: ${MAIL_PORT}
       ENV: ${DBCONSUMER_ENV}
-    logging:
-      options:
-        max-size: "20m"
-        max-file: "3"
-
-  milepost-graph-db:
-    build: milepost-graph-db
-    restart: always
-    ports:
-      - "6474:7474"
-      - "6473:7473"
-      - "6687:7687"
-    volumes:
-      - ./milepost-graph-db/neo-data/plugins:/var/lib/neo4j/plugins
-      - ./milepost-graph-db/neo-data/import:/var/lib/neo4j/import
-      - ./milepost-graph-db/neo-data/conf:/var/lib/neo4j/conf
-      - ./milepost-graph-db/neo-data/data:/var/lib/neo4j/data
-    environment:
-      NEO4J_AUTH: none
+      LOGGING_LEVEL_COM_TRIHYDRO: ${LOGGING_LEVEL_COM_TRIHYDRO}
     logging:
       options:
         max-size: "20m"
@@ -312,6 +303,7 @@ services:
       DEPOSIT_GROUP: ${EXP_GROUP}
       CV_REST_SERVICE: ${LOGGER_CV_REST_SERVICE}
       PRODUCER_TOPIC: ${DBCONSUMER_DEPOSIT_TOPIC}
+      LOGGING_LEVEL_COM_TRIHYDRO: ${LOGGING_LEVEL_COM_TRIHYDRO}
     logging:
       options:
         max-size: "20m"

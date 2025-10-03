@@ -1,7 +1,10 @@
 package com.trihydro.odewrapper.helpers;
 
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.when;
 
+import com.trihydro.library.model.IncidentChoice;
+import com.trihydro.odewrapper.model.WydotTimIncident;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -23,42 +26,42 @@ import org.mockito.junit.jupiter.MockitoExtension;
 @ExtendWith(MockitoExtension.class)
 public class SetItisCodesTest {
 
-    @Mock
-    ItisCodeService mockItisCodeService;
-    @Mock
-    IncidentChoicesService mockIncidentChoicesService;
+  @Mock
+  ItisCodeService mockItisCodeService;
+  @Mock
+  IncidentChoicesService mockIncidentChoicesService;
 
-    @InjectMocks
-    SetItisCodes uut;
+  @InjectMocks
+  SetItisCodes uut;
 
-    public void setup() {
-        List<ItisCode> itisCodes = new ArrayList<>();
-        ItisCode code = new ItisCode();
-        code.setItisCode(268);// speed limit
-        itisCodes.add(code);
+  public void setup() {
+    List<ItisCode> itisCodes = new ArrayList<>();
+    ItisCode code = new ItisCode();
+    code.setItisCode(268);// speed limit
+    itisCodes.add(code);
 
-        code = new ItisCode();
-        code.setItisCode(770);// closed
-        itisCodes.add(code);
+    code = new ItisCode();
+    code.setItisCode(770);// closed
+    itisCodes.add(code);
 
-        code = new ItisCode();
-        code.setItisCode(1309);// rockfall
-        itisCodes.add(code);
+    code = new ItisCode();
+    code.setItisCode(1309);// rockfall
+    itisCodes.add(code);
 
-        code = new ItisCode();
-        code.setItisCode(3084);// wildfire
-        itisCodes.add(code);
+    code = new ItisCode();
+    code.setItisCode(3084);// wildfire
+    itisCodes.add(code);
 
-        code = new ItisCode();
-        code.setItisCode(4868); // snow
-        itisCodes.add(code);
+    code = new ItisCode();
+    code.setItisCode(4868); // snow
+    itisCodes.add(code);
 
-        code = new ItisCode();
-        code.setItisCode(770); // closed
-        itisCodes.add(code);
+    code = new ItisCode();
+    code.setItisCode(770); // closed
+    itisCodes.add(code);
 
-        doReturn(itisCodes).when(mockItisCodeService).selectAll();
-    }
+    doReturn(itisCodes).when(mockItisCodeService).selectAll();
+  }
 
     @Test
     public void setItisCodesRc_numeric() {
@@ -72,9 +75,9 @@ public class SetItisCodesTest {
         // Act
         var result = uut.setItisCodes(tim);
 
-        // Assert
-        Assertions.assertEquals(2, result.size());
-    }
+    // Assert
+    Assertions.assertEquals(2, result.size());
+  }
 
     @Test
     public void setItisCodesRc_nonExistent() {
@@ -88,9 +91,9 @@ public class SetItisCodesTest {
         // Act
         var result = uut.setItisCodes(tim);
 
-        // Assert
-        Assertions.assertEquals(0, result.size());
-    }
+    // Assert
+    Assertions.assertEquals(0, result.size());
+  }
 
     @Test
     public void setItisCodesRc_translated() {
@@ -104,10 +107,10 @@ public class SetItisCodesTest {
         // Act
         var result = uut.setItisCodes(tim);
 
-        // Assert
-        Assertions.assertEquals(2, result.size());
-        Assertions.assertTrue(result.contains("770"));
-    }
+    // Assert
+    Assertions.assertEquals(2, result.size());
+    Assertions.assertTrue(result.contains("770"));
+  }
 
     @Test
     public void setItisCodesRc_alphabetic() {
@@ -121,35 +124,35 @@ public class SetItisCodesTest {
         // Act
         var result = uut.setItisCodes(tim);
 
-        // Assert
-        Assertions.assertEquals(2, result.size());
-        Assertions.assertTrue(result.contains("Extreme blow over risk"));
-    }
+    // Assert
+    Assertions.assertEquals(2, result.size());
+    Assertions.assertTrue(result.contains("Extreme blow over risk"));
+  }
 
-    @Test
-    public void setItisCodesBowr_SUCCESS() throws WeightNotSupportedException {
-        // Arrange
-        // calling setup() not necessary here
-        int weightInPounds = 20000;
-        String weightAsItisCode = "11589";
-        WydotTimBowr tim = new WydotTimBowr();
-        tim.setData(weightInPounds);
-        List<String> expectedResult = List.of("5127", "2563", "2569", "7682", "2577", weightAsItisCode, "8739");
+  @Test
+  public void setItisCodesBowr_SUCCESS() throws WeightNotSupportedException {
+    // Arrange
+    // calling setup() not necessary here
+    int weightInPounds = 20000;
+    String weightAsItisCode = "11589";
+    WydotTimBowr tim = new WydotTimBowr();
+    tim.setData(weightInPounds);
+    List<String> expectedResult = List.of("5127", "2563", "2569", "7682", "2577", weightAsItisCode, "8739");
 
-        // Act
-        List<String> result = uut.setItisCodesBowr(tim);
+    // Act
+    List<String> result = uut.setItisCodesBowr(tim);
 
-        // Assert
-        Assertions.assertEquals(expectedResult, result);
-    }
+    // Assert
+    Assertions.assertEquals(expectedResult, result);
+  }
 
-    @Test
-    public void setItisCodesBowr_FAILURE() throws WeightNotSupportedException {
-        // Arrange
-        // calling setup() not necessary here
-        int weightInPounds = 23456;
-        WydotTimBowr tim = new WydotTimBowr();
-        tim.setData(weightInPounds);
+  @Test
+  public void setItisCodesBowr_FAILURE() {
+    // Arrange
+    // calling setup() not necessary here
+    int weightInPounds = 23456;
+    WydotTimBowr tim = new WydotTimBowr();
+    tim.setData(weightInPounds);
 
         // Act & Assert
         Assertions.assertThrows(WeightNotSupportedException.class, () -> uut.setItisCodesBowr(tim));

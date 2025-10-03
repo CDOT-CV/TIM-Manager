@@ -86,10 +86,10 @@ public class RsuController extends BaseController {
 
 			rs = statement.executeQuery(
 					"select rsus.rsu_id, rsu_credentials.username as update_username, " +
-					"rsu_credentials.password as update_password, ST_X(ST_AsText(rsus.geography)) " + 
-					"as longitude, ST_Y(ST_AsText(rsus.geography)) as latitude, rsus.ipv4_address, " + 
-					"tim_rsu.rsu_index from rsus inner join rsu_credentials on " + 
-					"rsu_credentials.credential_id = rsus.credential_id inner join tim_rsu on " + 
+					"rsu_credentials.password as update_password, ST_X(ST_AsText(rsus.geography)) " +
+					"as longitude, ST_Y(ST_AsText(rsus.geography)) as latitude, rsus.ipv4_address, " +
+					"tim_rsu.rsu_index from rsus inner join rsu_credentials on " +
+					"rsu_credentials.credential_id = rsus.credential_id inner join tim_rsu on " +
 					"tim_rsu.rsu_id = rsus.rsu_id where tim_rsu.tim_id = " + timId);
 
 			while (rs.next()) {
@@ -126,9 +126,9 @@ public class RsuController extends BaseController {
 		return ResponseEntity.ok(rsus);
 	}
 
-	@RequestMapping(method = RequestMethod.GET, value = "/rsus-by-geometry/{geometry}")
+	@RequestMapping(method = RequestMethod.GET, produces = "application/json", value = "/rsus-by-geometry/{geometry}")
 	public ResponseEntity<ArrayList<WydotRsu>> SelectRsusByGeometry(@PathVariable String geometry) {
-		ArrayList<WydotRsu> rsus = new ArrayList<WydotRsu>();
+		ArrayList<WydotRsu> rsus = new ArrayList<>();
 		Connection connection = null;
 		ResultSet rs = null;
 		Statement statement = null;
@@ -141,7 +141,7 @@ public class RsuController extends BaseController {
 			rs = statement.executeQuery(
 					"SELECT rsu_id, ST_X(ST_AsText(geography)) as longitude, " +
 					"ST_Y(ST_AsText(geography)) as latitude, primary_route, milepost, ipv4_address, sc.username, sc.password " +
-					"FROM rsus " + 
+					"FROM rsus " +
 					"JOIN snmp_credentials AS sc ON rsus.snmp_credential_id = sc.snmp_credential_id " +
 					"WHERE rsu_id NOT IN (" +
 					"SELECT rsu_id " +
@@ -185,7 +185,7 @@ public class RsuController extends BaseController {
 		return ResponseEntity.ok(rsus);
 	}
 
-	@RequestMapping(method = RequestMethod.GET, value = "/rsus-by-route/{route}")
+	@RequestMapping(method = RequestMethod.GET, produces = "application/json", value = "/rsus-by-route/{route}")
 	public ResponseEntity<ArrayList<WydotRsu>> SelectRsusByRoute(@PathVariable String route) {
 		ArrayList<WydotRsu> rsus = new ArrayList<WydotRsu>();
 		Connection connection = null;
@@ -231,7 +231,7 @@ public class RsuController extends BaseController {
 		return ResponseEntity.ok(rsus);
 	}
 
-	@RequestMapping(method = RequestMethod.GET, value = "/active-rsu-tim-indexes/{rsuId}")
+	@RequestMapping(method = RequestMethod.GET, produces = "application/json", value = "/active-rsu-tim-indexes/{rsuId}")
 	public ResponseEntity<List<Integer>> GetActiveRsuTimIndexes(@PathVariable Integer rsuId) {
 		List<Integer> indexes = new ArrayList<Integer>();
 

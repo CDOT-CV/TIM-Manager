@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import com.trihydro.library.exceptionhandlers.IdenticalPointsExceptionHandler;
 import com.trihydro.library.helpers.MilepostReduction;
 import com.trihydro.library.helpers.TimGenerationHelper;
 import com.trihydro.library.helpers.Utility;
@@ -58,9 +59,9 @@ public class UtilityController extends WydotTimBaseController {
     public UtilityController(BasicConfiguration _basicConfiguration, WydotTimService _wydotTimService,
             TimTypeService _timTypeService, SetItisCodes _setItisCodes, ActiveTimService _activeTimService,
             OdeService _odeService, RestTemplateProvider _restTemplateProvider, MilepostReduction _milepostReduction,
-            Utility _utility, TimGenerationHelper _timGenerationHelper, MilepostService _milepostService) {
+            Utility _utility, TimGenerationHelper _timGenerationHelper, MilepostService _milepostService, IdenticalPointsExceptionHandler identicalPointsExceptionHandler) {
         super(_basicConfiguration, _wydotTimService, _timTypeService, _setItisCodes, _activeTimService,
-                _restTemplateProvider, _milepostReduction, _utility, _timGenerationHelper, _milepostService);
+                _restTemplateProvider, _milepostReduction, _utility, _timGenerationHelper, _milepostService, identicalPointsExceptionHandler);
         this.odeService = _odeService;
     }
 

@@ -12,6 +12,10 @@ import java.util.List;
 import java.util.Map;
 
 import org.springframework.stereotype.Component;
+import java.util.Map;
+
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Component;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
@@ -40,43 +44,13 @@ import us.dot.its.jpo.ode.plugin.j2735.timstorage.FrameType.TravelerInfoType;
 import us.dot.its.jpo.ode.util.JsonUtils;
 
 @Component
+@Slf4j
 public class JsonToJavaConverter {
 
-    private ObjectMapper mapper = new ObjectMapper();
+    private final ObjectMapper mapper = new ObjectMapper();
 
     public JsonToJavaConverter() {
         mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-    }
-
-    public J2735SpecialVehicleExtensions convertJ2735SpecialVehicleExtensionsJsonToJava(String value, int i) {
-
-        JsonNode part2Node = getPart2Node(value, i);
-        J2735SpecialVehicleExtensions spve = null;
-        try {
-            spve = mapper.treeToValue(part2Node, J2735SpecialVehicleExtensions.class);
-        } catch (JsonProcessingException e) {
-            e.printStackTrace();
-        }
-        return spve;
-    }
-
-    public J2735SupplementalVehicleExtensions convertJ2735SupplementalVehicleExtensionsJsonToJava(String value, int i) {
-
-        JsonNode part2Node = getPart2Node(value, i);
-        J2735SupplementalVehicleExtensions suve = null;
-        try {
-            suve = mapper.treeToValue(part2Node, J2735SupplementalVehicleExtensions.class);
-        } catch (JsonProcessingException e) {
-            e.printStackTrace();
-        }
-        return suve;
-    }
-
-    public JsonNode getPart2Node(String value, int i) {
-        JsonNode part2 = JsonUtils.getJsonNode(value, "payload").get("data").get("partII");
-        if (part2 != null)
-            return part2.get(i).get("value");
-        return null;
     }
 
     public OdeLogMetadata convertTimMetadataJsonToJava(String value) {
@@ -95,13 +69,12 @@ public class JsonToJavaConverter {
                     ((ObjectNode) metaDataNode).replace("receivedMessageDetails", receivedMessageDetailsNode);
                 }
             }
-            // System.out.println(metaDataNode);
+            log.trace("MetaDataNode: {}", metaDataNode);
             odeTimMetadata = mapper.treeToValue(metaDataNode, OdeLogMetadata.class);
         } catch (IOException e) {
-            System.out.println("IOException");
-            System.out.println(e.getStackTrace());
+            log.error("An IOException occurred while converting TIM metadata JSON to Java", e);
         } catch (NullPointerException e) {
-            System.out.println(e.getMessage());
+            log.error("A NullPointerException occurred while converting TIM metadata JSON to Java: {}", e.getMessage());
         }
 
         return odeTimMetadata;
@@ -166,10 +139,10 @@ public class JsonToJavaConverter {
             }
 
         } catch (IOException e) {
-            System.out.println("IOException");
-            System.out.println(e.getStackTrace());
+            log.error("An IOException occurred while converting Broadcast TIM metadata JSON to Java", e);
         } catch (NullPointerException e) {
-            System.out.println(e.getMessage());
+            log.error("A NullPointerException occurred while converting Broadcast TIM metadata JSON to Java: {}",
+                e.getMessage());
         }
         return odeTimMetadata;
     }
@@ -359,7 +332,7 @@ public class JsonToJavaConverter {
                     regions.add(region);
                 }
             } else {
-                System.out.println("warning: geographicalPathNode is not an object or an array");
+                log.warn("geographicalPathNode is not an object or an array");
             }
 
             dataFrame.setRegions(regions.toArray(new OdeTravelerInformationMessage.DataFrame.Region[regions.size()]));
@@ -369,9 +342,9 @@ public class JsonToJavaConverter {
             odeTimPayload = new OdeTimPayload();
             odeTimPayload.setData(tim);
         } catch (IOException e) {
-            System.out.println(e.getStackTrace());
+            log.error("An IOException occurred while converting TIM JSON to Java", e);
         } catch (NullPointerException e) {
-            System.out.println(e.getMessage());
+            log.error("A NullPointerException occurred while converting TIM JSON to Java: {}", e.getMessage());
         }
 
         return odeTimPayload;
@@ -582,7 +555,7 @@ public class JsonToJavaConverter {
                         regions.add(region);
                     }
                 } else {
-                    System.out.println("warning: geographicalPathNode is not an object or an array");
+                    log.warn("geographicalPathNode is not an object or an array");
                 }
 
                 dataFrame.setRegions(regions.toArray(OdeTravelerInformationMessage.DataFrame.Region[]::new));
@@ -593,9 +566,9 @@ public class JsonToJavaConverter {
             odeTimPayload = new OdeTimPayload();
             odeTimPayload.setData(tim);
         } catch (IOException e) {
-            System.out.println(e.getStackTrace());
+            log.error("An IOException occurred while converting TMC TIM JSON to Java", e);
         } catch (NullPointerException e) {
-            System.out.println(e.getMessage());
+            log.error("A NullPointerException occurred while converting TMC TIM JSON to Java: {}", e.getMessage());
         }
 
         return odeTimPayload;
@@ -609,9 +582,9 @@ public class JsonToJavaConverter {
             JsonNode timNode = JsonUtils.getJsonNode(value, "payload").get("data");
             odeTim = mapper.treeToValue(timNode, OdeTravelerInformationMessage.class);
         } catch (IOException e) {
-            System.out.println(e.getStackTrace());
+            log.error("An IOException occurred while converting Broadcast TIM JSON to Java", e);
         } catch (NullPointerException e) {
-            System.out.println(e.getMessage());
+            log.error("A NullPointerException occurred while converting Broadcast TIM JSON to Java: {}", e.getMessage());
         }
 
         return odeTim;
