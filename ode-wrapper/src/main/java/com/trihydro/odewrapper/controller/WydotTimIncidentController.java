@@ -1,12 +1,9 @@
 package com.trihydro.odewrapper.controller;
 
+import com.trihydro.library.exceptionhandlers.IdenticalPointsExceptionHandler;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 
 import com.trihydro.library.helpers.MilepostReduction;
 import com.trihydro.library.helpers.TimGenerationHelper;
@@ -24,6 +21,7 @@ import com.trihydro.odewrapper.model.ControllerResult;
 import com.trihydro.odewrapper.model.TimIncidentList;
 import com.trihydro.odewrapper.model.WydotTimIncident;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -42,6 +40,7 @@ import us.dot.its.jpo.ode.plugin.j2735.timstorage.FrameType.TravelerInfoType;
 @CrossOrigin
 @RestController
 @Api(description = "Incidents")
+@Slf4j
 public class WydotTimIncidentController extends WydotTimBaseController {
 
     private final String type = "I";
@@ -51,9 +50,9 @@ public class WydotTimIncidentController extends WydotTimBaseController {
     public WydotTimIncidentController(BasicConfiguration _basicConfiguration, WydotTimService _wydotTimService,
             TimTypeService _timTypeService, SetItisCodes _setItisCodes, ActiveTimService _activeTimService,
             RestTemplateProvider _restTemplateProvider, MilepostReduction _milepostReduction, Utility _utility,
-            TimGenerationHelper _timGenerationHelper, MilepostService _milepostService) {
+            TimGenerationHelper _timGenerationHelper, MilepostService _milepostService, IdenticalPointsExceptionHandler identicalPointsExceptionHandler) {
         super(_basicConfiguration, _wydotTimService, _timTypeService, _setItisCodes, _activeTimService,
-                _restTemplateProvider, _milepostReduction, _utility, _timGenerationHelper, _milepostService);
+                _restTemplateProvider, _milepostReduction, _utility, _timGenerationHelper, _milepostService, identicalPointsExceptionHandler);
     }
 
     @RequestMapping(value = "/incident-tim", method = RequestMethod.POST, headers = "Accept=application/json")
@@ -69,10 +68,10 @@ public class WydotTimIncidentController extends WydotTimBaseController {
         List<ControllerResult> resultList = new ArrayList<>();
         ControllerResult resultTim;
 
-        // build TIM
-        for (WydotTimIncident wydotTim : timIncidentList.getTimIncidentList()) {
+    // build TIM
+    for (WydotTimIncident wydotTim : timIncidentList.getTimIncidentList()) {
 
-            resultTim = validateInputIncident(wydotTim);
+      resultTim = validateInputIncident(wydotTim);
 
             if (wydotTim.getDirection().equalsIgnoreCase("i")) {
                 makeIncreasingTims(wydotTim);
@@ -81,15 +80,15 @@ public class WydotTimIncidentController extends WydotTimBaseController {
                 makeDecreasingTims(wydotTim);
             }
 
-            resultTim.getResultMessages().add("success");
-            resultList.add(resultTim);
-        }
-
-        makeTimsAsync(timsToSend);
-
-        String responseMessage = gson.toJson(resultList);
-        return ResponseEntity.status(HttpStatus.OK).body(responseMessage);
+      resultTim.getResultMessages().add("success");
+      resultList.add(resultTim);
     }
+
+    makeTimsAsync(timsToSend);
+
+    String responseMessage = gson.toJson(resultList);
+    return ResponseEntity.status(HttpStatus.OK).body(responseMessage);
+  }
 
     public void makeIncreasingTims(WydotTimIncident wydotTim) {
         // i - add buffer for point TIMs
@@ -194,13 +193,9 @@ public class WydotTimIncidentController extends WydotTimBaseController {
         }).start();
     }
 
-    @RequestMapping(value = "/incident-tim/{incidentId}", method = RequestMethod.DELETE, headers = "Accept=application/json")
-    public ResponseEntity<String> deleteIncidentTim(@PathVariable String incidentId) {
-
-        DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
-        Date date = new Date();
-
-        utility.logWithDate(dateFormat.format(date) + " - Delete Incident TIM", this.getClass());
+  @RequestMapping(value = "/incident-tim/{incidentId}", method = RequestMethod.DELETE, headers = "Accept=application/json")
+  public ResponseEntity<String> deleteIncidentTim(@PathVariable String incidentId) {
+    log.info("Delete Incident TIM");
 
         // expire and clear TIM
         wydotTimService.clearTimsById("I", incidentId, null, true);
@@ -209,20 +204,15 @@ public class WydotTimIncidentController extends WydotTimBaseController {
         return ResponseEntity.status(HttpStatus.OK).body(responseMessage);
     }
 
-    @RequestMapping(value = "/incident-tim", method = RequestMethod.GET, headers = "Accept=application/json")
-    public Collection<ActiveTim> getIncidentTims() {
+  @RequestMapping(value = "/incident-tim", method = RequestMethod.GET, headers = "Accept=application/json")
+  public Collection<ActiveTim> getIncidentTims() {
+    // get active TIMs
+    return wydotTimService.selectTimsByType("I");
+  }
 
-        // get active TIMs
-        List<ActiveTim> activeTims = wydotTimService.selectTimsByType("I");
-
-        return activeTims;
-    }
-
-    @RequestMapping(value = "/incident-tim/{incidentId}", method = RequestMethod.GET, headers = "Accept=application/json")
-    public Collection<ActiveTim> getIncidentTimById(@PathVariable String incidentId) {
-
-        // get active TIMs
-        List<ActiveTim> activeTims = wydotTimService.selectTimByClientId("I", incidentId);
-        return activeTims;
-    }
+  @RequestMapping(value = "/incident-tim/{incidentId}", method = RequestMethod.GET, headers = "Accept=application/json")
+  public Collection<ActiveTim> getIncidentTimById(@PathVariable String incidentId) {
+    // get active TIMs
+    return wydotTimService.selectTimByClientId("I", incidentId);
+  }
 }

@@ -4,6 +4,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.isA;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -34,6 +35,7 @@ import org.mockito.Spy;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
+import org.springframework.web.client.HttpServerErrorException;
 import us.dot.its.jpo.ode.plugin.j2735.timstorage.FrameType;
 
 public class ActiveTimControllerTest extends TestBase<ActiveTimController> {
@@ -48,8 +50,7 @@ public class ActiveTimControllerTest extends TestBase<ActiveTimController> {
     }
 
     private void setupPreparedStatement() {
-        doReturn(mockPreparedStatement).when(mockTimDbTables).buildUpdateStatement(any(), any(), any(), any(),
-                any());
+        doReturn(mockPreparedStatement).when(mockTimDbTables).buildUpdateStatement(any(), any(), any(), any(), any());
     }
 
     @Test
@@ -337,15 +338,17 @@ public class ActiveTimControllerTest extends TestBase<ActiveTimController> {
     @Test
     public void GetExpiredActiveTims_SUCCESS() throws SQLException {
         // Arrange
-        String statementStr = "select * from ACTIVE_TIM";
-        statementStr += " WHERE TIM_END <= (NOW() AT TIME ZONE 'UTC')";
+        String statementStr = "SELECT * FROM ACTIVE_TIM";
+        statementStr += " WHERE TIM_END <= (NOW() AT TIME ZONE 'UTC') LIMIT ?";
 
         // Act
-        ResponseEntity<List<ActiveTim>> aTims = uut.GetExpiredActiveTims();
+        ResponseEntity<List<ActiveTim>> aTims = uut.GetExpiredActiveTims(500);
 
         // Assert
         Assertions.assertEquals(HttpStatus.OK, aTims.getStatusCode());
-        verify(mockStatement).executeQuery(statementStr);
+        verify(mockConnection).prepareStatement(statementStr);
+        verify(mockPreparedStatement).setInt(1, 500);
+        verify(mockPreparedStatement).executeQuery();
         verify(mockRs).getLong("ACTIVE_TIM_ID");
         verify(mockRs).getLong("TIM_ID");
         verify(mockRs).getString("SAT_RECORD_ID");
@@ -356,7 +359,7 @@ public class ActiveTimControllerTest extends TestBase<ActiveTimController> {
         verify(mockRs).getString("CLIENT_ID");
         verify(mockRs).getString("ROUTE");
         verify(mockRs).getString("DIRECTION");
-        verify(mockStatement).close();
+        verify(mockPreparedStatement).close();
         verify(mockConnection).close();
         Assertions.assertEquals(1, aTims.getBody().size());
     }
@@ -364,19 +367,18 @@ public class ActiveTimControllerTest extends TestBase<ActiveTimController> {
     @Test
     public void GetExpiredActiveTims_FAIL() throws SQLException {
         // Arrange
-        String statementStr = "select * from ACTIVE_TIM";
-        statementStr += " WHERE TIM_END <= (NOW() AT TIME ZONE 'UTC')";
-        when(mockStatement.executeQuery(isA(String.class))).thenThrow(new SQLException());
+        String statementStr = "SELECT * FROM ACTIVE_TIM";
+        statementStr += " WHERE TIM_END <= (NOW() AT TIME ZONE 'UTC') LIMIT ?";
+        when(mockPreparedStatement.executeQuery()).thenThrow(new SQLException());
 
         // Act
-        ResponseEntity<List<ActiveTim>> aTims = uut.GetExpiredActiveTims();
+        Assertions.assertThrows(HttpServerErrorException.class, () -> uut.GetExpiredActiveTims(500));
 
         // Assert
-        Assertions.assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, aTims.getStatusCode());
-        verify(mockStatement).executeQuery(statementStr);
-        verify(mockStatement).close();
+        verify(mockConnection).prepareStatement(statementStr);
+        verify(mockPreparedStatement).executeQuery();
+        verify(mockPreparedStatement).close();
         verify(mockConnection).close();
-        Assertions.assertEquals(0, aTims.getBody().size());
     }
 
     @Test
@@ -429,8 +431,7 @@ public class ActiveTimControllerTest extends TestBase<ActiveTimController> {
         String clientId = "clientId";
         Long timTypeId = -1l;
         String direction = "eastward";
-        String selectStatement = "select * from active_tim where CLIENT_ID like '" + clientId + "' and TIM_TYPE_ID = "
-                + timTypeId;
+        String selectStatement = "select * from active_tim where CLIENT_ID like '" + clientId + "' and TIM_TYPE_ID = " + timTypeId;
         selectStatement += " and DIRECTION = '" + direction + "'";
         selectStatement += " and MARKED_FOR_DELETION = '0'";
 
@@ -464,8 +465,7 @@ public class ActiveTimControllerTest extends TestBase<ActiveTimController> {
         String clientId = "clientId";
         Long timTypeId = -1l;
         String direction = "eastward";
-        String selectStatement = "select * from active_tim where CLIENT_ID like '" + clientId + "' and TIM_TYPE_ID = "
-                + timTypeId;
+        String selectStatement = "select * from active_tim where CLIENT_ID like '" + clientId + "' and TIM_TYPE_ID = " + timTypeId;
         selectStatement += " and DIRECTION = '" + direction + "'";
         selectStatement += " and MARKED_FOR_DELETION = '0'";
         doThrow(new SQLException()).when(mockRs).getLong("ACTIVE_TIM_ID");
@@ -561,8 +561,9 @@ public class ActiveTimControllerTest extends TestBase<ActiveTimController> {
     public void GetItisCodesForActiveTim_FAIL() throws SQLException {
         // Arrange
         Long activeTimId = -1l;
-        String selectStatement = "select itis_code from active_tim inner join tim on tim.tim_id = active_tim.tim_id inner join data_frame on tim.tim_id = data_frame.tim_id inner join data_frame_itis_code on data_frame_itis_code.data_frame_id = data_frame.data_frame_id inner join itis_code on data_frame_itis_code.itis_code_id = itis_code.itis_code_id where active_tim_id = "
-                + activeTimId + " order by data_frame_itis_code.position asc";
+        String selectStatement =
+            "select itis_code from active_tim inner join tim on tim.tim_id = active_tim.tim_id inner join data_frame on tim.tim_id = data_frame.tim_id inner join data_frame_itis_code on data_frame_itis_code.data_frame_id = data_frame.data_frame_id inner join itis_code on data_frame_itis_code.itis_code_id = itis_code.itis_code_id where active_tim_id = " +
+                activeTimId + " order by data_frame_itis_code.position asc";
         doThrow(new SQLException()).when(mockRs).getInt("ITIS_CODE");
 
         // Act
@@ -1144,14 +1145,10 @@ public class ActiveTimControllerTest extends TestBase<ActiveTimController> {
         verify(mockSqlNullHandler).setStringOrNull(mockPreparedStatement, 7, activeTim.getClientId());// CLIENT_ID
         verify(mockSqlNullHandler).setStringOrNull(mockPreparedStatement, 8, activeTim.getSatRecordId());// SAT_RECORD_ID
         verify(mockSqlNullHandler).setIntegerOrNull(mockPreparedStatement, 9, activeTim.getPk());// PK
-        verify(mockSqlNullHandler).setBigDecimalOrNull(mockPreparedStatement, 10,
-                activeTim.getStartPoint().getLatitude());// START_LATITUDE
-        verify(mockSqlNullHandler).setBigDecimalOrNull(mockPreparedStatement, 11,
-                activeTim.getStartPoint().getLongitude());// START_LONGITUDE
-        verify(mockSqlNullHandler).setBigDecimalOrNull(mockPreparedStatement, 12,
-                activeTim.getEndPoint().getLatitude());// END_LATITUDE
-        verify(mockSqlNullHandler).setBigDecimalOrNull(mockPreparedStatement, 13,
-                activeTim.getEndPoint().getLongitude());// END_LONGITUDE
+        verify(mockSqlNullHandler).setBigDecimalOrNull(mockPreparedStatement, 10, activeTim.getStartPoint().getLatitude());// START_LATITUDE
+        verify(mockSqlNullHandler).setBigDecimalOrNull(mockPreparedStatement, 11, activeTim.getStartPoint().getLongitude());// START_LONGITUDE
+        verify(mockSqlNullHandler).setBigDecimalOrNull(mockPreparedStatement, 12, activeTim.getEndPoint().getLatitude());// END_LATITUDE
+        verify(mockSqlNullHandler).setBigDecimalOrNull(mockPreparedStatement, 13, activeTim.getEndPoint().getLongitude());// END_LONGITUDE
         verify(mockPreparedStatement).close();
         verify(mockConnection).close();
 
@@ -1165,8 +1162,7 @@ public class ActiveTimControllerTest extends TestBase<ActiveTimController> {
         String endTime = Instant.now().plusSeconds(60).toString();
         activeTim.setStartDateTime(startTime);
         activeTim.setEndDateTime(endTime);
-        doThrow(new SQLException()).when(mockSqlNullHandler).setLongOrNull(mockPreparedStatement, 1,
-                activeTim.getTimId());
+        doThrow(new SQLException()).when(mockSqlNullHandler).setLongOrNull(mockPreparedStatement, 1, activeTim.getTimId());
 
         // Act
         ResponseEntity<Long> data = uut.InsertActiveTim(activeTim);
@@ -1190,8 +1186,7 @@ public class ActiveTimControllerTest extends TestBase<ActiveTimController> {
         // Assert
         Assertions.assertEquals(HttpStatus.OK, data.getStatusCode());
         Assertions.assertTrue(data.getBody(), "Fail return on success");
-        verify(mockConnection)
-                .prepareStatement("UPDATE ACTIVE_TIM SET EXPIRATION_DATE = NULL WHERE ACTIVE_TIM_ID IN (?)");
+        verify(mockConnection).prepareStatement("UPDATE ACTIVE_TIM SET EXPIRATION_DATE = NULL WHERE ACTIVE_TIM_ID IN (?)");
         verify(mockPreparedStatement).setLong(1, -1l);
         verify(mockPreparedStatement).close();
         verify(mockConnection).close();
@@ -1224,18 +1219,16 @@ public class ActiveTimControllerTest extends TestBase<ActiveTimController> {
         }
         updateTwo = updateOne.substring(0, updateOne.length() - 1);
         updateTwo += ")";
-        verify(mockConnection)
-                .prepareStatement(updateOne);
-        verify(mockConnection)
-                .prepareStatement(updateTwo);
+        verify(mockConnection).prepareStatement(updateOne);
+        verify(mockConnection).prepareStatement(updateTwo);
 
         for (int i = 0; i < 500; i++) {
             verify(mockPreparedStatement).setLong(i + 1, (Long.valueOf(i)));
         }
-        for(int i = 500; i < 600; i++){
+        for (int i = 500; i < 600; i++) {
             verify(mockPreparedStatement).setLong(i - 499, (Long.valueOf(i)));
         }
-        verify(mockPreparedStatement).close();
+        verify(mockPreparedStatement, times(2)).close();
         verify(mockConnection).close();
     }
 
@@ -1252,8 +1245,7 @@ public class ActiveTimControllerTest extends TestBase<ActiveTimController> {
         // Assert
         Assertions.assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, data.getStatusCode());
         Assertions.assertFalse(data.getBody(), "Success return on error");
-        verify(mockConnection)
-                .prepareStatement("UPDATE ACTIVE_TIM SET EXPIRATION_DATE = NULL WHERE ACTIVE_TIM_ID IN (?)");
+        verify(mockConnection).prepareStatement("UPDATE ACTIVE_TIM SET EXPIRATION_DATE = NULL WHERE ACTIVE_TIM_ID IN (?)");
         verify(mockPreparedStatement).close();
         verify(mockConnection).close();
     }

@@ -24,9 +24,9 @@ public class WydotTim {
 	@ApiModelProperty(required = false)
 	private Integer bearing;
 
-	public WydotTim() {
+    public WydotTim() {
 
-	}
+    }
 
 	public WydotTim(WydotTim o) {
 		this.direction = o.direction;
@@ -50,53 +50,61 @@ public class WydotTim {
 		    this.bearing = o.bearing;
 	}
 
-	public WydotTim copy() {
-		return new WydotTim(this);
-	}
+    public WydotTim(TimUpdateModel aTim) {
+        setClientId(aTim.getClientId());
+        setDirection(aTim.getDirection());
+        setStartPoint(aTim.getStartPoint());
+        setEndPoint(aTim.getEndPoint());
+        // note: route and itisCodes are not set in this constructor
+    }
 
-	public String getClientId() {
-		return this.clientId;
-	}
+    public WydotTim copy() {
+        return new WydotTim(this);
+    }
 
-	public void setClientId(String clientId) {
-		this.clientId = clientId;
-	}
+    public String getClientId() {
+        return this.clientId;
+    }
 
-	public List<String> getItisCodes() {
-		return this.itisCodes;
-	}
+    public void setClientId(String clientId) {
+        this.clientId = clientId;
+    }
 
-	public void setItisCodes(List<String> itisCodes) {
-		this.itisCodes = itisCodes;
-	}
+    public List<String> getItisCodes() {
+        return this.itisCodes;
+    }
 
-	public String getDirection() {
-		return this.direction;
-	}
+    public void setItisCodes(List<String> itisCodes) {
+        this.itisCodes = itisCodes;
+    }
 
-	public void setDirection(String direction) {
-		this.direction = direction;
-	}
+    public String getDirection() {
+        return this.direction;
+    }
 
-	public Coordinate getStartPoint() {
-		return this.startPoint;
-	}
+    public void setDirection(String direction) {
+        this.direction = direction;
+    }
 
-	public void setStartPoint(Coordinate startPoint) {
-		this.startPoint = startPoint;
-	}
+    public Coordinate getStartPoint() {
+        return this.startPoint;
+    }
 
-	public Coordinate getEndPoint() {
-		return this.endPoint;
-	}
+    public void setStartPoint(Coordinate startPoint) {
+        this.startPoint = startPoint;
+    }
 
-	public void setEndPoint(Coordinate endPoint) {
-		this.endPoint = endPoint;
-	}
+    public Coordinate getEndPoint() {
+        return this.endPoint;
+    }
 
-	public String getRoute() {
-		return this.route;
-	}
+    public void setEndPoint(Coordinate endPoint) {
+        this.endPoint = endPoint;
+    }
+
+    public String getRoute() {
+        return this.route;
+    }
 
 	public void setRoute(String route) {
 		this.route = route;
