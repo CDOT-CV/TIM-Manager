@@ -153,7 +153,8 @@ public class WydotTimService {
         Random rand = new Random();
         StringBuffer sb = new StringBuffer();
         if (dotGnisId.equals("000000")) {
-            log.warn("DOT GNIS ID is set to default value of 000000. This is not a valid GNIS ID and should be changed in the configuration.");
+            log.error("DOT GNIS ID is set to default value of 000000. This is not a valid GNIS ID and should be changed in the configuration.");
+            return null;
         }
         sb.append(dotGnisId);
         while (sb.length() < 18) {

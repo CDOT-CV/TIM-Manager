@@ -366,9 +366,7 @@ public class WydotTimServiceTest {
         WydotTravelerInputData result = uut.createTim(new WydotTim(), timTypeStr, startDateTime, endDateTime, content, frameType, allMileposts, reducedMileposts, anchor, dotGnisId);
 
         // Assert
-        assertNotNull(result.getTim().getPacketID());
-        assertEquals(18, result.getTim().getPacketID().length());
-        assertTrue(result.getTim().getPacketID().matches("[0-9A-F]+"));
+        assertNull(result.getTim());
     }
 
     @Test
