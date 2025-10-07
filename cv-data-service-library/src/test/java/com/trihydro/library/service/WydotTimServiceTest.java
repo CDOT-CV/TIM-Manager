@@ -1,9 +1,7 @@
 package com.trihydro.library.service;
 
 import static org.junit.Assert.assertNull;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyList;
@@ -346,7 +344,7 @@ public class WydotTimServiceTest {
     }
 
     @Test
-    public void createTim_SetsRandomPacketIdUnsetGNISId() {
+    public void createTim_ThrowsExceptionPacketIdUnsetGNISId() {
         // Arrange
         String timTypeStr = "A";
         String startDateTime = "2023-01-01T00:00:00.000Z";
@@ -362,11 +360,10 @@ public class WydotTimServiceTest {
 
         when(mockCreateBaseTimUtil.buildTim(any(), any(), any(), any(), any(), any(), any())).thenReturn(timToSend);
 
-        // Act
-        WydotTravelerInputData result = uut.createTim(new WydotTim(), timTypeStr, startDateTime, endDateTime, content, frameType, allMileposts, reducedMileposts, anchor, dotGnisId);
-
-        // Assert
-        assertNull(result.getTim());
+        // Act & Assert
+        assertThrows(IllegalStateException.class, () -> {
+            uut.createTim(new WydotTim(), timTypeStr, startDateTime, endDateTime, content, frameType, allMileposts, reducedMileposts, anchor, dotGnisId);
+        });
     }
 
     @Test

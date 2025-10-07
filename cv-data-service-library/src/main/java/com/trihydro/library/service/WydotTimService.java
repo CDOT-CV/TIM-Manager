@@ -151,16 +151,15 @@ public class WydotTimService {
 
         // Set PacketId as an 18-character hex string: DOT GNIS ID + random hex suffix
         Random rand = new Random();
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         if (dotGnisId.equals("000000")) {
-            log.error("DOT GNIS ID is set to default value of 000000. This is not a valid GNIS ID and should be changed in the configuration.");
-            return null;
+            throw new IllegalStateException("DOT GNIS ID is set to default value of 000000. This is not a valid GNIS ID and should be changed in the configuration.");
         }
         sb.append(dotGnisId);
         while (sb.length() < 18) {
             sb.append(Integer.toHexString(rand.nextInt()));
         }
-        timToSend.getTim().setPacketID(sb.toString().substring(0, 18).toUpperCase());
+        timToSend.getTim().setPacketID(sb.substring(0, 18).toUpperCase());
 
         return timToSend;
     }
