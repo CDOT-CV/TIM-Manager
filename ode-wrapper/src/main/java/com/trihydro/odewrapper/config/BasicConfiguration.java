@@ -26,6 +26,7 @@ public class BasicConfiguration implements SdwProps, RsuDataServiceProps, TmddPr
     private String odeUrl;
     private String sdwRestUrl;
     private String sdwApiKey;
+    private String dotGnisId;
     private String mailHost;
     private int mailPort;
     private String[] alertAddresses;
@@ -58,6 +59,14 @@ public class BasicConfiguration implements SdwProps, RsuDataServiceProps, TmddPr
 
     public void setPointIncidentBufferMiles(Double pointIncidentBufferMiles) {
         this.pointIncidentBufferMiles = pointIncidentBufferMiles;
+    }
+
+    public String getDotGnisId() {
+        return dotGnisId;
+    }
+
+    public void setDotGnisId(String dotGnisId) {
+        this.dotGnisId = dotGnisId;
     }
 
     public String getFromEmail() {
