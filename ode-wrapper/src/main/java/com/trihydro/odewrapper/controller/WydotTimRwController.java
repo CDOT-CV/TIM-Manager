@@ -44,7 +44,7 @@ import us.dot.its.jpo.ode.plugin.j2735.timstorage.FrameType.TravelerInfoType;
 @CrossOrigin
 @RestController
 @Api(description = "Road Construction")
-public class WydotTimRwController extends WydotTimBaseController {
+public class WydotTimRwController extends WydotTimBaseController implements BufferTimFactory {
 
     private final String type = "RW";
     List<WydotTimRw> timsToSend;
@@ -86,19 +86,15 @@ public class WydotTimRwController extends WydotTimBaseController {
             if (wydotTim.getBuffers() != null)
                 wydotTim.getBuffers().sort(Comparator.comparingDouble(Buffer::getDistance));
 
-            // if bi-directional
+
             if (wydotTim.getDirection().equalsIgnoreCase("b")) {
-                // make i TIMs
-                makeIncreasingTims(wydotTim);
-                // make d TIMs
-                makeDecreasingTims(wydotTim);
-            }
-            // else make one direction TIMs
-            else if (wydotTim.getDirection().equalsIgnoreCase("i")) {
-                makeIncreasingTims(wydotTim);
-            }
-            else {
-                makeDecreasingTims(wydotTim);
+                // if bi-directional, make both increasing and decreasing TIMs
+                makeIncreasingTims(wydotTim, bufferTimITISCodes, milepostService);
+                makeDecreasingTims(wydotTim, bufferTimITISCodes, milepostService);
+            } else if (wydotTim.getDirection().equalsIgnoreCase("i")) {
+                makeIncreasingTims(wydotTim, bufferTimITISCodes, milepostService);
+            } else {
+                makeDecreasingTims(wydotTim, bufferTimITISCodes, milepostService);
             }
 
             // compile result messages for user
@@ -112,26 +108,6 @@ public class WydotTimRwController extends WydotTimBaseController {
         return ResponseEntity.status(HttpStatus.OK).body(responseMessage);
     }
 
-    public void makeIncreasingTims(WydotTimRw wydotTim) {
-        // i - add buffer for point TIMs
-        WydotTimRw timOneWay = copyTimWithStartDate(wydotTim);
-        timOneWay.setDirection("I");
-
-        addTimsToSend(timOneWay, false);
-
-        makeBufferTims(timOneWay);
-    }
-
-    public void makeDecreasingTims(WydotTimRw wydotTim) {
-        // d - add buffer for point TIMs
-        WydotTimRw timOneWay = copyTimWithStartDate(wydotTim);
-        timOneWay.setDirection("D");
-
-        addTimsToSend(timOneWay, false);
-
-        makeBufferTims(timOneWay);
-    }
-
     private WydotTimRw copyTimWithStartDate(WydotTimRw wydotTim) {
         WydotTimRw timOneWay = wydotTim.copy();
         if (StringUtils.isBlank(timOneWay.getSchedStart())) {
@@ -139,38 +115,6 @@ public class WydotTimRwController extends WydotTimBaseController {
             timOneWay.setSchedStart(startTime);
         }
         return timOneWay;
-    }
-
-    private void addTimsToSend(WydotTimRw tim, boolean isBuffer) {
-        for (String itisCodeEntry : tim.getItisCodes()) {
-            // CTW Update requires that individual TIMs are created for each ITIS ordering
-            List<String> itisCodes = Arrays.asList(itisCodeEntry.split(" "));
-
-            // only generate appropriate TIMs for geometry list (buffer, workZone)
-            String lastItisCode = itisCodes.get(itisCodes.size() - 1);
-            boolean isBufferTim = bufferTimITISCodes.contains(Integer.valueOf(lastItisCode));
-            if (isBuffer && !isBufferTim) {
-                continue;
-            } else if (!isBuffer && isBufferTim) {
-                continue;
-            }
-
-            WydotTimRw timToSend = tim.copy();
-            timToSend.setItisCodes(itisCodes);
-            var itisCodeAbb = SetItisCodes.getItisCodeAbbreviation(itisCodeEntry);
-            String clientIdWithItis = tim.getClientId() + '-' + tim.getDirection() + '-' + itisCodeAbb;
-            timToSend.setClientId(clientIdWithItis);
-            timsToSend.add(timToSend);
-        }
-    }
-
-    public void makeBufferTims(WydotTimRw wydotTim) {
-        // get mileposts for buffer
-        List<Milepost> bufferMps = milepostService.getBufferForPath(wydotTim.getRoute().replace('-', '_'), 1.0, wydotTim.toMileposts());
-        wydotTim.setGeometry(milepostToGeometry(bufferMps));
-        wydotTim.setClientId(wydotTim.getClientId() + "%BUFF");
-
-        addTimsToSend(wydotTim, true);
     }
 
     public void processRequestAsync() {
