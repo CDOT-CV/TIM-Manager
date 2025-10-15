@@ -11,12 +11,7 @@ import java.util.List;
 import com.trihydro.library.helpers.MilepostReduction;
 import com.trihydro.library.helpers.TimGenerationHelper;
 import com.trihydro.library.helpers.Utility;
-import com.trihydro.library.model.ActiveTim;
-import com.trihydro.library.model.Buffer;
-import com.trihydro.library.model.ContentEnum;
-import com.trihydro.library.model.Milepost;
-import com.trihydro.library.model.TimRwList;
-import com.trihydro.library.model.WydotTimRw;
+import com.trihydro.library.model.*;
 import com.trihydro.library.service.ActiveTimService;
 import com.trihydro.library.service.RestTemplateProvider;
 import com.trihydro.library.service.TimTypeService;
@@ -47,7 +42,7 @@ import us.dot.its.jpo.ode.plugin.j2735.timstorage.FrameType.TravelerInfoType;
 public class WydotTimRwController extends WydotTimBaseController implements BufferTimFactory {
 
     private final String type = "RW";
-    List<WydotTimRw> timsToSend;
+    List<WydotTim> timsToSend;
 
     @Autowired
     public WydotTimRwController(BasicConfiguration _basicConfiguration, WydotTimService _wydotTimService,
@@ -89,12 +84,12 @@ public class WydotTimRwController extends WydotTimBaseController implements Buff
 
             if (wydotTim.getDirection().equalsIgnoreCase("b")) {
                 // if bi-directional, make both increasing and decreasing TIMs
-                makeIncreasingTims(wydotTim, bufferTimITISCodes, milepostService);
-                makeDecreasingTims(wydotTim, bufferTimITISCodes, milepostService);
+                timsToSend.addAll(makeIncreasingTims(wydotTim, bufferTimITISCodes, milepostService));
+                timsToSend.addAll(makeDecreasingTims(wydotTim, bufferTimITISCodes, milepostService));
             } else if (wydotTim.getDirection().equalsIgnoreCase("i")) {
-                makeIncreasingTims(wydotTim, bufferTimITISCodes, milepostService);
+                timsToSend.addAll(makeIncreasingTims(wydotTim, bufferTimITISCodes, milepostService));
             } else {
-                makeDecreasingTims(wydotTim, bufferTimITISCodes, milepostService);
+                timsToSend.addAll(makeDecreasingTims(wydotTim, bufferTimITISCodes, milepostService));
             }
 
             // compile result messages for user
@@ -120,19 +115,20 @@ public class WydotTimRwController extends WydotTimBaseController implements Buff
     public void processRequestAsync() {
         // An Async task always executes in new thread
         new Thread(() -> {
-            for (WydotTimRw tim : timsToSend) {
+            for (var tim : timsToSend) {
+                WydotTimRw timRw = (WydotTimRw) tim;
                 // check for reduce speed, itis code 7443
-                if (tim.getItisCodes() != null && tim.getItisCodes().size() == 3
-                        && tim.getItisCodes().get(0).equals("7443")) {
-                    processRequest(tim, getTimType(type), tim.getSchedStart(), tim.getSchedEnd(), null,
+                if (timRw.getItisCodes() != null && timRw.getItisCodes().size() == 3
+                        && timRw.getItisCodes().get(0).equals("7443")) {
+                    processRequest(timRw, getTimType(type), timRw.getSchedStart(), timRw.getSchedEnd(), null,
                             ContentEnum.speedLimit, TravelerInfoType.advisory);
-                } else if (tim.getItisCodes() != null && tim.getItisCodes().get(0).equals("7186")) {
+                } else if (timRw.getItisCodes() != null && timRw.getItisCodes().get(0).equals("7186")) {
                     // prepare to stop
-                    processRequest(tim, getTimType(type), tim.getSchedStart(), tim.getSchedEnd(), null,
+                    processRequest(timRw, getTimType(type), timRw.getSchedStart(), timRw.getSchedEnd(), null,
                             ContentEnum.advisory, TravelerInfoType.advisory);
                 } else {
                     // the rest are content=workZone
-                    processRequest(tim, getTimType(type), tim.getSchedStart(), tim.getSchedEnd(), null,
+                    processRequest(timRw, getTimType(type), timRw.getSchedStart(), timRw.getSchedEnd(), null,
                             ContentEnum.workZone, TravelerInfoType.advisory);
                 }
             }

@@ -67,10 +67,10 @@ public class WydotTimVslController extends WydotTimBaseController implements Buf
             }
 
             if (wydotTim.getDirection().equalsIgnoreCase("i")) {
-                makeIncreasingTims(wydotTim, bufferTimITISCodes, milepostService);
+                timsToSend.addAll(makeIncreasingTims(wydotTim, bufferTimITISCodes, milepostService));
             }
             else {
-                makeDecreasingTims(wydotTim, bufferTimITISCodes, milepostService);
+                timsToSend.addAll(makeDecreasingTims(wydotTim, bufferTimITISCodes, milepostService));
             }
 
             resultTim.getResultMessages().add("success");

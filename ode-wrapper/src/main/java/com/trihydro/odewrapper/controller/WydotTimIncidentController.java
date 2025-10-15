@@ -6,6 +6,7 @@ import com.trihydro.library.helpers.TimGenerationHelper;
 import com.trihydro.library.helpers.Utility;
 import com.trihydro.library.model.ActiveTim;
 import com.trihydro.library.model.ContentEnum;
+import com.trihydro.library.model.WydotTim;
 import com.trihydro.library.service.*;
 import com.trihydro.odewrapper.config.BasicConfiguration;
 import com.trihydro.odewrapper.helpers.SetItisCodes;
@@ -34,7 +35,7 @@ import java.util.List;
 public class WydotTimIncidentController extends WydotTimBaseController implements BufferTimFactory {
 
     private final String type = "I";
-    List<WydotTimIncident> timsToSend = new ArrayList<>();
+    List<WydotTim> timsToSend = new ArrayList<>();
 
     @Autowired
     public WydotTimIncidentController(BasicConfiguration _basicConfiguration, WydotTimService _wydotTimService,
@@ -64,10 +65,10 @@ public class WydotTimIncidentController extends WydotTimBaseController implement
       resultTim = validateInputIncident(wydotTim);
 
             if (wydotTim.getDirection().equalsIgnoreCase("i")) {
-                makeIncreasingTims(wydotTim, bufferTimITISCodes, milepostService);
+                timsToSend.addAll(makeIncreasingTims(wydotTim, bufferTimITISCodes, milepostService));
             }
             else {
-                makeDecreasingTims(wydotTim, bufferTimITISCodes, milepostService);
+                timsToSend.addAll(makeDecreasingTims(wydotTim, bufferTimITISCodes, milepostService));
             }
 
       resultTim.getResultMessages().add("success");
@@ -118,14 +119,15 @@ public class WydotTimIncidentController extends WydotTimBaseController implement
         return ResponseEntity.status(HttpStatus.OK).body(responseMessage);
     }
 
-    public void makeTimsAsync(List<WydotTimIncident> wydotTims) {
+    public void makeTimsAsync(List<WydotTim> wydotTims) {
 
         new Thread(() -> {
             var startTime = getStartTime();
-            for (WydotTimIncident wydotTim : wydotTims) {
+            for (var wydotTim : wydotTims) {
+                var wydotTimIncident = (WydotTimIncident)wydotTim;
                 // set route
-                wydotTim.setRoute(wydotTim.getRoute());
-                processRequest(wydotTim, getTimType(type), startTime, null, wydotTim.getPk(), ContentEnum.advisory,
+                wydotTim.setRoute(wydotTimIncident.getRoute());
+                processRequest(wydotTimIncident, getTimType(type), startTime, null, wydotTimIncident.getPk(), ContentEnum.advisory,
                         TravelerInfoType.advisory);
             }
         }).start();
