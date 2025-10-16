@@ -81,7 +81,6 @@ public class WydotTimRwController extends WydotTimBaseController implements Buff
             if (wydotTim.getBuffers() != null)
                 wydotTim.getBuffers().sort(Comparator.comparingDouble(Buffer::getDistance));
 
-
             if (wydotTim.getDirection().equalsIgnoreCase("b")) {
                 // if bi-directional, make both increasing and decreasing TIMs
                 timsToSend.addAll(makeIncreasingTims(wydotTim, bufferTimITISCodes, milepostService));

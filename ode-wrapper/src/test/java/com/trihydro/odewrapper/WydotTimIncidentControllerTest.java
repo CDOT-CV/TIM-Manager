@@ -76,33 +76,6 @@ public class WydotTimIncidentControllerTest {
 		lenient().doReturn(true).when(uut).routeSupported(isA(String.class));
 	}
 
-	private List<Milepost> getMileposts() {
-		List<Milepost> mileposts = new ArrayList<>();
-
-		var mp = new Milepost();
-		mp = new Milepost();
-		mp.setLatitude(BigDecimal.valueOf(200));
-		mp.setLongitude(BigDecimal.valueOf(300));
-		mileposts.add(mp);
-
-
-		mp = new Milepost();
-		mp.setLatitude(BigDecimal.valueOf(300));
-		mp.setLongitude(BigDecimal.valueOf(300));
-		mileposts.add(mp);
-
-		mp = new Milepost();
-		mp.setLatitude(BigDecimal.valueOf(400));
-		mp.setLongitude(BigDecimal.valueOf(400));
-		mileposts.add(mp);
-
-		mp = new Milepost();
-		mp.setLatitude(BigDecimal.valueOf(500));
-		mp.setLongitude(BigDecimal.valueOf(500));
-		mileposts.add(mp);
-		return mileposts;
-	}
-
 	@Test
 	public void testCreateIncidentTim_bothDirections_success() throws Exception {
 
