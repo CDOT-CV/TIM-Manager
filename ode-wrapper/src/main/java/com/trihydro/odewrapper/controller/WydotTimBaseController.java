@@ -1,7 +1,6 @@
 package com.trihydro.odewrapper.controller;
 
 import com.trihydro.library.exceptionhandlers.IdenticalPointsExceptionHandler;
-import com.trihydro.library.model.TimUpdateModel;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
@@ -19,7 +18,6 @@ import java.util.Objects;
 import java.util.TimeZone;
 
 import com.google.gson.Gson;
-import com.trihydro.library.exceptionhandlers.IdenticalPointsExceptionHandler;
 import com.trihydro.library.helpers.MilepostReduction;
 import com.trihydro.library.helpers.TimGenerationHelper;
 import com.trihydro.library.helpers.Utility;
@@ -176,8 +174,8 @@ public abstract class WydotTimBaseController {
         if (tim.getHighway() == null || !routeSupported(tim.getHighway())) {
             resultMessages.add("route not supported");
         } else {
-            tim.setRoute(tim.getRoute());
-            result.setRoute(tim.getRoute());
+            tim.setRoute(tim.getHighway());
+            result.setRoute(tim.getHighway());
         }
 
         // if direction is not i/d/b fail
@@ -230,7 +228,7 @@ public abstract class WydotTimBaseController {
             resultMessages.add("direction not supported");
         }
 
-        // if geometry isn't present check for start/end points
+        // if geometry isn't present, check for start/end points
         if (!tim.isGeometryValid()) {
             if (tim.getStartPoint() == null || !tim.getStartPoint().isValid()) {
                 resultMessages.add("Invalid startPoint");
@@ -765,11 +763,5 @@ public abstract class WydotTimBaseController {
             reducedMileposts);
     }
 
-    public List<Coordinate> milepostToGeometry(List<Milepost> mileposts) {
-		var timGeometry = new ArrayList<Coordinate>();
-		for (Milepost milepost : mileposts) {
-			timGeometry.add(new Coordinate(milepost.getLatitude(), milepost.getLongitude()));
-		}
-		return timGeometry;
-	}
+
 }

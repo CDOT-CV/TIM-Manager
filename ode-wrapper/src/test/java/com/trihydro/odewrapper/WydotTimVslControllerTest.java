@@ -2,8 +2,8 @@ package com.trihydro.odewrapper;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.isA;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.*;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -14,6 +14,7 @@ import com.trihydro.library.helpers.Utility;
 import com.trihydro.library.model.ActiveTim;
 import com.trihydro.library.model.ItisCode;
 import com.trihydro.library.service.ActiveTimService;
+import com.trihydro.library.service.MilepostService;
 import com.trihydro.library.service.TimTypeService;
 import com.trihydro.library.service.WydotTimService;
 import com.trihydro.odewrapper.config.BasicConfiguration;
@@ -50,6 +51,8 @@ public class WydotTimVslControllerTest {
 	ActiveTimService mockActiveTimService;
 	@Mock
 	Utility utility;
+	@Mock
+	MilepostService milepostService;
 
 	@InjectMocks
 	@Spy
@@ -71,8 +74,10 @@ public class WydotTimVslControllerTest {
 		lenient().doReturn(itisCodesIncident).when(mockSetItisCodes).setItisCodes(any());
 		lenient().doReturn(itisCodes).when(mockSetItisCodes).getItisCodes();
 
-		lenient().doNothing().when(uut).processRequestAsync(any());
+		milepostService = mock(MilepostService.class);
+
 		lenient().doReturn(true).when(uut).routeSupported(isA(String.class));
+		lenient().doNothing().when(uut).processRequestAsync(any());
 	}
 
 	@Test
@@ -130,5 +135,13 @@ public class WydotTimVslControllerTest {
 		Assertions.assertEquals(1, data.size());
 		Assertions.assertEquals(at, data.iterator().next());
 	}
+
+//	@ParameterizedTest
+//	@CsvSource({
+//			"[268, 8720], []",
+//			"[268, 13569, 8720, 12302], []",
+//			"[268, 7712, 8720], []",
+//	})
+//	void testCreateVSLTim_itisOrdering_success(String code, List<String> expectedDescription) {
 
 }

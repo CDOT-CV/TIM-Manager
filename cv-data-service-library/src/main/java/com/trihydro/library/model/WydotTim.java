@@ -127,7 +127,7 @@ public class WydotTim {
 	}
 
 	public boolean isGeometryValid() {
-		if (this.geometry != null && this.geometry.size() > 0) {
+		if (this.geometry != null && !this.geometry.isEmpty()) {
 			for (Coordinate coord : this.geometry) {
 				if (!coord.isValid()) {
 					return false;
@@ -141,14 +141,16 @@ public class WydotTim {
 
 	public List<Milepost> toMileposts() {
 		var mileposts = new ArrayList<Milepost>();
-		for (Coordinate coordinate : this.getGeometry()) {
-			Milepost milepost = new Milepost();
-			milepost.setLatitude(coordinate.getLatitude());
-			milepost.setLongitude(coordinate.getLongitude());
-			milepost.setDirection(this.getDirection());
-			milepost.setCommonName(this.getRoute());
-			milepost.setMilepost(0.0);
-			mileposts.add(milepost);
+		if (this.getGeometry() != null && this.getGeometry().size() > 1) {
+			for (Coordinate coordinate : this.getGeometry()) {
+				Milepost milepost = new Milepost();
+				milepost.setLatitude(coordinate.getLatitude());
+				milepost.setLongitude(coordinate.getLongitude());
+				milepost.setDirection(this.getDirection());
+				milepost.setCommonName(this.getRoute());
+				milepost.setMilepost(0.0);
+				mileposts.add(milepost);
+			}
 		}
 		return mileposts;
 	}

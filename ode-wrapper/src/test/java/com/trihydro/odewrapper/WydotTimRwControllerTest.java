@@ -2,9 +2,7 @@ package com.trihydro.odewrapper;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.isA;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.lenient;
-import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.*;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -16,6 +14,7 @@ import com.trihydro.library.helpers.Utility;
 import com.trihydro.library.model.ActiveTim;
 import com.trihydro.library.model.ItisCode;
 import com.trihydro.library.model.TimRwList;
+import com.trihydro.library.service.MilepostService;
 import com.trihydro.library.service.TimTypeService;
 import com.trihydro.library.service.WydotTimService;
 import com.trihydro.odewrapper.config.BasicConfiguration;
@@ -49,6 +48,8 @@ public class WydotTimRwControllerTest {
 	SetItisCodes setItisCodes;
 	@Mock
 	Utility utility;
+	@Mock
+	private MilepostService milepostService;
 
 	@InjectMocks
 	@Spy
@@ -58,6 +59,8 @@ public class WydotTimRwControllerTest {
 
 	@BeforeEach
 	public void setup() throws Exception {
+		milepostService = mock(MilepostService.class);
+
 		List<ItisCode> itisCodes = new ArrayList<>();
 		ItisCode ic = new ItisCode();
 		ic.setCategoryId(-1);
@@ -117,7 +120,7 @@ public class WydotTimRwControllerTest {
 
 	@Test
 	public void testCreateRwTim_bothDirections_NoItisCodes() throws Exception {
-
+		// Arrange
 		String rwJson = "{ \"timRwList\": [ {\"startPoint\": {\"latitude\": 41.161446, \"longitude\": -104.653162},\"endPoint\": {\"latitude\": 41.170465, \"longitude\": -104.085578},\"highway\": \"I-80\",\"pk\": \"15917\",\"id\": \"15917\",\"projectKey\": 19185,\"direction\":\"d\",\"surface\": \"P\",\"schedStart\": \"2018-04-16\"}]}";
 		TimRwList timRwList = gson.fromJson(rwJson, TimRwList.class);
 
