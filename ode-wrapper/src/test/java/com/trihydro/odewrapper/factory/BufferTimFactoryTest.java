@@ -1,4 +1,4 @@
-package com.trihydro.odewrapper.controller;
+package com.trihydro.odewrapper.factory;
 
 import com.trihydro.library.model.Coordinate;
 import com.trihydro.library.model.ItisCode;
@@ -54,7 +54,7 @@ public class BufferTimFactoryTest implements BufferTimFactory {
     }
 
     private List<Milepost> getMileposts() {
-        List<Milepost> mileposts = new ArrayList<>();;
+        List<Milepost> mileposts = new ArrayList<>();
 
         var mp = new Milepost();
         mp = new Milepost();

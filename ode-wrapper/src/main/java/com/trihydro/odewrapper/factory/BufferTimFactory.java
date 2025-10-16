@@ -1,4 +1,4 @@
-package com.trihydro.odewrapper.controller;
+package com.trihydro.odewrapper.factory;
 
 import com.trihydro.library.model.Coordinate;
 import com.trihydro.library.model.Milepost;
