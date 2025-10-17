@@ -3,6 +3,7 @@ package com.trihydro.odewrapper.helpers;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 
 import com.trihydro.library.model.CustomItisEnum;
 import com.trihydro.library.model.IncidentChoice;
@@ -23,42 +24,41 @@ import org.springframework.stereotype.Component;
 @Component
 @Slf4j
 public class SetItisCodes {
-  private final IncidentChoicesService incidentChoicesService;
-  private final ItisCodeService itisCodeService;
+    private final IncidentChoicesService incidentChoicesService;
+    private final ItisCodeService itisCodeService;
 
-  private List<IncidentChoice> incidentProblems;
-  private List<IncidentChoice> incidentEffects;
-  private List<IncidentChoice> incidentActions;
+    private List<IncidentChoice> incidentProblems;
+    private List<IncidentChoice> incidentEffects;
+    private List<IncidentChoice> incidentActions;
 
-  private List<ItisCode> itisCodes;
+    private List<ItisCode> itisCodes;
 
-  @Autowired
-  public SetItisCodes(ItisCodeService _itisCodeService, IncidentChoicesService _incidentChoicesService) {
-    itisCodeService = _itisCodeService;
-    incidentChoicesService = _incidentChoicesService;
-  }
-
-  public List<ItisCode> getItisCodes() {
-    if (itisCodes != null) {
-      return itisCodes;
-    } else {
-      itisCodes = itisCodeService.selectAll();
-      return itisCodes;
+    @Autowired
+    public SetItisCodes(ItisCodeService _itisCodeService, IncidentChoicesService _incidentChoicesService) {
+        itisCodeService = _itisCodeService;
+        incidentChoicesService = _incidentChoicesService;
     }
-  }
 
-  public List<String> setItisCodesFromAdvisoryArray(WydotTimRc wydotTim) {
-
-    // check to see if code exists
-
-    List<String> items = new ArrayList<>();
-    for (Integer item : wydotTim.getAdvisory()) {
-
-      getItisCodes().stream().filter(x -> x.getItisCode().equals(item)).findFirst().ifPresent(code -> items.add(item.toString()));
-
+    public List<ItisCode> getItisCodes() {
+        if (itisCodes != null) {
+            return itisCodes;
+        } else {
+            itisCodes = itisCodeService.selectAll();
+            return itisCodes;
+        }
     }
-    return items;
-  }
+
+    public List<String> setItisCodesFromAdvisoryArray(WydotTimRc wydotTim) {
+
+        // check to see if code exists
+        List<String> items = new ArrayList<>();
+        for (Integer item : wydotTim.getAdvisory()) {
+
+            getItisCodes().stream().filter(x -> x.getItisCode().equals(item)).findFirst().ifPresent(code -> items.add(item.toString()));
+
+        }
+        return items;
+    }
 
     public String getCustomAlphabetic(Integer itisCode) {
         String text = null;
@@ -71,66 +71,66 @@ public class SetItisCodes {
 
     public List<String> setItisCodesParking(WydotTimParking wydotTim) {
 
-    // check to see if code exists
-    List<String> items = new ArrayList<>();
+        // check to see if code exists
+        List<String> items = new ArrayList<>();
 
-    ItisCode code = getItisCodes().stream().filter(x -> x.getItisCode().equals(wydotTim.getAvailability())).findFirst().orElse(null);
+        ItisCode code = getItisCodes().stream().filter(x -> x.getItisCode().equals(wydotTim.getAvailability())).findFirst().orElse(null);
 
-    log.info("Availablity : {}", wydotTim.getAvailability());
-    log.info("Exit : {}", wydotTim.getExit());
+        log.info("Availablity : {}", wydotTim.getAvailability());
+        log.info("Exit : {}", wydotTim.getExit());
 
-    if (code != null) {
-      items.add(wydotTim.getAvailability().toString());
-    }
+        if (code != null) {
+            items.add(wydotTim.getAvailability().toString());
+        }
 
-    // for parking TIM, content=exitService, and includes additional itis codes
-    // depending on if rest area or exit number
-    if (wydotTim.getExit() != null) {
-      // if exit, the exit number should be a text value.
-      // This has some strange implications as seen here
-      // https://github.com/usdot-jpo-ode/jpo-ode/blob/540b79f1697f4d6464e8c4b8491666ec9cf08d8d/jpo-ode-plugins/src/main/java/us/dot/its/jpo/ode/plugin/j2735/builders/TravelerMessageFromHumanToAsnConverter.java#L337
-      // the ODE translates a text value only if we start with a single quote to
-      // denote this. No ending quote is used
-      items.add("11794");// Exit Number
-      if (wydotTim.getExit().equalsIgnoreCase("turnout") || wydotTim.getExit().equalsIgnoreCase("parking")) {
-        items.add("'" + (int) Math.round(wydotTim.getMileMarker()));
-      } else {
-        items.add("'" + wydotTim.getExit());
-      }
-    } else {
-      items.add("7986");// Rest Area
-      log.info("rest area");
-    }
+        // for parking TIM, content=exitService, and includes additional itis codes
+        // depending on if rest area or exit number
+        if (wydotTim.getExit() != null) {
+            // if exit, the exit number should be a text value.
+            // This has some strange implications as seen here
+            // https://github.com/usdot-jpo-ode/jpo-ode/blob/540b79f1697f4d6464e8c4b8491666ec9cf08d8d/jpo-ode-plugins/src/main/java/us/dot/its/jpo/ode/plugin/j2735/builders/TravelerMessageFromHumanToAsnConverter.java#L337
+            // the ODE translates a text value only if we start with a single quote to
+            // denote this. No ending quote is used
+            items.add("11794");// Exit Number
+            if (wydotTim.getExit().equalsIgnoreCase("turnout") || wydotTim.getExit().equalsIgnoreCase("parking")) {
+                items.add("'" + (int) Math.round(wydotTim.getMileMarker()));
+            } else {
+                items.add("'" + wydotTim.getExit());
+            }
+        } else {
+            items.add("7986");// Rest Area
+            log.info("rest area");
+        }
 
         return items;
     }
 
-  public List<IncidentChoice> getIncidentProblems() {
-    if (incidentProblems != null) {
-      return incidentProblems;
-    } else {
-      incidentProblems = incidentChoicesService.selectAllIncidentProblems();
-      return incidentProblems;
+    public List<IncidentChoice> getIncidentProblems() {
+        if (incidentProblems != null) {
+            return incidentProblems;
+        } else {
+            incidentProblems = incidentChoicesService.selectAllIncidentProblems();
+            return incidentProblems;
+        }
     }
-  }
 
-  public List<IncidentChoice> getIncidentEffects() {
-    if (incidentEffects != null) {
-      return incidentEffects;
-    } else {
-      incidentEffects = incidentChoicesService.selectAllIncidentEffects();
-      return incidentEffects;
+    public List<IncidentChoice> getIncidentEffects() {
+        if (incidentEffects != null) {
+            return incidentEffects;
+        } else {
+            incidentEffects = incidentChoicesService.selectAllIncidentEffects();
+            return incidentEffects;
+        }
     }
-  }
 
-  public List<IncidentChoice> getIncidentActions() {
-    if (incidentActions != null) {
-      return incidentActions;
-    } else {
-      incidentActions = incidentChoicesService.selectAllIncidentActions();
-      return incidentActions;
+    public List<IncidentChoice> getIncidentActions() {
+        if (incidentActions != null) {
+            return incidentActions;
+        } else {
+            incidentActions = incidentChoicesService.selectAllIncidentActions();
+            return incidentActions;
+        }
     }
-  }
 
     public List<String> setItisCodes(WydotTim wydotTim) {
 
@@ -163,24 +163,56 @@ public class SetItisCodes {
                 items.add(code.getItisCode().toString());
         }
 
-    return items;
-  }
+        return items;
+    }
 
-  public List<String> setItisCodesBowr(WydotTimBowr tim) throws WeightNotSupportedException {
-    List<String> itisCodes = new ArrayList<>();
+    public List<String> setItisCodesVsl(WydotTimVsl wydotTim) {
 
-    int weightInPounds = tim.getData();
+        List<String> items = new ArrayList<String>();
 
-    itisCodes.add("5127"); // Strong winds
-    itisCodes.add("2563"); // Truck restriction
-    itisCodes.add("2569"); // No high profile vehicles
-    itisCodes.add("7682"); // Below
-    itisCodes.add("2577"); // Gross-Weight-Limit
-    itisCodes.add(translateWeightToItisCode(weightInPounds)); // Weight, translated from pounds to ITIS code
-    itisCodes.add("8739"); // Pounds
+        List<ItisCode> allItisCodes = getItisCodes();
 
-    return itisCodes;
-  }
+        // add advisory code first if advisory speed limit
+        wydotTim.getItisCodes().stream().filter(x -> x.contains("7712")).findFirst()
+                .ifPresent(items::add);
+
+        // speed limit itis code
+        allItisCodes.stream().filter(x -> x.getDescription().equals("speed limit")).findFirst().ifPresent(mph -> items.add(mph.getItisCode().toString()));
+
+        // add reduced code next if reduced speed
+        wydotTim.getItisCodes().stream().filter(x -> x.contains("12302")).findFirst()
+                .ifPresent(items::add);
+
+        // number e.g 50, convert to ITIS code
+        items.add(Integer.toString(
+                Optional.ofNullable(wydotTim.getSpeed()).orElse(0) + 12544
+        ));
+
+        // mph itis code
+        allItisCodes.stream().filter(x -> x.getDescription().equals("mph")).findFirst().ifPresent(mph -> items.add(mph.getItisCode().toString()));
+
+        // add ahead code next if tim includes ahead code last
+        wydotTim.getItisCodes().stream().filter(x -> x.contains("13569")).findFirst()
+                .ifPresent(items::add);
+
+        return items;
+    }
+
+    public List<String> setItisCodesBowr(WydotTimBowr tim) throws WeightNotSupportedException {
+        List<String> itisCodes = new ArrayList<>();
+
+        int weightInPounds = tim.getData();
+
+        itisCodes.add("5127"); // Strong winds
+        itisCodes.add("2563"); // Truck restriction
+        itisCodes.add("2569"); // No high profile vehicles
+        itisCodes.add("7682"); // Below
+        itisCodes.add("2577"); // Gross-Weight-Limit
+        itisCodes.add(translateWeightToItisCode(weightInPounds)); // Weight, translated from pounds to ITIS code
+        itisCodes.add("8739"); // Pounds
+
+        return itisCodes;
+    }
 
     public static String getItisCodeAbbreviation(String itisCodes) {
         List<String> words = Arrays.asList(itisCodes.split(" "));

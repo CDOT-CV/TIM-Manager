@@ -440,7 +440,7 @@ public abstract class WydotTimBaseController {
         }
 
         // set itis codes
-        List<String> itisCodes = setItisCodes.setItisCodes(tim);
+        List<String> itisCodes = setItisCodes.setItisCodesVsl(tim);
         if (itisCodes.isEmpty()) {
             resultMessages.add("No ITIS codes found");
         }
