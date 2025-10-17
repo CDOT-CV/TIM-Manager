@@ -173,7 +173,7 @@ public class WydotTimService {
             return milepostsAll;
         }
 
-        if (wydotTim.getGeometry() != null && wydotTim.getGeometry().size() > 1) {
+        if (wydotTim.isGeometryValid()) {
             if (milepostsAll == null) {
                 milepostsAll = new ArrayList<>();
             }
@@ -268,7 +268,7 @@ public class WydotTimService {
         // if geometry exists, use it to find RSUs
         List<WydotRsu> rsus = new ArrayList<>();
 
-        if (wydotTim.isGeometryValid() && wydotTim.getGeometry().size() > 1) {
+        if (wydotTim.isGeometryValid()) {
             rsus = rsuService.getRsusByGeometry(wydotTim.getGeometry());
             utility.logWithDate("Found " + rsus.size() + " RSUs by geometry");
         } else {
