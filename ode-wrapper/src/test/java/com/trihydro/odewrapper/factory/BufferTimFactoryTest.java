@@ -95,7 +95,7 @@ public class BufferTimFactoryTest implements BufferTimFactory {
     }
 
     @Test
-    void testBuildTimsFromItisCodes_withNonBufferCode() {
+    void testBuildTimsFromItisCodes_withoutBufferCode() {
         // Arrange
         List<Integer> bufferCodes = List.of(7364);
 
