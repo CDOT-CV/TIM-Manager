@@ -12,7 +12,6 @@ import com.trihydro.library.model.WydotTim;
 import com.trihydro.library.service.IncidentChoicesService;
 import com.trihydro.library.service.ItisCodeService;
 import com.trihydro.odewrapper.model.WydotTimBowr;
-import com.trihydro.odewrapper.model.WydotTimIncident;
 import com.trihydro.odewrapper.model.WydotTimParking;
 import com.trihydro.odewrapper.model.WydotTimRc;
 import com.trihydro.odewrapper.model.WydotTimVsl;
