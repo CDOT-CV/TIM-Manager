@@ -1,9 +1,8 @@
 package com.trihydro.odewrapper.controller;
 
 import com.trihydro.library.exceptionhandlers.IdenticalPointsExceptionHandler;
-import java.math.BigDecimal;
+
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
@@ -11,17 +10,13 @@ import java.util.List;
 import com.trihydro.library.helpers.MilepostReduction;
 import com.trihydro.library.helpers.TimGenerationHelper;
 import com.trihydro.library.helpers.Utility;
-import com.trihydro.library.model.ActiveTim;
-import com.trihydro.library.model.Buffer;
-import com.trihydro.library.model.ContentEnum;
-import com.trihydro.library.model.Milepost;
-import com.trihydro.library.model.TimRwList;
-import com.trihydro.library.model.WydotTimRw;
+import com.trihydro.library.model.*;
 import com.trihydro.library.service.ActiveTimService;
 import com.trihydro.library.service.RestTemplateProvider;
 import com.trihydro.library.service.TimTypeService;
 import com.trihydro.library.service.WydotTimService;
 import com.trihydro.odewrapper.config.BasicConfiguration;
+import com.trihydro.odewrapper.factory.BufferTimFactory;
 import com.trihydro.odewrapper.helpers.SetItisCodes;
 import com.trihydro.odewrapper.model.ControllerResult;
 
@@ -44,10 +39,10 @@ import us.dot.its.jpo.ode.plugin.j2735.timstorage.FrameType.TravelerInfoType;
 @CrossOrigin
 @RestController
 @Api(description = "Road Construction")
-public class WydotTimRwController extends WydotTimBaseController {
+public class WydotTimRwController extends WydotTimBaseController implements BufferTimFactory {
 
     private final String type = "RW";
-    List<WydotTimRw> timsToSend;
+    List<WydotTim> timsToSend;
 
     @Autowired
     public WydotTimRwController(BasicConfiguration _basicConfiguration, WydotTimService _wydotTimService,
@@ -86,19 +81,14 @@ public class WydotTimRwController extends WydotTimBaseController {
             if (wydotTim.getBuffers() != null)
                 wydotTim.getBuffers().sort(Comparator.comparingDouble(Buffer::getDistance));
 
-            // if bi-directional
             if (wydotTim.getDirection().equalsIgnoreCase("b")) {
-                // make i TIMs
-                makeIncreasingTims(wydotTim);
-                // make d TIMs
-                makeDecreasingTims(wydotTim);
-            }
-            // else make one direction TIMs
-            else if (wydotTim.getDirection().equalsIgnoreCase("i")) {
-                makeIncreasingTims(wydotTim);
-            }
-            else {
-                makeDecreasingTims(wydotTim);
+                // if bi-directional, make both increasing and decreasing TIMs
+                timsToSend.addAll(makeIncreasingTims(wydotTim, bufferTimITISCodes, milepostService));
+                timsToSend.addAll(makeDecreasingTims(wydotTim, bufferTimITISCodes, milepostService));
+            } else if (wydotTim.getDirection().equalsIgnoreCase("i")) {
+                timsToSend.addAll(makeIncreasingTims(wydotTim, bufferTimITISCodes, milepostService));
+            } else {
+                timsToSend.addAll(makeDecreasingTims(wydotTim, bufferTimITISCodes, milepostService));
             }
 
             // compile result messages for user
@@ -112,26 +102,6 @@ public class WydotTimRwController extends WydotTimBaseController {
         return ResponseEntity.status(HttpStatus.OK).body(responseMessage);
     }
 
-    public void makeIncreasingTims(WydotTimRw wydotTim) {
-        // i - add buffer for point TIMs
-        WydotTimRw timOneWay = copyTimWithStartDate(wydotTim);
-        timOneWay.setDirection("I");
-
-        addTimsToSend(timOneWay, false);
-
-        makeBufferTims(timOneWay);
-    }
-
-    public void makeDecreasingTims(WydotTimRw wydotTim) {
-        // d - add buffer for point TIMs
-        WydotTimRw timOneWay = copyTimWithStartDate(wydotTim);
-        timOneWay.setDirection("D");
-
-        addTimsToSend(timOneWay, false);
-
-        makeBufferTims(timOneWay);
-    }
-
     private WydotTimRw copyTimWithStartDate(WydotTimRw wydotTim) {
         WydotTimRw timOneWay = wydotTim.copy();
         if (StringUtils.isBlank(timOneWay.getSchedStart())) {
@@ -141,54 +111,23 @@ public class WydotTimRwController extends WydotTimBaseController {
         return timOneWay;
     }
 
-    private void addTimsToSend(WydotTimRw tim, boolean isBuffer) {
-        for (String itisCodeEntry : tim.getItisCodes()) {
-            // CTW Update requires that individual TIMs are created for each ITIS ordering
-            List<String> itisCodes = Arrays.asList(itisCodeEntry.split(" "));
-
-            // only generate appropriate TIMs for geometry list (buffer, workZone)
-            String lastItisCode = itisCodes.get(itisCodes.size() - 1);
-            boolean isBufferTim = bufferTimITISCodes.contains(Integer.valueOf(lastItisCode));
-            if (isBuffer && !isBufferTim) {
-                continue;
-            } else if (!isBuffer && isBufferTim) {
-                continue;
-            }
-
-            WydotTimRw timToSend = tim.copy();
-            timToSend.setItisCodes(itisCodes);
-            var itisCodeAbb = SetItisCodes.getItisCodeAbbreviation(itisCodeEntry);
-            String clientIdWithItis = tim.getClientId() + '-' + tim.getDirection() + '-' + itisCodeAbb;
-            timToSend.setClientId(clientIdWithItis);
-            timsToSend.add(timToSend);
-        }
-    }
-
-    public void makeBufferTims(WydotTimRw wydotTim) {
-        // get mileposts for buffer
-        List<Milepost> bufferMps = milepostService.getBufferForPath(wydotTim.getRoute().replace('-', '_'), 1.0, wydotTim.toMileposts());
-        wydotTim.setGeometry(milepostToGeometry(bufferMps));
-        wydotTim.setClientId(wydotTim.getClientId() + "%BUFF");
-
-        addTimsToSend(wydotTim, true);
-    }
-
     public void processRequestAsync() {
         // An Async task always executes in new thread
         new Thread(() -> {
-            for (WydotTimRw tim : timsToSend) {
+            for (var tim : timsToSend) {
+                WydotTimRw timRw = (WydotTimRw) tim;
                 // check for reduce speed, itis code 7443
-                if (tim.getItisCodes() != null && tim.getItisCodes().size() == 3
-                        && tim.getItisCodes().get(0).equals("7443")) {
-                    processRequest(tim, getTimType(type), tim.getSchedStart(), tim.getSchedEnd(), null,
+                if (timRw.getItisCodes() != null && timRw.getItisCodes().size() == 3
+                        && timRw.getItisCodes().get(0).equals("7443")) {
+                    processRequest(timRw, getTimType(type), timRw.getSchedStart(), timRw.getSchedEnd(), null,
                             ContentEnum.speedLimit, TravelerInfoType.advisory);
-                } else if (tim.getItisCodes() != null && tim.getItisCodes().get(0).equals("7186")) {
+                } else if (timRw.getItisCodes() != null && timRw.getItisCodes().get(0).equals("7186")) {
                     // prepare to stop
-                    processRequest(tim, getTimType(type), tim.getSchedStart(), tim.getSchedEnd(), null,
+                    processRequest(timRw, getTimType(type), timRw.getSchedStart(), timRw.getSchedEnd(), null,
                             ContentEnum.advisory, TravelerInfoType.advisory);
                 } else {
                     // the rest are content=workZone
-                    processRequest(tim, getTimType(type), tim.getSchedStart(), tim.getSchedEnd(), null,
+                    processRequest(timRw, getTimType(type), timRw.getSchedStart(), timRw.getSchedEnd(), null,
                             ContentEnum.workZone, TravelerInfoType.advisory);
                 }
             }

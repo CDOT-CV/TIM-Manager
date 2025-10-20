@@ -2,9 +2,9 @@ package com.trihydro.odewrapper;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.isA;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.*;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -13,6 +13,8 @@ import com.google.gson.Gson;
 import com.trihydro.library.helpers.Utility;
 import com.trihydro.library.model.ActiveTim;
 import com.trihydro.library.model.ItisCode;
+import com.trihydro.library.model.Milepost;
+import com.trihydro.library.service.MilepostService;
 import com.trihydro.library.service.TimTypeService;
 import com.trihydro.library.service.WydotTimService;
 import com.trihydro.odewrapper.config.BasicConfiguration;
@@ -45,6 +47,8 @@ public class WydotTimIncidentControllerTest {
 	SetItisCodes setItisCodes;
 	@Mock
 	Utility utility;
+	@Mock
+	MilepostService milepostService;
 
 	@InjectMocks
 	@Spy
@@ -54,6 +58,8 @@ public class WydotTimIncidentControllerTest {
 
 	@BeforeEach
 	public void setup() throws Exception {
+		milepostService = mock(MilepostService.class);
+
 		List<ItisCode> itisCodes = new ArrayList<>();
 		ItisCode ic = new ItisCode();
 		ic.setCategoryId(-1);
@@ -92,7 +98,7 @@ public class WydotTimIncidentControllerTest {
 	}
 
 	@Test
-	public void testCreateIncidentTim_bothDirections_NoMileposts() throws Exception {
+	public void testCreateIncidentTim_bothDirections_RouteNotSupported() throws Exception {
 
 		// Arrange
 		String incidentJson = "{\"timIncidentList\": [{ \"startPoint\": {\"latitude\": 41.161446, \"longitude\": -104.653162},\"endPoint\": {\"latitude\": 41.170465, \"longitude\": -104.085578}, \"impact\":\"L\", \"problem\": \"fire\", \"effect\": \"test\",\"action\": \"test\", \"pk\": 3622, \"highway\": \"I-25\", \"incidentId\":\"IN49251\", \"direction\": \"b\", \"ts\": \"2018-04-16T19:30:05.000Z\"}]}";
@@ -133,6 +139,7 @@ public class WydotTimIncidentControllerTest {
 	@Test
 	public void testCreateIncidentTim_oneDirection_success() throws Exception {
 
+		//Arrange
 		String incidentJson = "{\"timIncidentList\": [{ \"startPoint\": {\"latitude\": 41.161446, \"longitude\": -104.653162},\"endPoint\": {\"latitude\": 41.170465, \"longitude\": -104.085578}, \"impact\":\"L\", \"problem\": \"fire\", \"effect\": \"test\",\"action\": \"test\", \"pk\": 3622, \"highway\": \"I-80\", \"incidentId\":\"OD49251\", \"direction\": \"i\", \"ts\":\"2018-04-16T19:30:05.000Z\" }]}";
 		TimIncidentList til = gson.fromJson(incidentJson, TimIncidentList.class);
 
@@ -150,8 +157,9 @@ public class WydotTimIncidentControllerTest {
 	}
 
 	@Test
-	public void testCreateIncidentTim_oneDirection_NoMileposts() throws Exception {
+	public void testCreateIncidentTim_oneDirection_RouteNotSupported() throws Exception {
 
+		// Arrange
 		String incidentJson = "{\"timIncidentList\": [{ \"startPoint\": {\"latitude\": 41.161446, \"longitude\": -104.653162},\"endPoint\": {\"latitude\": 41.170465, \"longitude\": -104.085578}, \"impact\":\"L\", \"problem\": \"fire\", \"effect\": \"test\",\"action\": \"test\", \"pk\": 3622, \"highway\": \"I-25\", \"incidentId\":\"IN49251\", \"direction\": \"i\", \"ts\":\"2018-04-16T19:30:05.000Z\" }]}";
 		TimIncidentList til = gson.fromJson(incidentJson, TimIncidentList.class);
 		doReturn(false).when(uut).routeSupported("I-25");
@@ -171,6 +179,7 @@ public class WydotTimIncidentControllerTest {
 	@Test
 	public void testCreateIncidentTim_oneDirection_NoItisCodes() throws Exception {
 
+		// Arrange
 		String incidentJson = "{\"timIncidentList\": [{ \"startPoint\": {\"latitude\": 41.161446, \"longitude\": -104.653162},\"endPoint\": {\"latitude\": 41.170465, \"longitude\": -104.085578}, \"impact\":\"L\", \"problem\": \"test\", \"effect\": \"test\",\"action\": \"test\", \"pk\": 3622, \"highway\": \"I-80\", \"incidentId\":\"IN49251\", \"direction\": \"i\", \"ts\":\"2018-04-16T19:30:05.000Z\" }]}";
 		TimIncidentList til = gson.fromJson(incidentJson, TimIncidentList.class);
 

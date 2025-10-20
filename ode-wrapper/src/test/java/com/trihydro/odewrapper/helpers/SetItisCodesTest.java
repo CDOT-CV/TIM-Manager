@@ -1,10 +1,7 @@
 package com.trihydro.odewrapper.helpers;
 
 import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.when;
 
-import com.trihydro.library.model.IncidentChoice;
-import com.trihydro.odewrapper.model.WydotTimIncident;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -102,7 +99,7 @@ public class SetItisCodesTest {
         WydotTimRc tim = new WydotTimRc();
         ArrayList<String> itisCodes = new ArrayList<>();
         itisCodes.add("4868");
-        itisCodes.add("769");
+        itisCodes.add("770");
         tim.setItisCodes(itisCodes);
         // Act
         var result = uut.setItisCodes(tim);
