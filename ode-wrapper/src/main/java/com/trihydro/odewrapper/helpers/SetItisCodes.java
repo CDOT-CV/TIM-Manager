@@ -32,6 +32,10 @@ public class SetItisCodes {
 
     private List<ItisCode> itisCodes;
 
+    private final String AdvisoryItisCode = "7712";
+    private final String ReducedItisCode = "12302";
+    private final String AheadItisCode = "13569";
+
     @Autowired
     public SetItisCodes(ItisCodeService _itisCodeService, IncidentChoicesService _incidentChoicesService) {
         itisCodeService = _itisCodeService;
@@ -165,6 +169,12 @@ public class SetItisCodes {
         return items;
     }
 
+    /**
+     * Creates a properly ordered list of ITIS codes based on the TIM.
+     *
+     * @param wydotTim TIM to base the ITIS codes on
+     * @return Properly ordered list of ITIS codes to assign back to the TIM
+     */
     public List<String> setItisCodesVsl(WydotTimVsl wydotTim) {
 
         List<String> items = new ArrayList<String>();
@@ -175,17 +185,18 @@ public class SetItisCodes {
         List<ItisCode> allItisCodes = getAllItisCodesFromDatabase();
 
         // add advisory code first if advisory speed limit
-        wydotTim.getItisCodes().stream().filter(x -> x.contains("7712")).findFirst()
+        wydotTim.getItisCodes().stream().filter(x -> x.contains(AdvisoryItisCode)).findFirst()
                 .ifPresent(items::add);
 
         // speed limit itis code
         allItisCodes.stream().filter(x -> x.getDescription().equals("speed limit")).findFirst().ifPresent(mph -> items.add(mph.getItisCode().toString()));
 
         // add reduced code next if reduced speed
-        wydotTim.getItisCodes().stream().filter(x -> x.contains("12302")).findFirst()
+        wydotTim.getItisCodes().stream().filter(x -> x.contains(ReducedItisCode)).findFirst()
                 .ifPresent(items::add);
 
-        // number e.g 50, convert to ITIS code
+        // J2540 small number ITIS codes start at 12,544 and increment by 1 to represent each number up to 255.
+        // To covert speed to an ITIS code, adding 12,544 is enough.
         items.add(Integer.toString(
                 Optional.ofNullable(wydotTim.getSpeed()).orElse(0) + 12544
         ));
@@ -194,7 +205,7 @@ public class SetItisCodes {
         allItisCodes.stream().filter(x -> x.getDescription().equals("mph")).findFirst().ifPresent(mph -> items.add(mph.getItisCode().toString()));
 
         // add ahead code next if tim includes ahead code last
-        wydotTim.getItisCodes().stream().filter(x -> x.contains("13569")).findFirst()
+        wydotTim.getItisCodes().stream().filter(x -> x.contains(AheadItisCode)).findFirst()
                 .ifPresent(items::add);
 
         return items;
