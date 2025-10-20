@@ -72,7 +72,7 @@ public class WydotTimVslControllerTest {
 		List<String> itisCodesVsl = new ArrayList<>();
 		itisCodesVsl.add("531");
 		lenient().doReturn(itisCodesVsl).when(mockSetItisCodes).setItisCodesVsl(any());
-		lenient().doReturn(itisCodes).when(mockSetItisCodes).getItisCodes();
+		lenient().doReturn(itisCodes).when(mockSetItisCodes).getAllItisCodesFromDatabase();
 
 		milepostService = mock(MilepostService.class);
 

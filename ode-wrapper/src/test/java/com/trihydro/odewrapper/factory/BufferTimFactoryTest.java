@@ -50,7 +50,7 @@ public class BufferTimFactoryTest implements BufferTimFactory {
         itisCodes.add(ic);
 
         lenient().doReturn(wydotTimItisCodes).when(setItisCodes).setItisCodes(any());
-        lenient().doReturn(itisCodes).when(setItisCodes).getItisCodes();
+        lenient().doReturn(itisCodes).when(setItisCodes).getAllItisCodesFromDatabase();
     }
 
     private List<Milepost> getMileposts() {

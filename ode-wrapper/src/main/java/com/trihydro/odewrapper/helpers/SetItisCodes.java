@@ -38,7 +38,7 @@ public class SetItisCodes {
         incidentChoicesService = _incidentChoicesService;
     }
 
-    public List<ItisCode> getItisCodes() {
+    public List<ItisCode> getAllItisCodesFromDatabase() {
         if (itisCodes != null) {
             return itisCodes;
         } else {
@@ -53,7 +53,7 @@ public class SetItisCodes {
         List<String> items = new ArrayList<>();
         for (Integer item : wydotTim.getAdvisory()) {
 
-            getItisCodes().stream().filter(x -> x.getItisCode().equals(item)).findFirst().ifPresent(code -> items.add(item.toString()));
+            getAllItisCodesFromDatabase().stream().filter(x -> x.getItisCode().equals(item)).findFirst().ifPresent(code -> items.add(item.toString()));
 
         }
         return items;
@@ -73,7 +73,7 @@ public class SetItisCodes {
         // check to see if code exists
         List<String> items = new ArrayList<>();
 
-        ItisCode code = getItisCodes().stream().filter(x -> x.getItisCode().equals(wydotTim.getAvailability())).findFirst().orElse(null);
+        ItisCode code = getAllItisCodesFromDatabase().stream().filter(x -> x.getItisCode().equals(wydotTim.getAvailability())).findFirst().orElse(null);
 
         log.info("Availablity : {}", wydotTim.getAvailability());
         log.info("Exit : {}", wydotTim.getExit());
@@ -156,7 +156,7 @@ public class SetItisCodes {
                 continue;
             }
 
-            code = getItisCodes().stream().filter(x -> x.getItisCode().equals(itisCode)).findFirst().orElse(null);
+            code = getAllItisCodesFromDatabase().stream().filter(x -> x.getItisCode().equals(itisCode)).findFirst().orElse(null);
 
             if (code != null)
                 items.add(code.getItisCode().toString());
@@ -172,7 +172,7 @@ public class SetItisCodes {
             throw new IllegalArgumentException("Cannot determine Speed limit. Speed cannot be null.");
         }
 
-        List<ItisCode> allItisCodes = getItisCodes();
+        List<ItisCode> allItisCodes = getAllItisCodesFromDatabase();
 
         // add advisory code first if advisory speed limit
         wydotTim.getItisCodes().stream().filter(x -> x.contains("7712")).findFirst()

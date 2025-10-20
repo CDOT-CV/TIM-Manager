@@ -71,7 +71,7 @@ public class WydotTimRwControllerTest {
 		List<String> itisCodesIncident = new ArrayList<>();
 		itisCodesIncident.add("531");
 		lenient().doReturn(itisCodesIncident).when(setItisCodes).setItisCodes(any());
-		lenient().doReturn(itisCodes).when(setItisCodes).getItisCodes();
+		lenient().doReturn(itisCodes).when(setItisCodes).getAllItisCodesFromDatabase();
 
 		lenient().doReturn(true).when(uut).routeSupported(isA(String.class));
 
