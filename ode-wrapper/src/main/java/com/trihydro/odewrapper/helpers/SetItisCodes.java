@@ -168,6 +168,9 @@ public class SetItisCodes {
     public List<String> setItisCodesVsl(WydotTimVsl wydotTim) {
 
         List<String> items = new ArrayList<String>();
+        if (wydotTim.getSpeed() == null) {
+            throw new IllegalArgumentException("Cannot determine Speed limit. Speed cannot be null.");
+        }
 
         List<ItisCode> allItisCodes = getItisCodes();
 

@@ -32,7 +32,7 @@ public class SetItisCodesTest {
     @InjectMocks
     SetItisCodes uut;
 
-    public void setup() {
+    public void setupItisCodeDefinitions() {
         List<ItisCode> itisCodes = new ArrayList<>();
         ItisCode code = new ItisCode();
         code.setItisCode(268);
@@ -75,9 +75,9 @@ public class SetItisCodesTest {
     @Test
     public void setItisCodesRc_numeric() {
         // Arrange
-        setup();
+        setupItisCodeDefinitions();
         WydotTimRc tim = new WydotTimRc();
-        ArrayList<String> itisCodes = new ArrayList();
+        ArrayList<String> itisCodes = new ArrayList<>();
         itisCodes.add("4868");
         itisCodes.add("1309");
         tim.setItisCodes(itisCodes);
@@ -91,7 +91,7 @@ public class SetItisCodesTest {
     @Test
     public void setItisCodesRc_nonExistent() {
         // Arrange
-        setup();
+        setupItisCodeDefinitions();
         WydotTimRc tim = new WydotTimRc();
         ArrayList<String> itisCodes = new ArrayList<>();
         itisCodes.add("0");
@@ -107,7 +107,7 @@ public class SetItisCodesTest {
     @Test
     public void setItisCodesRc_translated() {
         // Arrange
-        setup();
+        setupItisCodeDefinitions();
         WydotTimRc tim = new WydotTimRc();
         ArrayList<String> itisCodes = new ArrayList<>();
         itisCodes.add("4868");
@@ -124,7 +124,7 @@ public class SetItisCodesTest {
     @Test
     public void setItisCodesRc_alphabetic() {
         // Arrange
-        setup();
+        setupItisCodeDefinitions();
         WydotTimRc tim = new WydotTimRc();
         ArrayList<String> itisCodes = new ArrayList<>();
         itisCodes.add("4868");
@@ -170,7 +170,7 @@ public class SetItisCodesTest {
     @Test
     public void setItisCodesVsl_Success() {
         // Arrange
-        setup();
+        setupItisCodeDefinitions();
         int speedMph = 50;
         WydotTimVsl tim = new WydotTimVsl();
         tim.setSpeed(speedMph);
@@ -185,9 +185,18 @@ public class SetItisCodesTest {
     }
 
     @Test
+    public void setItisCodesVsl_Failure() {
+        // Arrange
+        WydotTimVsl tim = new WydotTimVsl();
+
+        // Act and Assert
+        Assertions.assertThrows(IllegalArgumentException.class, () -> uut.setItisCodesVsl(tim));
+    }
+
+    @Test
     public void setItisCodes_reducedAhead_Success() {
         // Arrange
-        setup();
+        setupItisCodeDefinitions();
         int speedMph = 50;
         WydotTimVsl tim = new WydotTimVsl();
         tim.setSpeed(speedMph);
@@ -204,7 +213,7 @@ public class SetItisCodesTest {
     @Test
     public void setItisCodesVsl_advisorySpeedLimit_Success() {
         // Arrange
-        setup();
+        setupItisCodeDefinitions();
         int speedMph = 50;
         WydotTimVsl tim = new WydotTimVsl();
         tim.setSpeed(speedMph);
