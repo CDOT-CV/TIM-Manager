@@ -42,15 +42,16 @@ public class CreateBaseTimUtil {
      *
      * @param wydotTim The WydotTim object containing the data for the TIM.
      * @param genProps The TimGenerationProps object containing the generation properties.
-     * @param content The ContentEnum object representing the content of the TIM.
      * @param frameType The TravelerInfoType object representing the frame type of the TIM.
      * @param allMileposts The list of Milepost objects representing all mileposts.
      * @param reducedMileposts The list of Milepost objects representing reduced mileposts.
      * @param anchor The Milepost object representing the anchor milepost.
      * @return The WydotTravelerInputData object containing the built TIM.
      */
-    public WydotTravelerInputData buildTim(WydotTim wydotTim, TimGenerationProps genProps, ContentEnum content,
+    public WydotTravelerInputData buildTim(WydotTim wydotTim, TimGenerationProps genProps,
             TravelerInfoType frameType, List<Milepost> allMileposts, List<Milepost> reducedMileposts, Milepost anchor) {
+
+        ContentEnum content = ContentEnum.advisory;
 
         // build TIM object with data
         WydotTravelerInputData timToSend = new WydotTravelerInputData();
@@ -83,7 +84,7 @@ public class CreateBaseTimUtil {
         anchorPosition.setLongitude(anchor.getLongitude());
         
         // build msgId
-        MsgId msgId = buildMsgId(anchorPosition, content, frameType);
+        MsgId msgId = buildMsgId(anchorPosition, frameType);
         dataFrame.setMsgId(msgId);
 
         // set regions. note that we now support multiple regions in a single TIM package
@@ -195,7 +196,7 @@ public class CreateBaseTimUtil {
         region.setDirection(directionString); // heading slice
 
         // set path nodes
-        if (reducedMileposts != null && reducedMileposts.size() > 0) {
+        if (reducedMileposts != null && !reducedMileposts.isEmpty()) {
             OdeTravelerInformationMessage.NodeXY[] nodes = buildNodePathFromMileposts(reducedMileposts, anchor);
             OdeTravelerInformationMessage.DataFrame.Region.Path path = new OdeTravelerInformationMessage.DataFrame.Region.Path();
             path.setScale(0);
@@ -243,7 +244,7 @@ public class CreateBaseTimUtil {
         int timDirection = 0;
         // this is a regular tim, so we need to set the direction normally
         // path list - change later
-        if (allMileposts != null && allMileposts.size() > 0) {
+        if (allMileposts != null && !allMileposts.isEmpty()) {
             double startLat = anchorPosition.getLatitude().doubleValue();
             double startLon = anchorPosition.getLongitude().doubleValue();
             for (int j = 0; j < allMileposts.size(); j++) {
@@ -271,18 +272,17 @@ public class CreateBaseTimUtil {
      * Builds a message ID based on the provided anchor position, content, and frame type.
      * 
      * @param anchorPosition The anchor position for the road sign.
-     * @param content The content of the message.
      * @param frameType The type of the frame.
      * @return The built message ID.
      */
-    protected MsgId buildMsgId(OdePosition3D anchorPosition, ContentEnum content, TravelerInfoType frameType) {
+    protected MsgId buildMsgId(OdePosition3D anchorPosition, TravelerInfoType frameType) {
         MsgId msgId = new MsgId();
         RoadSignID roadSignID = new RoadSignID();
         roadSignID.setPosition(anchorPosition);
 
-        // if we are coming in with content=speedLimit and frameType=roadSignage,
+        // if we are coming in with frameType=roadSignage,
         // we need to set the mutcdCode to regulatory to display the regulatory signage
-        if (content == ContentEnum.speedLimit && frameType == TravelerInfoType.roadSignage) {
+        if (frameType == TravelerInfoType.roadSignage) {
             roadSignID.setMutcdCode(MutcdCodeEnum.regulatory);
         } else {
             roadSignID.setMutcdCode(MutcdCodeEnum.warning);

@@ -120,15 +120,15 @@ public class WydotTimRwController extends WydotTimBaseController implements Buff
                 if (timRw.getItisCodes() != null && timRw.getItisCodes().size() == 3
                         && timRw.getItisCodes().get(0).equals("7443")) {
                     processRequest(timRw, getTimType(type), timRw.getSchedStart(), timRw.getSchedEnd(), null,
-                            ContentEnum.speedLimit, TravelerInfoType.advisory);
+                            TravelerInfoType.advisory);
                 } else if (timRw.getItisCodes() != null && timRw.getItisCodes().get(0).equals("7186")) {
                     // prepare to stop
                     processRequest(timRw, getTimType(type), timRw.getSchedStart(), timRw.getSchedEnd(), null,
-                            ContentEnum.advisory, TravelerInfoType.advisory);
+                            TravelerInfoType.advisory);
                 } else {
                     // the rest are content=workZone
                     processRequest(timRw, getTimType(type), timRw.getSchedStart(), timRw.getSchedEnd(), null,
-                            ContentEnum.workZone, TravelerInfoType.advisory);
+                            TravelerInfoType.advisory);
                 }
             }
         }).start();

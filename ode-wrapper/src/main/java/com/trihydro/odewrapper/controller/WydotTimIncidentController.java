@@ -5,7 +5,6 @@ import com.trihydro.library.helpers.MilepostReduction;
 import com.trihydro.library.helpers.TimGenerationHelper;
 import com.trihydro.library.helpers.Utility;
 import com.trihydro.library.model.ActiveTim;
-import com.trihydro.library.model.ContentEnum;
 import com.trihydro.library.model.WydotTim;
 import com.trihydro.library.service.*;
 import com.trihydro.odewrapper.config.BasicConfiguration;
@@ -128,7 +127,7 @@ public class WydotTimIncidentController extends WydotTimBaseController implement
                 var wydotTimIncident = (WydotTimIncident)wydotTim;
                 // set route
                 wydotTim.setRoute(wydotTimIncident.getRoute());
-                processRequest(wydotTimIncident, getTimType(type), startTime, null, wydotTimIncident.getPk(), ContentEnum.advisory,
+                processRequest(wydotTimIncident, getTimType(type), startTime, null, wydotTimIncident.getPk(),
                         TravelerInfoType.advisory);
             }
         }).start();
