@@ -32,9 +32,9 @@ public class SetItisCodes {
 
     private List<ItisCode> itisCodes;
 
-    private final String AdvisoryItisCode = "7712";
-    private final String ReducedItisCode = "12302";
-    private final String AheadItisCode = "13569";
+    private final String ADVISORY_ITIS_CODE = "7712";
+    private final String REDUCED_ITIS_CODE = "12302";
+    private final String AHEAD_ITIS_CODE = "13569";
 
     @Autowired
     public SetItisCodes(ItisCodeService _itisCodeService, IncidentChoicesService _incidentChoicesService) {
@@ -185,14 +185,14 @@ public class SetItisCodes {
         List<ItisCode> allItisCodes = getAllItisCodesFromDatabase();
 
         // add advisory code first if advisory speed limit
-        wydotTim.getItisCodes().stream().filter(x -> x.contains(AdvisoryItisCode)).findFirst()
+        wydotTim.getItisCodes().stream().filter(x -> x.contains(ADVISORY_ITIS_CODE)).findFirst()
                 .ifPresent(items::add);
 
         // speed limit itis code
         allItisCodes.stream().filter(x -> x.getDescription().equals("speed limit")).findFirst().ifPresent(mph -> items.add(mph.getItisCode().toString()));
 
         // add reduced code next if reduced speed
-        wydotTim.getItisCodes().stream().filter(x -> x.contains(ReducedItisCode)).findFirst()
+        wydotTim.getItisCodes().stream().filter(x -> x.contains(REDUCED_ITIS_CODE)).findFirst()
                 .ifPresent(items::add);
 
         // J2540 small number ITIS codes start at 12,544 and increment by 1 to represent each number up to 255.
@@ -205,7 +205,7 @@ public class SetItisCodes {
         allItisCodes.stream().filter(x -> x.getDescription().equals("mph")).findFirst().ifPresent(mph -> items.add(mph.getItisCode().toString()));
 
         // add ahead code next if tim includes ahead code last
-        wydotTim.getItisCodes().stream().filter(x -> x.contains(AheadItisCode)).findFirst()
+        wydotTim.getItisCodes().stream().filter(x -> x.contains(AHEAD_ITIS_CODE)).findFirst()
                 .ifPresent(items::add);
 
         return items;
