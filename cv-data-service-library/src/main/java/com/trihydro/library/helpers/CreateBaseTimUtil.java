@@ -22,10 +22,8 @@ import us.dot.its.jpo.ode.plugin.ServiceRequest;
 import us.dot.its.jpo.ode.plugin.j2735.OdePosition3D;
 import us.dot.its.jpo.ode.plugin.j2735.OdeTravelerInformationMessage;
 import us.dot.its.jpo.ode.plugin.j2735.OdeTravelerInformationMessage.DataFrame.MsgId;
-import us.dot.its.jpo.ode.plugin.j2735.OdeTravelerInformationMessage.DataFrame.RoadSignID;
 import us.dot.its.jpo.ode.plugin.j2735.OdeTravelerInformationMessage.NodeXY;
 import us.dot.its.jpo.ode.plugin.j2735.timstorage.FrameType.TravelerInfoType;
-import us.dot.its.jpo.ode.plugin.j2735.timstorage.MutcdCode.MutcdCodeEnum;
 
 @Component
 public class CreateBaseTimUtil {
@@ -77,13 +75,10 @@ public class CreateBaseTimUtil {
         // add itis codes to tim
         dataFrame.setItems(wydotTim.getItisCodes().toArray(new String[wydotTim.getItisCodes().size()]));
 
-        // create anchor for the msgId
-        OdePosition3D anchorPosition = new OdePosition3D();
-        anchorPosition.setLatitude(anchor.getLatitude());
-        anchorPosition.setLongitude(anchor.getLongitude());
-        
-        // build msgId
-        MsgId msgId = buildMsgId(anchorPosition, content, frameType);
+        // Per CTW guidance, msgId must be populated using furtherInfoID (not roadSignID)
+        // Since furtherInfoID is not used, set it to the default value of 0
+        MsgId msgId = new MsgId();
+        msgId.setFurtherInfoID("0");
         dataFrame.setMsgId(msgId);
 
         // set regions. note that we now support multiple regions in a single TIM package
@@ -265,31 +260,5 @@ public class CreateBaseTimUtil {
         headingSliceString = StringUtils.repeat("0", 16 - headingSliceString.length()) + headingSliceString;
         headingSliceString = StringUtils.reverse(headingSliceString);
         return headingSliceString;
-    }
-
-    /**
-     * Builds a message ID based on the provided anchor position, content, and frame type.
-     * 
-     * @param anchorPosition The anchor position for the road sign.
-     * @param content The content of the message.
-     * @param frameType The type of the frame.
-     * @return The built message ID.
-     */
-    protected MsgId buildMsgId(OdePosition3D anchorPosition, ContentEnum content, TravelerInfoType frameType) {
-        MsgId msgId = new MsgId();
-        RoadSignID roadSignID = new RoadSignID();
-        roadSignID.setPosition(anchorPosition);
-
-        // if we are coming in with content=speedLimit and frameType=roadSignage,
-        // we need to set the mutcdCode to regulatory to display the regulatory signage
-        if (content == ContentEnum.speedLimit && frameType == TravelerInfoType.roadSignage) {
-            roadSignID.setMutcdCode(MutcdCodeEnum.regulatory);
-        } else {
-            roadSignID.setMutcdCode(MutcdCodeEnum.warning);
-        }
-        // set view angle to 360 degrees
-        roadSignID.setViewAngle("1111111111111111");
-        msgId.setRoadSignID(roadSignID);
-        return msgId;
     }
 }

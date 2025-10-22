@@ -134,17 +134,7 @@
                   "roadSignage": ""
                 },
                 "msgId": {
-                  "roadSignID": {
-                    "viewAngle": 1100000000000001,
-                    "mutcdCode": {
-                      "warning": ""
-                    },
-                    "position": {
-                      "elevation": 20,
-                      "lat": 263055670,
-                      "long": -801481500
-                    }
-                  }
+                  "furtherInfoID": "0"
                 },
                 "startTime": 149760,
                 "priority": 2,

@@ -24,14 +24,7 @@
                 "doNotUse1": 0,
                 "frameType": "advisory",
                 "msgId": {
-                    "roadSignID": {
-                        "position": {
-                            "latitude": 44.8062595,
-                            "longitude": -107.3203401
-                        },
-                        "viewAngle": "1111111111111111",
-                        "mutcdCode": "warning"
-                    }
+                    "furtherInfoID": "0"
                 },
                 "startDateTime": "2024-10-02T11:00:50.814Z",
                 "durationTime": 32000,
