@@ -119,6 +119,7 @@ public class CreateBaseTimUtilTest {
         Assertions.assertEquals("advisory", dataFrame.getContent());
         Assertions.assertEquals(32000, dataFrame.getDurationTime());
         Assertions.assertEquals("0", dataFrame.getMsgId().getFurtherInfoID());
+        Assertions.assertNull(dataFrame.getMsgId().getRoadSignID());
 
         var region = dataFrame.getRegions()[0];
         Assertions.assertNotNull(region);
@@ -169,6 +170,7 @@ public class CreateBaseTimUtilTest {
         Assertions.assertEquals("advisory", dataFrame.getContent());
         Assertions.assertEquals(32000, dataFrame.getDurationTime());
         Assertions.assertEquals("0", dataFrame.getMsgId().getFurtherInfoID());
+        Assertions.assertNull(dataFrame.getMsgId().getRoadSignID());
 
         var region = dataFrame.getRegions()[0];
         Assertions.assertNotNull(region);
