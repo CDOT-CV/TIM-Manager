@@ -116,20 +116,7 @@ public class WydotTimRwController extends WydotTimBaseController implements Buff
         new Thread(() -> {
             for (var tim : timsToSend) {
                 WydotTimRw timRw = (WydotTimRw) tim;
-                // check for reduce speed, itis code 7443
-                if (timRw.getItisCodes() != null && timRw.getItisCodes().size() == 3
-                        && timRw.getItisCodes().get(0).equals("7443")) {
-                    processRequest(timRw, getTimType(type), timRw.getSchedStart(), timRw.getSchedEnd(), null,
-                            TravelerInfoType.advisory);
-                } else if (timRw.getItisCodes() != null && timRw.getItisCodes().get(0).equals("7186")) {
-                    // prepare to stop
-                    processRequest(timRw, getTimType(type), timRw.getSchedStart(), timRw.getSchedEnd(), null,
-                            TravelerInfoType.advisory);
-                } else {
-                    // the rest are content=workZone
-                    processRequest(timRw, getTimType(type), timRw.getSchedStart(), timRw.getSchedEnd(), null,
-                            TravelerInfoType.advisory);
-                }
+                processRequest(timRw, getTimType(type), timRw.getSchedStart(), timRw.getSchedEnd(), null, TravelerInfoType.advisory);
             }
         }).start();
 
