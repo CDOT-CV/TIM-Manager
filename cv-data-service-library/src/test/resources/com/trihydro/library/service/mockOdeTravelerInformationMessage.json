@@ -10,16 +10,7 @@
             "doNotUse1": "0",
             "frameType": "advisory",
             "msgId": {
-                "roadSignID": {
-                    "position": {
-                        "latitude": "41.678473",
-                        "longitude": "-108.782775",
-                        "elevation": "917.1432"
-                    },
-                    "viewAngle": "1010101010101010",
-                    "mutcdCode": "warning",
-                    "crc": "0000"
-                }
+                "furtherInfoID": "0"
             },
             "priority": "0",
             "doNotUse2": "3",

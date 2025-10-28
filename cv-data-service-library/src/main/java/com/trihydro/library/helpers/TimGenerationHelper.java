@@ -11,7 +11,6 @@ import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
@@ -20,7 +19,6 @@ import com.google.gson.Gson;
 import com.trihydro.library.model.ActiveTimError;
 import com.trihydro.library.model.ActiveTimHolding;
 import com.trihydro.library.model.ActiveTimValidationResult;
-import com.trihydro.library.model.ContentEnum;
 import com.trihydro.library.model.Coordinate;
 import com.trihydro.library.model.Milepost;
 import com.trihydro.library.model.MilepostBuffer;
@@ -56,10 +54,7 @@ import us.dot.its.jpo.ode.plugin.j2735.OdeTravelerInformationMessage.DataFrame;
 import us.dot.its.jpo.ode.plugin.j2735.OdeTravelerInformationMessage.DataFrame.MsgId;
 import us.dot.its.jpo.ode.plugin.j2735.OdeTravelerInformationMessage.DataFrame.Region;
 import us.dot.its.jpo.ode.plugin.j2735.OdeTravelerInformationMessage.DataFrame.Region.Path;
-import us.dot.its.jpo.ode.plugin.j2735.OdeTravelerInformationMessage.DataFrame.RoadSignID;
-import us.dot.its.jpo.ode.plugin.j2735.OdeTravelerInformationMessage.NodeXY;
-import us.dot.its.jpo.ode.plugin.j2735.timstorage.FrameType.TravelerInfoType;
-import us.dot.its.jpo.ode.plugin.j2735.timstorage.MutcdCode.MutcdCodeEnum;
+import us.dot.its.jpo.ode.plugin.j2735.OdeTravelerInformationMessage.NodeXY;;
 
 @Component
 @Slf4j
@@ -700,7 +695,7 @@ public class TimGenerationHelper {
                                                  boolean resetStartTimes,
                                                  boolean resetExpirationTime) {
         String nowAsISO = Instant.now().toString();
-        DataFrame dataFrame = getDataFrame(aTim, anchor, resetStartTimes, resetExpirationTime);
+        DataFrame dataFrame = getDataFrame(aTim, resetStartTimes, resetExpirationTime);
         // check to see if we have any itis codes
         // if not, just continue on
         if (dataFrame.getItems() == null || dataFrame.getItems().length == 0) {
@@ -832,25 +827,12 @@ public class TimGenerationHelper {
         return ++currentCount;
     }
 
-    private DataFrame getDataFrame(TimUpdateModel aTim, Milepost anchor, boolean resetStartTimes,
+    private DataFrame getDataFrame(TimUpdateModel aTim, boolean resetStartTimes,
                                    boolean resetExpirationTime) {
-        // RoadSignID
-        RoadSignID rsid = new RoadSignID();
-        rsid.setPosition(getAnchorPosition(anchor));
-        rsid.setViewAngle("1111111111111111");
-
-        // if we are coming in with content=speedLimit and frameType=roadSignage,
-        // we need to set the mutcdCode to regulatory to display the regulatory signage
-        if (aTim.getDfContent() == ContentEnum.speedLimit &&
-            aTim.getFrameType() == TravelerInfoType.roadSignage) {
-            rsid.setMutcdCode(MutcdCodeEnum.regulatory);
-        } else {
-            rsid.setMutcdCode(MutcdCodeEnum.warning);
-        }
 
         // MsgId
         MsgId msgId = new MsgId();
-        msgId.setRoadSignID(rsid);
+        msgId.setFurtherInfoID("0");
 
         // DataFrame
         DataFrame df = new DataFrame();
