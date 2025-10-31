@@ -4,7 +4,6 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.trihydro.library.model.ContentEnum;
 import com.trihydro.library.model.Coordinate;
 import com.trihydro.library.model.Milepost;
 import com.trihydro.library.model.WydotTim;
@@ -106,11 +105,10 @@ public class CreateBaseTimUtilTest {
         wydotTim.setItisCodes(itisCodes);
         wydotTim.setClientId("testclientid");
 
-        var content = ContentEnum.advisory;
         var frameType = TravelerInfoType.advisory;
 
         // Act
-        var data = uut.buildTim(wydotTim, genProps, content, frameType, allMileposts, milepostsReduced, anchor);
+        var data = uut.buildTim(wydotTim, genProps, frameType, allMileposts, milepostsReduced, anchor);
 
         // Assert
         // validate dataFrame
@@ -157,11 +155,10 @@ public class CreateBaseTimUtilTest {
         wydotTim.setItisCodes(itisCodes);
         wydotTim.setClientId("testclientid");
 
-        var content = ContentEnum.advisory;
         var frameType = TravelerInfoType.advisory;
 
         // Act
-        var data = uut.buildTim(wydotTim, genProps, content, frameType, allMileposts, milepostsReduced, anchor);
+        var data = uut.buildTim(wydotTim, genProps, frameType, allMileposts, milepostsReduced, anchor);
 
         // Assert
         // validate dataFrame
@@ -208,11 +205,10 @@ public class CreateBaseTimUtilTest {
         wydotTim.setItisCodes(itisCodes);
         wydotTim.setClientId("testclientid");
 
-        var content = ContentEnum.advisory;
         var frameType = TravelerInfoType.advisory;
 
         // Act
-        var data = uut.buildTim(wydotTim, genProps, content, frameType, allMileposts, milepostsReduced, anchor);
+        var data = uut.buildTim(wydotTim, genProps, frameType, allMileposts, milepostsReduced, anchor);
 
         // Assert
         Assertions.assertEquals(1, data.getTim().getDataframes()[0].getRegions().length);
@@ -239,11 +235,10 @@ public class CreateBaseTimUtilTest {
         wydotTim.setItisCodes(itisCodes);
         wydotTim.setClientId("testclientid");
 
-        var content = ContentEnum.advisory;
         var frameType = TravelerInfoType.advisory;
 
         // Act
-        var data = uut.buildTim(wydotTim, genProps, content, frameType, allMileposts, milepostsReduced, anchor);
+        var data = uut.buildTim(wydotTim, genProps, frameType, allMileposts, milepostsReduced, anchor);
 
         // Assert
         Assertions.assertEquals(2, data.getTim().getDataframes()[0].getRegions().length);
@@ -282,11 +277,10 @@ public class CreateBaseTimUtilTest {
         wydotTim.setItisCodes(itisCodes);
         wydotTim.setClientId("testclientid");
 
-        var content = ContentEnum.advisory;
         var frameType = TravelerInfoType.advisory;
 
         // Act
-        var data = uut.buildTim(wydotTim, genProps, content, frameType, allMileposts, milepostsReduced, anchor);
+        var data = uut.buildTim(wydotTim, genProps, frameType, allMileposts, milepostsReduced, anchor);
 
         // Assert
         Assertions.assertEquals(3, data.getTim().getDataframes()[0].getRegions().length);

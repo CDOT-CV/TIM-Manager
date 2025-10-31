@@ -12,10 +12,8 @@ import java.util.List;
 import java.util.Map;
 
 import org.springframework.stereotype.Component;
-import java.util.Map;
 
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Component;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
@@ -33,8 +31,6 @@ import us.dot.its.jpo.ode.plugin.RoadSideUnit.RSU;
 import us.dot.its.jpo.ode.plugin.SNMP;
 import us.dot.its.jpo.ode.plugin.ServiceRequest;
 import us.dot.its.jpo.ode.plugin.SnmpProtocol;
-import us.dot.its.jpo.ode.plugin.j2735.J2735SpecialVehicleExtensions;
-import us.dot.its.jpo.ode.plugin.j2735.J2735SupplementalVehicleExtensions;
 import us.dot.its.jpo.ode.plugin.j2735.OdePosition3D;
 import us.dot.its.jpo.ode.plugin.j2735.OdeTravelerInformationMessage;
 import us.dot.its.jpo.ode.plugin.j2735.OdeTravelerInformationMessage.DataFrame.Region;
@@ -261,16 +257,16 @@ public class JsonToJavaConverter {
                 dataFrame.setContent(ContentEnum.advisory.getStringValue());
             } else if (contentNode.has(ContentEnum.speedLimit.getStringValue())) {
                 sequenceArrNode = contentNode.get(ContentEnum.speedLimit.getStringValue()).get("SEQUENCE");
-                dataFrame.setContent(ContentEnum.speedLimit.getStringValue());
+                dataFrame.setContent(ContentEnum.advisory.getStringValue());
             } else if (contentNode.has(ContentEnum.exitService.getStringValue())) {
                 sequenceArrNode = contentNode.get(ContentEnum.exitService.getStringValue()).get("SEQUENCE");
-                dataFrame.setContent(ContentEnum.exitService.getStringValue());
+                dataFrame.setContent(ContentEnum.advisory.getStringValue());
             } else if (contentNode.has(ContentEnum.genericSign.getStringValue())) {
                 sequenceArrNode = contentNode.get(ContentEnum.genericSign.getStringValue()).get("SEQUENCE");
-                dataFrame.setContent(ContentEnum.genericSign.getStringValue());
+                dataFrame.setContent(ContentEnum.advisory.getStringValue());
             } else if (contentNode.has(ContentEnum.workZone.getStringValue())) {
                 sequenceArrNode = contentNode.get(ContentEnum.workZone.getStringValue()).get("SEQUENCE");
-                dataFrame.setContent(ContentEnum.workZone.getStringValue());
+                dataFrame.setContent(ContentEnum.advisory.getStringValue());
             }
 
             LocalDate now = LocalDate.now();
@@ -480,16 +476,16 @@ public class JsonToJavaConverter {
                     dataFrame.setContent(ContentEnum.advisory.getStringValue());
                 } else if (contentNode.has(ContentEnum.speedLimit.getStringValue())) {
                     sequenceArrNode = contentNode.get("speedLimit");
-                    dataFrame.setContent(ContentEnum.speedLimit.getStringValue());
+                    dataFrame.setContent(ContentEnum.advisory.getStringValue());
                 } else if (contentNode.has(ContentEnum.exitService.getStringValue())) {
                     sequenceArrNode = contentNode.get("exitService");
-                    dataFrame.setContent(ContentEnum.exitService.getStringValue());
+                    dataFrame.setContent(ContentEnum.advisory.getStringValue());
                 } else if (contentNode.has(ContentEnum.genericSign.getStringValue())) {
                     sequenceArrNode = contentNode.get("genericSign");
-                    dataFrame.setContent(ContentEnum.genericSign.getStringValue());
+                    dataFrame.setContent(ContentEnum.advisory.getStringValue());
                 } else if (contentNode.has(ContentEnum.workZone.getStringValue())) {
                     sequenceArrNode = contentNode.get("workZone");
-                    dataFrame.setContent(ContentEnum.workZone.getStringValue());
+                    dataFrame.setContent(ContentEnum.advisory.getStringValue());
                 }
 
                 List<String> itemsList = new ArrayList<>();

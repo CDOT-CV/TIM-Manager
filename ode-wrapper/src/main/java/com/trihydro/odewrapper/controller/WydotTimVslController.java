@@ -5,7 +5,6 @@ import com.trihydro.library.helpers.MilepostReduction;
 import com.trihydro.library.helpers.TimGenerationHelper;
 import com.trihydro.library.helpers.Utility;
 import com.trihydro.library.model.ActiveTim;
-import com.trihydro.library.model.ContentEnum;
 import com.trihydro.library.model.WydotTim;
 import com.trihydro.library.service.*;
 import com.trihydro.odewrapper.config.BasicConfiguration;
@@ -88,7 +87,7 @@ public class WydotTimVslController extends WydotTimBaseController implements Buf
         new Thread(() -> {
             var startTime = getStartTime();
             for (WydotTim tim : wydotTims) {
-                processRequest(tim, getTimType(type), startTime, null, null, ContentEnum.speedLimit,
+                processRequest(tim, getTimType(type), startTime, null, null,
                         TravelerInfoType.roadSignage);
             }
         }).start();
