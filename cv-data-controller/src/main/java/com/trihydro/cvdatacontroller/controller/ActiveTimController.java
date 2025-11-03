@@ -43,7 +43,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import org.springframework.web.client.HttpServerErrorException;
 import springfox.documentation.annotations.ApiIgnore;
-import us.dot.its.jpo.ode.plugin.j2735.timstorage.FrameType.TravelerInfoType;
 
 @CrossOrigin
 @RestController

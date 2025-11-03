@@ -40,7 +40,6 @@ public class CreateBaseTimUtil {
      *
      * @param wydotTim The WydotTim object containing the data for the TIM.
      * @param genProps The TimGenerationProps object containing the generation properties.
-     * @param frameType The TravelerInfoType object representing the frame type of the TIM.
      * @param allMileposts The list of Milepost objects representing all mileposts.
      * @param reducedMileposts The list of Milepost objects representing reduced mileposts.
      * @param anchor The Milepost object representing the anchor milepost.
