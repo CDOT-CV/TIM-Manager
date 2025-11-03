@@ -141,7 +141,7 @@ public class WydotTimServiceTest {
     }
 
     private OdeTravelerInformationMessage getMockOdeTravelerInformationMessage() {
-        String timJson = "{\"msgCnt\":\"1\",\"timeStamp\":\"2017-08-03T22:25:36.297Z\",\"urlB\":\"null\",\"packetID\":\"EC9C236B0000000000\",\"dataframes\":[{\"startDateTime\":\"2017-08-02T22:25:00.000Z\",\"durationTime\":1,\"doNotUse1\":\"0\",\"frameType\":\"advisory\",\"msgId\":{\"furtherInfoID\":\"0\"},\"priority\":\"0\",\"doNotUse2\":\"3\",\"regions\":[{\"name\":\"Testing TIM\",\"regulatorID\":\"0\",\"segmentID\":\"33\",\"anchorPosition\":{\"latitude\":\"41.2500807\",\"longitude\":\"-111.0093847\",\"elevation\":\"2020.6969900289998\"},\"laneWidth\":\"7\",\"directionality\":\"3\",\"closedPath\":\"false\",\"description\":\"path\",\"path\":{\"scale\":\"0\",\"type\":\"ll\",\"nodes\":[{\"nodeLong\":\"0.0030982\",\"nodeLat\":\"0.0014562\",\"delta\":\"node-LL3\"},{\"nodeLong\":\"-111.0093847\",\"nodeLat\":\"41.2500807\",\"delta\":\"node-LatLon\"}]},\"direction\":\"0000000000001010\"}],\"doNotUse4\":\"2\",\"doNotUse3\":\"3\",\"content\":\"Advisory\",\"items\":[\"125\",\"some text\",\"250\",\"'98765\"],\"url\":\"null\"}]}";
+        String timJson = "{\"msgCnt\":\"1\",\"timeStamp\":\"2017-08-03T22:25:36.297Z\",\"urlB\":\"null\",\"packetID\":\"EC9C236B0000000000\",\"dataframes\":[{\"startDateTime\":\"2017-08-02T22:25:00.000Z\",\"durationTime\":1,\"doNotUse1\":\"0\",\"frameType\":\"roadSignage\",\"msgId\":{\"furtherInfoID\":\"0\"},\"priority\":\"0\",\"doNotUse2\":\"3\",\"regions\":[{\"name\":\"Testing TIM\",\"regulatorID\":\"0\",\"segmentID\":\"33\",\"anchorPosition\":{\"latitude\":\"41.2500807\",\"longitude\":\"-111.0093847\",\"elevation\":\"2020.6969900289998\"},\"laneWidth\":\"7\",\"directionality\":\"3\",\"closedPath\":\"false\",\"description\":\"path\",\"path\":{\"scale\":\"0\",\"type\":\"ll\",\"nodes\":[{\"nodeLong\":\"0.0030982\",\"nodeLat\":\"0.0014562\",\"delta\":\"node-LL3\"},{\"nodeLong\":\"-111.0093847\",\"nodeLat\":\"41.2500807\",\"delta\":\"node-LatLon\"}]},\"direction\":\"0000000000001010\"}],\"doNotUse4\":\"2\",\"doNotUse3\":\"3\",\"content\":\"Advisory\",\"items\":[\"125\",\"some text\",\"250\",\"'98765\"],\"url\":\"null\"}]}";
         Gson gson = new Gson();
         return gson.fromJson(timJson, OdeTravelerInformationMessage.class);
     }
@@ -223,16 +223,15 @@ public class WydotTimServiceTest {
         String timTypeStr = "A";
         String startDateTime = "2023-01-01T00:00:00.000Z";
         String endDateTime = "2023-01-01T01:00:00.000Z";
-        TravelerInfoType frameType = TravelerInfoType.advisory;
         List<Milepost> allMileposts = new ArrayList<>();
         List<Milepost> reducedMileposts = new ArrayList<>();
         Milepost anchor = new Milepost();
         String dotGnisId = "1B2843";
 
-        when(mockCreateBaseTimUtil.buildTim(any(), any(), any(), any(), any(), any())).thenReturn(null);
+        when(mockCreateBaseTimUtil.buildTim(any(), any(), any(), any(), any())).thenReturn(null);
 
         // Act
-        WydotTravelerInputData result = uut.createTim(new WydotTim(), timTypeStr, startDateTime, endDateTime, frameType, allMileposts, reducedMileposts, anchor, dotGnisId);
+        WydotTravelerInputData result = uut.createTim(new WydotTim(), timTypeStr, startDateTime, endDateTime, allMileposts, reducedMileposts, anchor, dotGnisId);
 
         // Assert
         assertNull(result);
@@ -244,7 +243,6 @@ public class WydotTimServiceTest {
         String timTypeStr = "A";
         String startDateTime = "2023-01-01T00:00:00.000Z";
         String endDateTime = "2023-01-01T01:00:00.000Z";
-        TravelerInfoType frameType = TravelerInfoType.advisory;
         List<Milepost> allMileposts = new ArrayList<>();
         List<Milepost> reducedMileposts = new ArrayList<>();
         Milepost anchor = new Milepost();
@@ -252,10 +250,10 @@ public class WydotTimServiceTest {
 
         WydotTravelerInputData timToSend = getMockWydotTravelerInputDataWithDataFrame();
 
-        when(mockCreateBaseTimUtil.buildTim(any(), any(), any(), any(), any(), any())).thenReturn(timToSend);
+        when(mockCreateBaseTimUtil.buildTim(any(), any(), any(), any(), any())).thenReturn(timToSend);
 
         // Act
-        WydotTravelerInputData result = uut.createTim(new WydotTim(), timTypeStr, startDateTime, endDateTime, frameType, allMileposts, reducedMileposts, anchor, dotGnisId);
+        WydotTravelerInputData result = uut.createTim(new WydotTim(), timTypeStr, startDateTime, endDateTime, allMileposts, reducedMileposts, anchor, dotGnisId);
 
         // Assert
         assertEquals(startDateTime, result.getTim().getDataframes()[0].getStartDateTime());
@@ -267,7 +265,6 @@ public class WydotTimServiceTest {
         String timTypeStr = "A";
         String startDateTime = "2023-01-01T00:00:00.000Z";
         String endDateTime = "2023-01-01T01:00:00.000Z";
-        TravelerInfoType frameType = TravelerInfoType.advisory;
         List<Milepost> allMileposts = new ArrayList<>();
         List<Milepost> reducedMileposts = new ArrayList<>();
         Milepost anchor = new Milepost();
@@ -275,11 +272,11 @@ public class WydotTimServiceTest {
 
         WydotTravelerInputData timToSend = getMockWydotTravelerInputDataWithDataFrame();
 
-        when(mockCreateBaseTimUtil.buildTim(any(), any(), any(), any(), any(), any())).thenReturn(timToSend);
+        when(mockCreateBaseTimUtil.buildTim(any(), any(), any(), any(), any())).thenReturn(timToSend);
         when(mockUtility.getMinutesDurationBetweenTwoDates(anyString(), anyString())).thenReturn(60);
 
         // Act
-        WydotTravelerInputData result = uut.createTim(new WydotTim(), timTypeStr, startDateTime, endDateTime, frameType, allMileposts, reducedMileposts, anchor, dotGnisId);
+        WydotTravelerInputData result = uut.createTim(new WydotTim(), timTypeStr, startDateTime, endDateTime, allMileposts, reducedMileposts, anchor, dotGnisId);
 
         // Assert
         assertEquals(60, result.getTim().getDataframes()[0].getDurationTime());
@@ -291,7 +288,6 @@ public class WydotTimServiceTest {
         String timTypeStr = "P";
         String startDateTime = "2023-01-01T00:00:00.000Z";
         String endDateTime = "2023-01-01T01:00:00.000Z";
-        TravelerInfoType frameType = TravelerInfoType.advisory;
         List<Milepost> allMileposts = new ArrayList<>();
         List<Milepost> reducedMileposts = new ArrayList<>();
         Milepost anchor = new Milepost();
@@ -299,10 +295,10 @@ public class WydotTimServiceTest {
 
         WydotTravelerInputData timToSend = getMockWydotTravelerInputDataWithDataFrame();
 
-        when(mockCreateBaseTimUtil.buildTim(any(), any(), any(), any(), any(), any())).thenReturn(timToSend);
+        when(mockCreateBaseTimUtil.buildTim(any(), any(), any(), any(), any())).thenReturn(timToSend);
 
         // Act
-        WydotTravelerInputData result = uut.createTim(new WydotTim(), timTypeStr, startDateTime, endDateTime, frameType, allMileposts, reducedMileposts, anchor, dotGnisId);
+        WydotTravelerInputData result = uut.createTim(new WydotTim(), timTypeStr, startDateTime, endDateTime, allMileposts, reducedMileposts, anchor, dotGnisId);
 
         // Assert
         assertEquals(120, result.getTim().getDataframes()[0].getDurationTime());
@@ -314,7 +310,6 @@ public class WydotTimServiceTest {
         String timTypeStr = "A";
         String startDateTime = "2023-01-01T00:00:00.000Z";
         String endDateTime = "2023-01-01T01:00:00.000Z";
-        TravelerInfoType frameType = TravelerInfoType.advisory;
         List<Milepost> allMileposts = new ArrayList<>();
         List<Milepost> reducedMileposts = new ArrayList<>();
         Milepost anchor = new Milepost();
@@ -322,10 +317,10 @@ public class WydotTimServiceTest {
 
         WydotTravelerInputData timToSend = getMockWydotTravelerInputDataWithDataFrame();
 
-        when(mockCreateBaseTimUtil.buildTim(any(), any(), any(), any(), any(), any())).thenReturn(timToSend);
+        when(mockCreateBaseTimUtil.buildTim(any(), any(), any(), any(), any())).thenReturn(timToSend);
 
         // Act
-        WydotTravelerInputData result = uut.createTim(new WydotTim(), timTypeStr, startDateTime, endDateTime, frameType, allMileposts, reducedMileposts, anchor, dotGnisId);
+        WydotTravelerInputData result = uut.createTim(new WydotTim(), timTypeStr, startDateTime, endDateTime, allMileposts, reducedMileposts, anchor, dotGnisId);
 
         // Assert
         assertNotNull(result.getTim().getPacketID());
@@ -340,7 +335,6 @@ public class WydotTimServiceTest {
         String timTypeStr = "A";
         String startDateTime = "2023-01-01T00:00:00.000Z";
         String endDateTime = "2023-01-01T01:00:00.000Z";
-        TravelerInfoType frameType = TravelerInfoType.advisory;
         List<Milepost> allMileposts = new ArrayList<>();
         List<Milepost> reducedMileposts = new ArrayList<>();
         Milepost anchor = new Milepost();
@@ -348,11 +342,11 @@ public class WydotTimServiceTest {
 
         WydotTravelerInputData timToSend = getMockWydotTravelerInputDataWithDataFrame();
 
-        when(mockCreateBaseTimUtil.buildTim(any(), any(), any(), any(), any(), any())).thenReturn(timToSend);
+        when(mockCreateBaseTimUtil.buildTim(any(), any(), any(), any(), any())).thenReturn(timToSend);
 
         // Act & Assert
         assertThrows(IllegalStateException.class, () -> {
-            uut.createTim(new WydotTim(), timTypeStr, startDateTime, endDateTime, frameType, allMileposts, reducedMileposts, anchor, dotGnisId);
+            uut.createTim(new WydotTim(), timTypeStr, startDateTime, endDateTime, allMileposts, reducedMileposts, anchor, dotGnisId);
         });
     }
 
