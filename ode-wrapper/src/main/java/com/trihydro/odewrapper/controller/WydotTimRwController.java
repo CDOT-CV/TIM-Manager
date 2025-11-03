@@ -116,7 +116,7 @@ public class WydotTimRwController extends WydotTimBaseController implements Buff
         new Thread(() -> {
             for (var tim : timsToSend) {
                 WydotTimRw timRw = (WydotTimRw) tim;
-                processRequest(timRw, getTimType(type), timRw.getSchedStart(), timRw.getSchedEnd(), null, TravelerInfoType.advisory);
+                processRequest(timRw, getTimType(type), timRw.getSchedStart(), timRw.getSchedEnd(), null);
             }
         }).start();
 

@@ -87,8 +87,7 @@ public class WydotTimVslController extends WydotTimBaseController implements Buf
         new Thread(() -> {
             var startTime = getStartTime();
             for (WydotTim tim : wydotTims) {
-                processRequest(tim, getTimType(type), startTime, null, null,
-                        TravelerInfoType.roadSignage);
+                processRequest(tim, getTimType(type), startTime, null, null);
             }
         }).start();
     }

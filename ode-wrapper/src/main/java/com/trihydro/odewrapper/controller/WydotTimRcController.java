@@ -170,8 +170,7 @@ public class WydotTimRcController extends WydotTimBaseController {
         new Thread(() -> {
             var startTime = getStartTime();
             for (WydotTim tim : wydotTims) {
-                processRequest(tim, getTimType(type), startTime, null, null,
-                        TravelerInfoType.advisory);
+                processRequest(tim, getTimType(type), startTime, null, null);
             }
         }).start();
     }

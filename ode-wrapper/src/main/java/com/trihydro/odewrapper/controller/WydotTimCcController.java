@@ -99,8 +99,7 @@ public class WydotTimCcController extends WydotTimBaseController {
             public void run() {
                 var startTime = getStartTime();
                 for (WydotTim tim : wydotTims) {
-                    processRequest(tim, getTimType(type), startTime, null, null,
-                            TravelerInfoType.advisory);
+                    processRequest(tim, getTimType(type), startTime, null, null);
                 }
             }
         }).start();

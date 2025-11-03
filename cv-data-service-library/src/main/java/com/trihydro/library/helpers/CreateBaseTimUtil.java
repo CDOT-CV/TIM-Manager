@@ -47,7 +47,7 @@ public class CreateBaseTimUtil {
      * @return The WydotTravelerInputData object containing the built TIM.
      */
     public WydotTravelerInputData buildTim(WydotTim wydotTim, TimGenerationProps genProps,
-            TravelerInfoType frameType, List<Milepost> allMileposts, List<Milepost> reducedMileposts, Milepost anchor) {
+            List<Milepost> allMileposts, List<Milepost> reducedMileposts, Milepost anchor) {
 
         ContentEnum content = ContentEnum.advisory;
 
@@ -71,7 +71,7 @@ public class CreateBaseTimUtil {
         dataFrame.setPriority(5);
 
         dataFrame.setContent(content.getStringValue());
-        dataFrame.setFrameType(frameType);
+        dataFrame.setFrameType(TravelerInfoType.roadSignage);
         dataFrame.setUrl("null");
         // add itis codes to tim
         dataFrame.setItems(wydotTim.getItisCodes().toArray(new String[wydotTim.getItisCodes().size()]));

@@ -511,17 +511,6 @@ public class JsonToJavaConverter {
                     itemsList.add(item);
                 }
 
-                // TravelerInfoType.valueOf();
-                JsonNode frameTypeNode = travelerDataFrame.get("frameType");
-                if (frameTypeNode != null) {
-                    if (frameTypeNode.fieldNames().hasNext()) {
-                        TravelerInfoType frameType = TravelerInfoType.valueOf(frameTypeNode.fieldNames().next());
-                        if (frameType != null) {
-                            dataFrame.setFrameType(frameType);
-                        }
-                    }
-                }
-
                 JsonNode startTimeNode = travelerDataFrame.get("startTime");
                 JsonNode durationNode = travelerDataFrame.get("durationTime");
                 JsonNode priorityNode = travelerDataFrame.get("priority");
@@ -531,6 +520,7 @@ public class JsonToJavaConverter {
                 dataFrame.setStartDateTime(startDate.toString() + "Z");
                 dataFrame.setDurationTime(durationNode.asInt());
                 dataFrame.setPriority(priorityNode.asInt());
+                dataFrame.setFrameType(TravelerInfoType.roadSignage);
 
                 String[] items = new String[itemsList.size()];
                 items = itemsList.toArray(items);

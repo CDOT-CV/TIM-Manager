@@ -18,6 +18,7 @@ import com.trihydro.library.helpers.SQLNullHandler;
 import com.trihydro.library.tables.TimDbTables;
 
 import us.dot.its.jpo.ode.plugin.j2735.OdeTravelerInformationMessage.DataFrame;
+import us.dot.its.jpo.ode.plugin.j2735.timstorage.FrameType;
 
 @Component
 @Slf4j
@@ -48,10 +49,8 @@ public class DataFrameService extends BaseService {
                 } else if (col.equals("SSP_TIM_RIGHTS")) {
                     sqlNullHandler.setShortOrNull(preparedStatement, fieldNum, dFrame.getDoNotUse1());
                 } else if (col.equals("FRAME_TYPE")) {
-                    Integer ordinal = null;
-                    if (dFrame.getFrameType() != null) {
-                        ordinal = dFrame.getFrameType().ordinal();
-                    }
+                    // Always assign TravelerInfoType.roadSignage
+                    Integer ordinal = FrameType.TravelerInfoType.roadSignage.ordinal();
                     sqlNullHandler.setIntegerOrNull(preparedStatement, fieldNum, ordinal);
                 } else if (col.equals("DURATION_TIME")) {
                     sqlNullHandler.setIntegerOrNull(preparedStatement, fieldNum, dFrame.getDurationTime());

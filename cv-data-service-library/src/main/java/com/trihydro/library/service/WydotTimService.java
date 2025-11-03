@@ -114,11 +114,11 @@ public class WydotTimService {
     DateTimeFormatter utcformatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
 
     public WydotTravelerInputData createTim(WydotTim wydotTim, String timTypeStr, String startDateTime,
-            String endDateTime, TravelerInfoType frameType, List<Milepost> allMileposts,
+            String endDateTime, List<Milepost> allMileposts,
             List<Milepost> reducedMileposts, Milepost anchor, String dotGnisId) {
 
         // build base TIM
-        WydotTravelerInputData timToSend = createBaseTimUtil.buildTim(wydotTim, genProps, frameType,
+        WydotTravelerInputData timToSend = createBaseTimUtil.buildTim(wydotTim, genProps,
                 allMileposts, reducedMileposts, anchor);
 
         if (timToSend == null) {

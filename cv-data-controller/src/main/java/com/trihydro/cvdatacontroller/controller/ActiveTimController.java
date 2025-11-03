@@ -102,17 +102,6 @@ public class ActiveTimController extends BaseController {
             while (rs.next()) {
                 var activeTim = buildTimUpdateModelFromResultSet(rs);
 
-                int frameTypeValue = rs.getInt("FRAME_TYPE");
-                if (!rs.wasNull() && frameTypeValue >= 0 && frameTypeValue < TravelerInfoType.values().length) {
-                    activeTim.setFrameType(TravelerInfoType.values()[frameTypeValue]);
-                }
-				else {
-                    log.warn("Could not set frame type from value {} for active tim id {}. Assuming Advisory.", frameTypeValue,
-                        activeTim.getActiveTimId());
-					// assume advisory
-					activeTim.setFrameType(TravelerInfoType.advisory);
-				}
-
                 activeTim.setDfContent(ContentEnum.advisory);
                 activeTims.add(activeTim);
             }
@@ -148,17 +137,6 @@ public class ActiveTimController extends BaseController {
             while (rs.next()) {
                 // Active_Tim properties
 				activeTim = buildTimUpdateModelFromResultSet(rs);
-
-                int frameTypeValue = rs.getInt("FRAME_TYPE");
-                if (!rs.wasNull() && frameTypeValue >= 0 && frameTypeValue < TravelerInfoType.values().length) {
-                    activeTim.setFrameType(TravelerInfoType.values()[frameTypeValue]);
-                }
-				else {
-                    log.warn("Could not set frame type from value {} for active tim id {}. Assuming Advisory.", frameTypeValue, activeTimId);
-					// assume advisory
-					activeTim.setFrameType(TravelerInfoType.advisory);
-				}
-
                 activeTim.setDfContent(ContentEnum.advisory);
             }
         } catch (Exception e) {
@@ -1060,6 +1038,7 @@ public class ActiveTimController extends BaseController {
 		timUpdateModel.setDataFrameId(rs.getInt("DATA_FRAME_ID"));
 		timUpdateModel.setDurationTime(rs.getInt("DURATION_TIME"));
 		timUpdateModel.setUrl(rs.getString("URL"));
+
 		return timUpdateModel;
 	}
 

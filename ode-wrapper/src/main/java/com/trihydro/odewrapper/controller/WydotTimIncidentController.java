@@ -127,8 +127,7 @@ public class WydotTimIncidentController extends WydotTimBaseController implement
                 var wydotTimIncident = (WydotTimIncident)wydotTim;
                 // set route
                 wydotTim.setRoute(wydotTimIncident.getRoute());
-                processRequest(wydotTimIncident, getTimType(type), startTime, null, wydotTimIncident.getPk(),
-                        TravelerInfoType.advisory);
+                processRequest(wydotTimIncident, getTimType(type), startTime, null, wydotTimIncident.getPk());
             }
         }).start();
     }

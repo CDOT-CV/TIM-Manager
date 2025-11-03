@@ -133,8 +133,7 @@ public class WydotTimBowrController extends WydotTimBaseController {
                     // get end time
                     String endTime = wydotTimBowr.getEndDateTime();
                     
-                    processRequest(tim, getTimType(type), startTime, endTime, null,
-                            TravelerInfoType.advisory);
+                    processRequest(tim, getTimType(type), startTime, endTime, null);
                 }
             }
         }).start();

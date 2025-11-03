@@ -140,8 +140,7 @@ public class WydotTimParkingController extends WydotTimBaseController {
             public void run() {
                 var startTime = getStartTime();
                 for (WydotTimParking wydotTim : wydotTims) {
-                    processRequest(wydotTim, getTimType(type), startTime, null, null,
-                            TravelerInfoType.advisory);
+                    processRequest(wydotTim, getTimType(type), startTime, null, null);
                 }
             }
         }).start();
