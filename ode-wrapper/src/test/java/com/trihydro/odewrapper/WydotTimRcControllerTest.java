@@ -4,7 +4,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.isA;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.lenient;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -74,7 +73,7 @@ public class WydotTimRcControllerTest {
 		List<String> itisCodesIncident = new ArrayList<>();
 		itisCodesIncident.add("531");
 		lenient().doReturn(itisCodesIncident).when(setItisCodes).setItisCodes(any());
-		lenient().doReturn(itisCodes).when(setItisCodes).getItisCodes();
+		lenient().doReturn(itisCodes).when(setItisCodes).getAllItisCodesFromDatabase();
 
 		lenient().doReturn(true).when(uut).routeSupported(isA(String.class));
 	}

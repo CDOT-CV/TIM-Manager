@@ -4,7 +4,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.isA;
 import static org.mockito.Mockito.*;
 
-import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -13,7 +12,6 @@ import com.google.gson.Gson;
 import com.trihydro.library.helpers.Utility;
 import com.trihydro.library.model.ActiveTim;
 import com.trihydro.library.model.ItisCode;
-import com.trihydro.library.model.Milepost;
 import com.trihydro.library.service.MilepostService;
 import com.trihydro.library.service.TimTypeService;
 import com.trihydro.library.service.WydotTimService;
@@ -70,7 +68,7 @@ public class WydotTimIncidentControllerTest {
 		List<String> itisCodesIncident = new ArrayList<>();
 		itisCodesIncident.add("531");
 		lenient().doReturn(itisCodesIncident).when(setItisCodes).setItisCodes(any());
-		lenient().doReturn(itisCodes).when(setItisCodes).getItisCodes();
+		lenient().doReturn(itisCodes).when(setItisCodes).getAllItisCodesFromDatabase();
 
 		lenient().doNothing().when(uut).makeTimsAsync(any());
 		lenient().doReturn(true).when(uut).routeSupported(isA(String.class));

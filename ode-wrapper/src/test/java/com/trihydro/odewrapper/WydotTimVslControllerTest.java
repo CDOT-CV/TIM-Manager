@@ -69,10 +69,10 @@ public class WydotTimVslControllerTest {
 		ic.setItisCode(-2);
 		ic.setItisCodeId(-3);
 		itisCodes.add(ic);
-		List<String> itisCodesIncident = new ArrayList<>();
-		itisCodesIncident.add("531");
-		lenient().doReturn(itisCodesIncident).when(mockSetItisCodes).setItisCodes(any());
-		lenient().doReturn(itisCodes).when(mockSetItisCodes).getItisCodes();
+		List<String> itisCodesVsl = new ArrayList<>();
+		itisCodesVsl.add("531");
+		lenient().doReturn(itisCodesVsl).when(mockSetItisCodes).setItisCodesVsl(any());
+		lenient().doReturn(itisCodes).when(mockSetItisCodes).getAllItisCodesFromDatabase();
 
 		milepostService = mock(MilepostService.class);
 
