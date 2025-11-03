@@ -51,7 +51,7 @@ public class DataFrameServiceTest extends TestBase<DataFrameService> {
         Assertions.assertEquals(Long.valueOf(-1), data);
         verify(mockSqlNullHandler).setLongOrNull(mockPreparedStatement, 1, -1L);// TIM_ID
         verify(mockSqlNullHandler).setShortOrNull(mockPreparedStatement, 2, dFrame.getDoNotUse1());// SSP_TIM_RIGHTS & NotUsed
-        verify(mockSqlNullHandler).setShortOrNull(mockPreparedStatement, 2, dFrame.getDoNotUse1());// FRAME_TYPE
+        verify(mockSqlNullHandler).setIntegerOrNull(mockPreparedStatement, 3, 2);// FRAME_TYPE is RoadSignage
         verify(mockSqlNullHandler).setIntegerOrNull(mockPreparedStatement, 4, dFrame.getDurationTime());// DURATION_TIME
         verify(mockSqlNullHandler).setIntegerOrNull(mockPreparedStatement, 5, dFrame.getPriority());// PRIORITY
         verify(mockSqlNullHandler).setShortOrNull(mockPreparedStatement, 6, dFrame.getDoNotUse2());// SSP_LOCATION_RIGHTS & NotUsed1
