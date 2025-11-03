@@ -36,6 +36,8 @@ public class SetItisCodes {
     private final String REDUCED_ITIS_CODE = "12302";
     private final String AHEAD_ITIS_CODE = "13569";
 
+    private static final int SMALL_ITIS_CODE_MIN = 12544;
+
     @Autowired
     public SetItisCodes(ItisCodeService _itisCodeService, IncidentChoicesService _incidentChoicesService) {
         itisCodeService = _itisCodeService;
@@ -197,9 +199,7 @@ public class SetItisCodes {
 
         // J2540 small number ITIS codes start at 12,544 and increment by 1 to represent each number up to 255.
         // To covert speed to an ITIS code, adding 12,544 is enough.
-        items.add(Integer.toString(
-                Optional.ofNullable(wydotTim.getSpeed()).orElse(0) + 12544
-        ));
+        items.add(Integer.toString(wydotTim.getSpeed() + SMALL_ITIS_CODE_MIN));
 
         // mph itis code
         allItisCodes.stream().filter(x -> x.getDescription().equals("mph")).findFirst().ifPresent(mph -> items.add(mph.getItisCode().toString()));
