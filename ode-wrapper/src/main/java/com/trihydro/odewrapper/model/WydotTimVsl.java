@@ -1,9 +1,11 @@
 package com.trihydro.odewrapper.model;
 
 import com.trihydro.library.model.WydotTim;
+import io.swagger.annotations.ApiModelProperty;
 
 public class WydotTimVsl extends WydotTim {
 
+    @ApiModelProperty(required = true)
     private Integer speed;
 
     private String deviceId;
