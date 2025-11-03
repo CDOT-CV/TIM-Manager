@@ -437,10 +437,8 @@ public abstract class WydotTimBaseController {
         }
 
         // set itis codes
-        List<String> itisCodes = new ArrayList<>();
         try {
-        List<String> itisCodes = new ArrayList<>();
-        try {
+            List<String> itisCodes;
             itisCodes= setItisCodes.setItisCodesVsl(tim);
             if (itisCodes.isEmpty()) {
                 resultMessages.add("No ITIS codes found");
@@ -453,8 +451,6 @@ public abstract class WydotTimBaseController {
         } catch (Exception e) {
             resultMessages.add("Could not determine speed for speed limit tim");
         }
-        result.setItisCodes(itisCodes);
-        tim.setItisCodes(itisCodes);
 
         result.setResultMessages(resultMessages);
         return result;
