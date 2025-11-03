@@ -198,7 +198,7 @@ public class RsuController extends BaseController {
 
 			// select all RSUs from RSU table
 			rs = statement.executeQuery(
-					"select rsu_id, ST_X(ST_AsText(geography)) as longitude, ST_Y(ST_AsText(geography)) as latitude, ipv4_address, primary_route, milepost from rsus where primary_route like %'%" + route + "%'");
+					"select rsu_id, ST_X(ST_AsText(geography)) as longitude, ST_Y(ST_AsText(geography)) as latitude, ipv4_address, primary_route, milepost from rsus where primary_route like '%" + route + "%'");
 
 			while (rs.next()) {
 				WydotRsu rsu = new WydotRsu();
