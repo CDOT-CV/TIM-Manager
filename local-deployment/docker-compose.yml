@@ -202,8 +202,6 @@ services:
     environment:
       SERVER_PORT: 7777
       CONFIG_ODE_URL: http://ode:8080
-      CONFIG_MAXIMUM_POOL_SIZE: 7
-      CONFIG_CONNECTION_TIMEOUT: 300000
       CONFIG_ENV: local
       CONFIG_SDW_TTL: oneday
       CONFIG_SDW_REST_URL: ${SDW_REST_URL}
