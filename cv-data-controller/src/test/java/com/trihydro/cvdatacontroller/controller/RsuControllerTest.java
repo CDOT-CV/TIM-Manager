@@ -110,7 +110,7 @@ public class RsuControllerTest extends TestBase<RsuController> {
         String route = "I80";
         String selectStatement = "select rsu_id, ST_X(ST_AsText(geography)) as longitude, " + 
         "ST_Y(ST_AsText(geography)) as latitude, ipv4_address, primary_route, milepost from rsus " + 
-        "where primary_route like %'%" + route + "%'";
+        "where primary_route like '%" + route + "%'";
         // Act
         ResponseEntity<ArrayList<WydotRsu>> data = uut.SelectRsusByRoute(route);
 
@@ -134,7 +134,7 @@ public class RsuControllerTest extends TestBase<RsuController> {
         String route = "I80";
         String selectStatement = "select rsu_id, ST_X(ST_AsText(geography)) as longitude, " + 
         "ST_Y(ST_AsText(geography)) as latitude, ipv4_address, primary_route, milepost from rsus " + 
-        "where primary_route like %'%" + route + "%'";
+        "where primary_route like '%" + route + "%'";
         doThrow(new SQLException()).when(mockRs).getInt("RSU_ID");
         // Act
         ResponseEntity<ArrayList<WydotRsu>> data = uut.SelectRsusByRoute(route);

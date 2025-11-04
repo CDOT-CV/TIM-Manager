@@ -2,7 +2,7 @@ version: "2"
 services:
   # external dependencies ----------------------------------------------
   kafka:
-    image: bitnami/kafka:latest
+    image: bitnamilegacy/kafka:3.8.0
     hostname: kafka
     ports:
       - "9092:9092"
@@ -27,7 +27,7 @@ services:
         max-file: "5"
 
   kafka_init:
-    image: bitnami/kafka:latest
+    image: bitnamilegacy/kafka:3.8.0
     depends_on:
       kafka:
         condition: service_started
@@ -202,11 +202,6 @@ services:
     environment:
       SERVER_PORT: 7777
       CONFIG_ODE_URL: http://ode:8080
-      CONFIG_DB_URL: jdbc:postgresql://${POSTGRES_DB_HOSTNAME}:5432/${POSTGRES_DB_NAME}?user=${POSTGRES_USER}
-      CONFIG_DB_USERNAME: ${POSTGRES_USER}
-      CONFIG_DB_PASSWORD: ${POSTGRES_PASSWORD}
-      CONFIG_MAXIMUM_POOL_SIZE: 7
-      CONFIG_CONNECTION_TIMEOUT: 300000
       CONFIG_ENV: local
       CONFIG_SDW_TTL: oneday
       CONFIG_SDW_REST_URL: ${SDW_REST_URL}
@@ -221,6 +216,7 @@ services:
       CONFIG_HTTP_LOGGING_MAX_SIZE: 2000
       CONFIG_RSU_ROUTES: ${RSU_ROUTES}
       CONFIG_POINT_INCIDENT_BUFFER_MILES: 1
+      CONFIG_DOT_GNIS_ID: ${DOT_GNIS_ID}
       LOGGING_LEVEL_COM_TRIHYDRO: ${LOGGING_LEVEL_COM_TRIHYDRO}
     ports:
       - "7777:7777"
