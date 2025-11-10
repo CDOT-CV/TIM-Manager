@@ -60,7 +60,7 @@
           "durationTime": 32000,
           "frameType": "advisory",
           "msgId": {
-            "furtherInfoID": "0"
+            "furtherInfoID": "0000"
           },
           "priority": 5,
           "regions": [

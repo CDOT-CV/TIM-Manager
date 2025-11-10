@@ -77,9 +77,10 @@ public class CreateBaseTimUtil {
         dataFrame.setItems(wydotTim.getItisCodes().toArray(new String[wydotTim.getItisCodes().size()]));
 
         // Per CTW guidance, msgId must be populated using furtherInfoID (not roadSignID)
-        // Since furtherInfoID is not used, set it to the default value of 0
+        // Per SAE J2735 (DE_FurtherInfoID), this field is defined as an OCTET STRING (SIZE(2)).
+        // Since furtherInfoID is not used, set it to two zero bytes (0000) to indicate "unknown or not present"
         MsgId msgId = new MsgId();
-        msgId.setFurtherInfoID("0");
+        msgId.setFurtherInfoID("0000");
         dataFrame.setMsgId(msgId);
 
         // set regions. note that we now support multiple regions in a single TIM package
