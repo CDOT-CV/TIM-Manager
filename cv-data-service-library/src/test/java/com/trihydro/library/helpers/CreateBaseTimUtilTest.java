@@ -114,7 +114,7 @@ public class CreateBaseTimUtilTest {
         Assertions.assertNotNull(dataFrame);
         Assertions.assertEquals("advisory", dataFrame.getContent());
         Assertions.assertEquals(32000, dataFrame.getDurationTime());
-        Assertions.assertEquals("0", dataFrame.getMsgId().getFurtherInfoID());
+        Assertions.assertEquals("0000", dataFrame.getMsgId().getFurtherInfoID());
         Assertions.assertEquals(TravelerInfoType.roadSignage, dataFrame.getFrameType());
         Assertions.assertNull(dataFrame.getMsgId().getRoadSignID());
 
@@ -161,7 +161,7 @@ public class CreateBaseTimUtilTest {
         Assertions.assertNotNull(dataFrame);
         Assertions.assertEquals("advisory", dataFrame.getContent());
         Assertions.assertEquals(32000, dataFrame.getDurationTime());
-        Assertions.assertEquals("0", dataFrame.getMsgId().getFurtherInfoID());
+        Assertions.assertEquals("0000", dataFrame.getMsgId().getFurtherInfoID());
         Assertions.assertEquals(TravelerInfoType.roadSignage, dataFrame.getFrameType());
         Assertions.assertNull(dataFrame.getMsgId().getRoadSignID());
 

@@ -24,7 +24,7 @@
                 "doNotUse1": 0,
                 "frameType": "roadSignage",
                 "msgId": {
-                    "furtherInfoID": "0"
+                    "furtherInfoID": "0000"
                 },
                 "startDateTime": "2024-10-02T11:00:50.814Z",
                 "durationTime": 32000,

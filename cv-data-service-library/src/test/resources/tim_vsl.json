@@ -39,7 +39,7 @@
           "doNotUse1": 0,
           "frameType": "roadSignage",
           "msgId": {
-            "furtherInfoID": "0"
+            "furtherInfoID": "0000"
           },
           "durationTime": 32000,
           "startYear": 2021,
