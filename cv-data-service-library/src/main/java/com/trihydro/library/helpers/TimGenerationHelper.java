@@ -832,7 +832,7 @@ public class TimGenerationHelper {
 
         // MsgId
         MsgId msgId = new MsgId();
-        msgId.setFurtherInfoID("0");
+        msgId.setFurtherInfoID("0000");
 
         // DataFrame
         DataFrame df = new DataFrame();
