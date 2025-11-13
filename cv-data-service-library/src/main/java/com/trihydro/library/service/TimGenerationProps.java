@@ -1,8 +1,8 @@
 package com.trihydro.library.service;
 
-import java.math.BigDecimal;
+import com.trihydro.library.model.TimeToLive;
 
-import us.dot.its.jpo.ode.plugin.SituationDataWarehouse.SDW.TimeToLive;
+import java.math.BigDecimal;
 
 public interface TimGenerationProps {
     public Double getPointIncidentBufferMiles();

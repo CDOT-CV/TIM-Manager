@@ -1,8 +1,9 @@
 package com.trihydro.library.model;
 
-import us.dot.its.jpo.ode.plugin.j2735.OdeTravelerInformationMessage;
 
-public class WydotOdeTravelerInformationMessage extends OdeTravelerInformationMessage {
+import us.dot.its.jpo.asn.j2735.r2024.TravelerInformation.TravelerInformation;
+
+public class WydotOdeTravelerInformationMessage extends TravelerInformation {
 
     private static final long serialVersionUID = 1L;
     private Integer rsuIndex;

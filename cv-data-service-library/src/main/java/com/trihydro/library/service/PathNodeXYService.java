@@ -6,8 +6,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
-
-import us.dot.its.jpo.ode.plugin.j2735.OdeTravelerInformationMessage.NodeXY;
+import us.dot.its.jpo.asn.j2735.r2024.Common.NodeXY;
 
 @Component
 public class PathNodeXYService extends CvDataServiceLibrary {

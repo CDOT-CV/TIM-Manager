@@ -1,9 +1,9 @@
 package com.trihydro.library.model;
 
+import us.dot.its.jpo.asn.j2735.r2024.TravelerInformation.TravelerInfoType;
+
 import java.math.BigDecimal;
 import java.sql.Timestamp;
-
-import us.dot.its.jpo.ode.plugin.j2735.timstorage.FrameType.TravelerInfoType;
 
 public class TimUpdateModel extends ActiveTim {
     // Tim properties
