@@ -31,7 +31,6 @@
     <module>tim-refresh</module>
     <module>logger-kafka-consumer</module>
     <module>cert-expiration</module>
-    <module>jpo-asn-pojos</module>
   </modules>
 
   <dependencyManagement>
