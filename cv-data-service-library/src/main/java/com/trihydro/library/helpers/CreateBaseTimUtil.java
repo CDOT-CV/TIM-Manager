@@ -17,13 +17,13 @@ import com.trihydro.library.service.TimGenerationProps;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-
-import us.dot.its.jpo.ode.plugin.ServiceRequest;
-import us.dot.its.jpo.ode.plugin.j2735.OdePosition3D;
-import us.dot.its.jpo.ode.plugin.j2735.OdeTravelerInformationMessage;
-import us.dot.its.jpo.ode.plugin.j2735.OdeTravelerInformationMessage.DataFrame.MsgId;
-import us.dot.its.jpo.ode.plugin.j2735.OdeTravelerInformationMessage.NodeXY;
-import us.dot.its.jpo.ode.plugin.j2735.timstorage.FrameType.TravelerInfoType;
+import us.dot.its.jpo.asn.j2735.r2024.Common.FurtherInfoID;
+import us.dot.its.jpo.asn.j2735.r2024.Common.MinuteOfTheYear;
+import us.dot.its.jpo.asn.j2735.r2024.Common.NodeXY;
+import us.dot.its.jpo.asn.j2735.r2024.Common.Position3D;
+import us.dot.its.jpo.asn.j2735.r2024.ITIS.ITIScodesAndText;
+import us.dot.its.jpo.asn.j2735.r2024.ITIS.ITIScodesAndTextSequence;
+import us.dot.its.jpo.asn.j2735.r2024.TravelerInformation.*;
 
 @Component
 public class CreateBaseTimUtil {
@@ -47,49 +47,67 @@ public class CreateBaseTimUtil {
      * @return The WydotTravelerInputData object containing the built TIM.
      */
     public WydotTravelerInputData buildTim(WydotTim wydotTim, TimGenerationProps genProps,
-            TravelerInfoType frameType, List<Milepost> allMileposts, List<Milepost> reducedMileposts, Milepost anchor) {
+                                           TravelerInfoType frameType, List<Milepost> allMileposts, List<Milepost> reducedMileposts, Milepost anchor) {
 
         ContentEnum content = ContentEnum.advisory;
 
         // build TIM object with data
         WydotTravelerInputData timToSend = new WydotTravelerInputData();
-        OdeTravelerInformationMessage tim = new OdeTravelerInformationMessage();
-        tim.setUrlB("null");
+        TravelerInformation tim = new TravelerInformation();
+        tim.setUrlB(new URL_Base("null"));
 
         // set TIM Properties
-        OdeTravelerInformationMessage.DataFrame dataFrame = new OdeTravelerInformationMessage.DataFrame();
+        TravelerDataFrame dataFrame = new TravelerDataFrame();
 
         // set TIM TimeStamp and StartDateTime to current time in UTC
         String nowAsISO = Instant.now().toString();
-        tim.setTimeStamp(nowAsISO);
-        dataFrame.setStartDateTime(nowAsISO);
+        MinuteOfTheYear mty = new MinuteOfTheYear();
+        mty.setValue(-1L); // TODO: set to minute of the year
+        tim.setTimeStamp(mty);
+        dataFrame.setStartDateTime(nowAsISO); // TODO: split into setStartDate() and setStartTime()
 
         // duration time set to 22 days worth of minutes
-        dataFrame.setDurationTime(32000);
+        MinutesDuration minutesDuration = new MinutesDuration();
+        minutesDuration.setValue(32000L);
 
         // default priority
-        dataFrame.setPriority(5);
+        SignPriority signPriority = new SignPriority();
+        signPriority.setValue(5);
 
-        dataFrame.setContent(content.getStringValue());
+        TravelerDataFrame.ContentChoice contentChoice = new TravelerDataFrame.ContentChoice();
+        ITIScodesAndText advisory = new ITIScodesAndText();
+        contentChoice.setAdvisory(advisory);
+        dataFrame.setContent(contentChoice);
         dataFrame.setFrameType(frameType);
-        dataFrame.setUrl("null");
+        URL_Short urlShort = new URL_Short("null");
+        dataFrame.setUrl(urlShort);
         // add itis codes to tim
-        dataFrame.setItems(wydotTim.getItisCodes().toArray(new String[wydotTim.getItisCodes().size()]));
+        ITIScodesAndText itisCodesAndText = new ITIScodesAndText();
+        String[] itisCodes = wydotTim.getItisCodes().toArray(new String[wydotTim.getItisCodes().size()]);
+
+        dataFrame.getContent().setAdvisory(itisCodesAndText);
 
         // Per CTW guidance, msgId must be populated using furtherInfoID (not roadSignID)
         // Per SAE J2735 (DE_FurtherInfoID), this field is defined as an OCTET STRING (SIZE(2)).
         // Since furtherInfoID is not used, set it to two zero bytes (0000) to indicate "unknown or not present"
-        MsgId msgId = new MsgId();
-        msgId.setFurtherInfoID("0000");
-        dataFrame.setMsgId(msgId);
+        TravelerDataFrame.MsgIdChoice msgIdChoice = new TravelerDataFrame.MsgIdChoice();
+        FurtherInfoID furtherInfoId = new FurtherInfoID();
+        furtherInfoId.setValue("0000");
+        msgIdChoice.setFurtherInfoID(furtherInfoId);
+        dataFrame.setMsgId(msgIdChoice);
 
         // set regions. note that we now support multiple regions in a single TIM package
         BigDecimal defaultLaneWidth = genProps.getDefaultLaneWidth();
-        List<OdeTravelerInformationMessage.DataFrame.Region> regions = buildRegions(defaultLaneWidth, allMileposts, reducedMileposts, anchor);
-        dataFrame.setRegions(regions.toArray(new OdeTravelerInformationMessage.DataFrame.Region[regions.size()]));
+        List<GeographicalPath> regions = buildRegions(defaultLaneWidth, allMileposts, reducedMileposts, anchor);
+        TravelerDataFrame.SequenceOfRegions seqOfRegions = new TravelerDataFrame.SequenceOfRegions();
+        for (GeographicalPath region : regions) {
+            seqOfRegions.add(region);
+        }
+
+        dataFrame.setRegions(seqOfRegions);
 
         // set dataframes, currently assuming a single dataframe
-        OdeTravelerInformationMessage.DataFrame[] dataFrames = new OdeTravelerInformationMessage.DataFrame[1];
+        TravelerDataFrame[] dataFrames = new TravelerDataFrame[1];
         dataFrames[0] = dataFrame;
         tim.setDataframes(dataFrames);
 
@@ -110,11 +128,11 @@ public class CreateBaseTimUtil {
      * @param anchor             the anchor milepost
      * @return a list of regions
      */
-    protected List<OdeTravelerInformationMessage.DataFrame.Region> buildRegions(BigDecimal defaultLaneWidth, List<Milepost> allMileposts, List<Milepost> reducedMileposts, Milepost anchor) {
+    protected List<GeographicalPath> buildRegions(BigDecimal defaultLaneWidth, List<Milepost> allMileposts, List<Milepost> reducedMileposts, Milepost anchor) {
         if (reducedMileposts.size() <= 63) {
             utility.logWithDate("Less than 63 mileposts, building a single region.", CreateBaseTimUtil.class);
-            List<OdeTravelerInformationMessage.DataFrame.Region> regions = new ArrayList<OdeTravelerInformationMessage.DataFrame.Region>();
-            OdeTravelerInformationMessage.DataFrame.Region singleRegion = buildSingleRegion(defaultLaneWidth, allMileposts, reducedMileposts, anchor);
+            List<GeographicalPath> regions = new ArrayList<GeographicalPath>();
+            GeographicalPath singleRegion = buildSingleRegion(defaultLaneWidth, allMileposts, reducedMileposts, anchor);
             regions.add(singleRegion);
             return regions;
         } else {
@@ -130,21 +148,21 @@ public class CreateBaseTimUtil {
      * @param allMileposts        a list of all mileposts
      * @param reducedMileposts    a list of reduced mileposts
      * @param anchor              the anchor milepost
-     * @return                    a list of OdeTravelerInformationMessage.DataFrame.Region objects representing the built regions
+     * @return                    a list of Region objects representing the built regions
      */
-    protected List<OdeTravelerInformationMessage.DataFrame.Region> buildMultipleRegions(BigDecimal defaultLaneWidth, List<Milepost> allMileposts, List<Milepost> reducedMileposts, Milepost anchor) {
-        List<OdeTravelerInformationMessage.DataFrame.Region> regions = new ArrayList<OdeTravelerInformationMessage.DataFrame.Region>(); 
+    protected List<GeographicalPath> buildMultipleRegions(BigDecimal defaultLaneWidth, List<Milepost> allMileposts, List<Milepost> reducedMileposts, Milepost anchor) {
+        List<GeographicalPath> regions = new ArrayList<>();
 
         int maxMilepostsPerRegion = 63;
 
-        List<Milepost> milepostsForNextRegion = new ArrayList<Milepost>();
+        List<Milepost> milepostsForNextRegion = new ArrayList<>();
         Milepost nextAnchor = new Milepost(anchor);
 
         for (int i = 0; i < reducedMileposts.size(); i++) {
             milepostsForNextRegion.add(reducedMileposts.get(i));
             // if we have reached the max number of mileposts per region, or if we are at the end of the list
             if (milepostsForNextRegion.size() == maxMilepostsPerRegion || i == reducedMileposts.size() - 1) {
-                OdeTravelerInformationMessage.DataFrame.Region region = buildSingleRegion(defaultLaneWidth, allMileposts, milepostsForNextRegion, nextAnchor);
+                GeographicalPath region = buildSingleRegion(defaultLaneWidth, allMileposts, milepostsForNextRegion, nextAnchor);
                 regions.add(region);
                 milepostsForNextRegion.clear();
                 nextAnchor = reducedMileposts.get(i);
@@ -164,8 +182,8 @@ public class CreateBaseTimUtil {
      * @param anchor              The anchor milepost.
      * @return                    The built region.
      */
-    protected OdeTravelerInformationMessage.DataFrame.Region buildSingleRegion(BigDecimal defaultLaneWidth, List<Milepost> allMileposts, List<Milepost> reducedMileposts, Milepost anchor) {
-        OdeTravelerInformationMessage.DataFrame.Region region = new OdeTravelerInformationMessage.DataFrame.Region();
+    protected GeographicalPath buildSingleRegion(BigDecimal defaultLaneWidth, List<Milepost> allMileposts, List<Milepost> reducedMileposts, Milepost anchor) {
+        GeographicalPath region = new GeographicalPath();
         region.setName("Temp");
         region.setRegulatorID(0);
 
@@ -179,7 +197,7 @@ public class CreateBaseTimUtil {
         region.setClosedPath(false);
 
         // set anchor position
-        OdePosition3D anchorPosition = new OdePosition3D();
+        Position3D anchorPosition = new Position3D();
         anchorPosition.setLatitude(anchor.getLatitude());
         anchorPosition.setLongitude(anchor.getLongitude());
         region.setAnchorPosition(anchorPosition);
@@ -193,8 +211,8 @@ public class CreateBaseTimUtil {
 
         // set path nodes
         if (reducedMileposts != null && !reducedMileposts.isEmpty()) {
-            OdeTravelerInformationMessage.NodeXY[] nodes = buildNodePathFromMileposts(reducedMileposts, anchor);
-            OdeTravelerInformationMessage.DataFrame.Region.Path path = new OdeTravelerInformationMessage.DataFrame.Region.Path();
+            NodeXY[] nodes = buildNodePathFromMileposts(reducedMileposts, anchor);
+            Path path = new Path();
             path.setScale(0);
             path.setType("ll");
             path.setNodes(nodes);
@@ -205,7 +223,7 @@ public class CreateBaseTimUtil {
     }
 
     public NodeXY[] buildNodePathFromMileposts(List<Milepost> reducedMileposts, Milepost anchor) {
-        ArrayList<OdeTravelerInformationMessage.NodeXY> nodes = new ArrayList<OdeTravelerInformationMessage.NodeXY>();
+        ArrayList<NodeXY> nodes = new ArrayList<NodeXY>();
 
         var previousMp = anchor;
 
@@ -214,7 +232,7 @@ public class CreateBaseTimUtil {
         // include a node with an offset of (0, 0) which is effectively a point that's
         // right on top of the anchor point.
         if (reducedMileposts.size() == 1) {
-            OdeTravelerInformationMessage.NodeXY node = new OdeTravelerInformationMessage.NodeXY();
+            NodeXY node = new NodeXY();
             node.setNodeLat(BigDecimal.valueOf(0));
             node.setNodeLong(BigDecimal.valueOf(0));
             node.setDelta("node-LL");
@@ -224,7 +242,7 @@ public class CreateBaseTimUtil {
         for (int i = 0; i < reducedMileposts.size(); i++) {
             // note that even though we are setting node-LL type here, the ODE only has a
             // NodeXY object, as the structure is the same.
-            OdeTravelerInformationMessage.NodeXY node = new OdeTravelerInformationMessage.NodeXY();
+            NodeXY node = new NodeXY();
             BigDecimal lat = reducedMileposts.get(i).getLatitude().subtract(previousMp.getLatitude());
             BigDecimal lon = reducedMileposts.get(i).getLongitude().subtract(previousMp.getLongitude());
             node.setNodeLat(lat);
@@ -233,10 +251,10 @@ public class CreateBaseTimUtil {
             nodes.add(node);
             previousMp = reducedMileposts.get(i);
         }
-        return nodes.toArray(new OdeTravelerInformationMessage.NodeXY[nodes.size()]);
+        return nodes.toArray(new NodeXY[nodes.size()]);
     }
 
-    public String buildHeadingSliceFromMileposts(List<Milepost> allMileposts, OdePosition3D anchorPosition) {
+    public String buildHeadingSliceFromMileposts(List<Milepost> allMileposts, Position3D anchorPosition) {
         int timDirection = 0;
         // this is a regular tim, so we need to set the direction normally
         // path list - change later

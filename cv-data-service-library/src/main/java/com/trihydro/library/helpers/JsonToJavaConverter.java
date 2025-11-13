@@ -21,23 +21,10 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.trihydro.library.model.ContentEnum;
-
-import us.dot.its.jpo.ode.model.OdeLogMetadata;
-import us.dot.its.jpo.ode.model.OdeMsgMetadata.GeneratedBy;
-import us.dot.its.jpo.ode.model.OdeRequestMsgMetadata;
-import us.dot.its.jpo.ode.model.OdeTimPayload;
-import us.dot.its.jpo.ode.model.SerialId;
-import us.dot.its.jpo.ode.plugin.RoadSideUnit.RSU;
-import us.dot.its.jpo.ode.plugin.SNMP;
-import us.dot.its.jpo.ode.plugin.ServiceRequest;
-import us.dot.its.jpo.ode.plugin.SnmpProtocol;
-import us.dot.its.jpo.ode.plugin.j2735.OdePosition3D;
-import us.dot.its.jpo.ode.plugin.j2735.OdeTravelerInformationMessage;
-import us.dot.its.jpo.ode.plugin.j2735.OdeTravelerInformationMessage.DataFrame.Region;
-import us.dot.its.jpo.ode.plugin.j2735.OdeTravelerInformationMessage.DataFrame.Region.Circle;
-import us.dot.its.jpo.ode.plugin.j2735.timstorage.DistanceUnits.DistanceUnitsEnum;
-import us.dot.its.jpo.ode.plugin.j2735.timstorage.FrameType.TravelerInfoType;
-import us.dot.its.jpo.ode.util.JsonUtils;
+import us.dot.its.jpo.asn.j2735.r2024.Common.Position3D;
+import us.dot.its.jpo.asn.j2735.r2024.TravelerInformation.Circle;
+import us.dot.its.jpo.asn.j2735.r2024.TravelerInformation.DistanceUnits;
+import us.dot.its.jpo.asn.j2735.r2024.TravelerInformation.TravelerInfoType;
 
 @Component
 @Slf4j
@@ -417,7 +404,7 @@ public class JsonToJavaConverter {
             BigDecimal latitude = mapper.treeToValue(circleCenterNode.get("lat"), BigDecimal.class);
             BigDecimal longitude = mapper.treeToValue(circleCenterNode.get("long"), BigDecimal.class);
             BigDecimal elevation = mapper.treeToValue(circleCenterNode.get("elevation"), BigDecimal.class);
-            OdePosition3D center = new OdePosition3D();
+            Position3D center = new OdePosition3D();
             center.setLatitude(latitude);
             center.setLongitude(longitude);
             if (elevation != null)
@@ -425,7 +412,7 @@ public class JsonToJavaConverter {
             circle.setCenter(center);
             circle.setRadius(circleRadius);
 
-            DistanceUnitsEnum units = mapper.treeToValue(circleNode.get("units"), DistanceUnitsEnum.class);
+            DistanceUnits units = mapper.treeToValue(circleNode.get("units"), DistanceUnits.class);
             circle.setUnits(units);
 
             geometry.setDirection(direction);
