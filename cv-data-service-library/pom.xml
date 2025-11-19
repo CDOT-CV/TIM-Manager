@@ -119,7 +119,7 @@
       <dependency>
           <groupId>usdot.jpo.ode</groupId>
           <artifactId>jpo-ode-core</artifactId>
-          <version>4.0.0</version>
+          <version>5.1.0</version>
           <exclusions>
               <exclusion>
                   <groupId>*</groupId>
@@ -130,7 +130,7 @@
       <dependency>
           <groupId>usdot.jpo.ode</groupId>
           <artifactId>jpo-ode-common</artifactId>
-          <version>4.0.0</version>
+          <version>5.1.0</version>
           <exclusions>
               <exclusion>
                   <groupId>*</groupId>
@@ -141,7 +141,7 @@
       <dependency>
           <groupId>usdot.jpo.ode</groupId>
           <artifactId>jpo-ode-plugins</artifactId>
-          <version>4.0.0</version>
+          <version>5.1.0</version>
           <exclusions>
               <exclusion>
                   <groupId>*</groupId>
@@ -152,7 +152,7 @@
       <dependency>
           <groupId>usdot.jpo.ode</groupId>
           <artifactId>jpo-ode-svcs</artifactId>
-          <version>4.0.0</version>
+          <version>5.1.0</version>
           <exclusions>
               <exclusion>
                   <groupId>*</groupId>
