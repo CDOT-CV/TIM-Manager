@@ -43,6 +43,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import org.springframework.web.client.HttpServerErrorException;
 import springfox.documentation.annotations.ApiIgnore;
+import us.dot.its.jpo.ode.plugin.j2735.timstorage.FrameType.TravelerInfoType;
 
 @CrossOrigin
 @RestController
@@ -101,6 +102,17 @@ public class ActiveTimController extends BaseController {
             while (rs.next()) {
                 var activeTim = buildTimUpdateModelFromResultSet(rs);
 
+                int frameTypeValue = rs.getInt("FRAME_TYPE");
+                if (!rs.wasNull() && frameTypeValue >= 0 && frameTypeValue < TravelerInfoType.values().length) {
+                    activeTim.setFrameType(TravelerInfoType.values()[frameTypeValue]);
+                }
+                else {
+                    log.warn("Could not set frame type from value {} for active tim id {}. Assuming Advisory.", frameTypeValue,
+                            activeTim.getActiveTimId());
+                    // assume roadSignage
+                    activeTim.setFrameType(TravelerInfoType.roadSignage);
+                }
+
                 activeTim.setDfContent(ContentEnum.advisory);
                 activeTims.add(activeTim);
             }
@@ -135,7 +147,18 @@ public class ActiveTimController extends BaseController {
             // convert to ActiveTim object
             while (rs.next()) {
                 // Active_Tim properties
-				activeTim = buildTimUpdateModelFromResultSet(rs);
+                activeTim = buildTimUpdateModelFromResultSet(rs);
+
+                int frameTypeValue = rs.getInt("FRAME_TYPE");
+                if (!rs.wasNull() && frameTypeValue >= 0 && frameTypeValue < TravelerInfoType.values().length) {
+                    activeTim.setFrameType(TravelerInfoType.values()[frameTypeValue]);
+                }
+                else {
+                    log.warn("Could not set frame type from value {} for active tim id {}. Assuming Advisory.", frameTypeValue, activeTimId);
+                    // assume roadSignage
+                    activeTim.setFrameType(TravelerInfoType.roadSignage);
+                }
+
                 activeTim.setDfContent(ContentEnum.advisory);
             }
         } catch (Exception e) {

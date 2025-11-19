@@ -70,6 +70,8 @@ public class CreateBaseTimUtil {
         dataFrame.setPriority(5);
 
         dataFrame.setContent(content.getStringValue());
+        // Per CTW, FrameType should be set to roadSignage when state or local deployment agency is generating the message
+        // which is all messages coming through the TIMM so always set to roadSignage
         dataFrame.setFrameType(TravelerInfoType.roadSignage);
         dataFrame.setUrl("null");
         // add itis codes to tim

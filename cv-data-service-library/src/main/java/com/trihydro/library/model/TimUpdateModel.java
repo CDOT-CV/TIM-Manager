@@ -30,6 +30,7 @@ public class TimUpdateModel extends ActiveTim {
 
     // DataFrame properties
     private int dataFrameId;
+    private TravelerInfoType frameType;
     private int durationTime;
     private short doNotUse2;
     private short doNotUse1;
@@ -37,9 +38,6 @@ public class TimUpdateModel extends ActiveTim {
     private short doNotUse3;
     private ContentEnum dfContent;
     private String url;
-    // Per CTW, FrameType should be set to roadSignage when state or local deployment agency is generating the message
-    // which is all messages coming through the TIMM so always set to roadSignage
-    private final TravelerInfoType frameType = TravelerInfoType.roadSignage;
 
     public BigDecimal getLaneWidth() {
         return laneWidth;
@@ -167,6 +165,10 @@ public class TimUpdateModel extends ActiveTim {
 
     public TravelerInfoType getFrameType() {
         return frameType;
+    }
+
+    public void setFrameType(TravelerInfoType frameType) {
+        this.frameType = frameType;
     }
 
     public short getDoNotUse1() {

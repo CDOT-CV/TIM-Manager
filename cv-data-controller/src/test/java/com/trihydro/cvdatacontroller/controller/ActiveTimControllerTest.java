@@ -36,7 +36,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
 import org.springframework.web.client.HttpServerErrorException;
-import us.dot.its.jpo.ode.plugin.j2735.timstorage.FrameType;
 
 public class ActiveTimControllerTest extends TestBase<ActiveTimController> {
     @Spy
@@ -82,7 +81,6 @@ public class ActiveTimControllerTest extends TestBase<ActiveTimController> {
         Assertions.assertEquals(HttpStatus.OK, tums.getStatusCode());
         Assertions.assertEquals(1, tums.getBody().size());
         Assertions.assertEquals(Long.valueOf(999), tums.getBody().get(0).getActiveTimId());
-        Assertions.assertEquals(FrameType.TravelerInfoType.roadSignage, tums.getBody().get(0).getFrameType());
         verify(mockStatement).executeQuery(selectStatement);
     }
 
@@ -146,7 +144,6 @@ public class ActiveTimControllerTest extends TestBase<ActiveTimController> {
         Assertions.assertEquals(HttpStatus.OK, tum.getStatusCode());
         Assertions.assertNotNull(tum.getBody());
         Assertions.assertEquals(Long.valueOf(999), tum.getBody().getActiveTimId());
-        Assertions.assertEquals(FrameType.TravelerInfoType.roadSignage, tum.getBody().getFrameType());
         verify(mockStatement).executeQuery(selectStatement);
     }
 

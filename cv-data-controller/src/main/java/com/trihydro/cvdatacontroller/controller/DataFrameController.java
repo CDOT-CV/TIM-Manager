@@ -29,7 +29,6 @@ import com.trihydro.library.tables.TimDbTables;
 
 import springfox.documentation.annotations.ApiIgnore;
 import us.dot.its.jpo.ode.plugin.j2735.OdeTravelerInformationMessage.DataFrame;
-import us.dot.its.jpo.ode.plugin.j2735.timstorage.FrameType;
 
 @CrossOrigin
 @RestController
@@ -113,8 +112,10 @@ public class DataFrameController extends BaseController {
 				if (col.equals("TIM_ID")) {
 					sqlNullHandler.setLongOrNull(preparedStatement, fieldNum, timId);
 				} else if (col.equals("FRAME_TYPE")) {
-                    // Always assign TravelerInfoType.roadSignage per CTW
-                    Integer ordinal = FrameType.TravelerInfoType.roadSignage.ordinal();
+                    Integer ordinal = null;
+                    if (dFrame.getFrameType() != null) {
+                        ordinal = dFrame.getFrameType().ordinal();
+                    }
 					sqlNullHandler.setIntegerOrNull(preparedStatement, fieldNum, ordinal);
 				} else if (col.equals("DURATION_TIME")) {
 					sqlNullHandler.setIntegerOrNull(preparedStatement, fieldNum, dFrame.getDurationTime());
