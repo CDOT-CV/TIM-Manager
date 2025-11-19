@@ -49,8 +49,10 @@ public class DataFrameService extends BaseService {
                 } else if (col.equals("SSP_TIM_RIGHTS")) {
                     sqlNullHandler.setShortOrNull(preparedStatement, fieldNum, dFrame.getDoNotUse1());
                 } else if (col.equals("FRAME_TYPE")) {
-                    // Always assign TravelerInfoType.roadSignage
-                    Integer ordinal = FrameType.TravelerInfoType.roadSignage.ordinal();
+                    Integer ordinal = null;
+                    if (dFrame.getFrameType() != null) {
+                        ordinal = dFrame.getFrameType().ordinal();
+                    }
                     sqlNullHandler.setIntegerOrNull(preparedStatement, fieldNum, ordinal);
                 } else if (col.equals("DURATION_TIME")) {
                     sqlNullHandler.setIntegerOrNull(preparedStatement, fieldNum, dFrame.getDurationTime());
