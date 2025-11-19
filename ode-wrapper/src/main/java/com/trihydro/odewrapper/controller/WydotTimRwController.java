@@ -34,7 +34,6 @@ import org.springframework.web.bind.annotation.RestController;
 import com.trihydro.library.service.MilepostService;
 
 import io.swagger.annotations.Api;
-import us.dot.its.jpo.ode.plugin.j2735.timstorage.FrameType.TravelerInfoType;
 
 @CrossOrigin
 @RestController
@@ -116,7 +115,7 @@ public class WydotTimRwController extends WydotTimBaseController implements Buff
         new Thread(() -> {
             for (var tim : timsToSend) {
                 WydotTimRw timRw = (WydotTimRw) tim;
-                processRequest(timRw, getTimType(type), timRw.getSchedStart(), timRw.getSchedEnd(), null, TravelerInfoType.advisory);
+                processRequest(timRw, getTimType(type), timRw.getSchedStart(), timRw.getSchedEnd(), null);
             }
         }).start();
 

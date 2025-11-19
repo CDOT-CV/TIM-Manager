@@ -18,7 +18,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import us.dot.its.jpo.ode.plugin.j2735.timstorage.FrameType.TravelerInfoType;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -87,8 +86,7 @@ public class WydotTimVslController extends WydotTimBaseController implements Buf
         new Thread(() -> {
             var startTime = getStartTime();
             for (WydotTim tim : wydotTims) {
-                processRequest(tim, getTimType(type), startTime, null, null,
-                        TravelerInfoType.roadSignage);
+                processRequest(tim, getTimType(type), startTime, null, null);
             }
         }).start();
     }

@@ -106,12 +106,12 @@ public class ActiveTimController extends BaseController {
                 if (!rs.wasNull() && frameTypeValue >= 0 && frameTypeValue < TravelerInfoType.values().length) {
                     activeTim.setFrameType(TravelerInfoType.values()[frameTypeValue]);
                 }
-				else {
+                else {
                     log.warn("Could not set frame type from value {} for active tim id {}. Assuming Advisory.", frameTypeValue,
-                        activeTim.getActiveTimId());
-					// assume advisory
-					activeTim.setFrameType(TravelerInfoType.advisory);
-				}
+                            activeTim.getActiveTimId());
+                    // assume roadSignage
+                    activeTim.setFrameType(TravelerInfoType.roadSignage);
+                }
 
                 activeTim.setDfContent(ContentEnum.advisory);
                 activeTims.add(activeTim);
@@ -147,17 +147,17 @@ public class ActiveTimController extends BaseController {
             // convert to ActiveTim object
             while (rs.next()) {
                 // Active_Tim properties
-				activeTim = buildTimUpdateModelFromResultSet(rs);
+                activeTim = buildTimUpdateModelFromResultSet(rs);
 
                 int frameTypeValue = rs.getInt("FRAME_TYPE");
                 if (!rs.wasNull() && frameTypeValue >= 0 && frameTypeValue < TravelerInfoType.values().length) {
                     activeTim.setFrameType(TravelerInfoType.values()[frameTypeValue]);
                 }
-				else {
+                else {
                     log.warn("Could not set frame type from value {} for active tim id {}. Assuming Advisory.", frameTypeValue, activeTimId);
-					// assume advisory
-					activeTim.setFrameType(TravelerInfoType.advisory);
-				}
+                    // assume roadSignage
+                    activeTim.setFrameType(TravelerInfoType.roadSignage);
+                }
 
                 activeTim.setDfContent(ContentEnum.advisory);
             }
@@ -1060,6 +1060,7 @@ public class ActiveTimController extends BaseController {
 		timUpdateModel.setDataFrameId(rs.getInt("DATA_FRAME_ID"));
 		timUpdateModel.setDurationTime(rs.getInt("DURATION_TIME"));
 		timUpdateModel.setUrl(rs.getString("URL"));
+
 		return timUpdateModel;
 	}
 

@@ -112,10 +112,10 @@ public class DataFrameController extends BaseController {
 				if (col.equals("TIM_ID")) {
 					sqlNullHandler.setLongOrNull(preparedStatement, fieldNum, timId);
 				} else if (col.equals("FRAME_TYPE")) {
-					Integer ordinal = null;
-					if (dFrame.getFrameType() != null) {
-						ordinal = dFrame.getFrameType().ordinal();
-					}
+                    Integer ordinal = null;
+                    if (dFrame.getFrameType() != null) {
+                        ordinal = dFrame.getFrameType().ordinal();
+                    }
 					sqlNullHandler.setIntegerOrNull(preparedStatement, fieldNum, ordinal);
 				} else if (col.equals("DURATION_TIME")) {
 					sqlNullHandler.setIntegerOrNull(preparedStatement, fieldNum, dFrame.getDurationTime());

@@ -19,7 +19,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import us.dot.its.jpo.ode.plugin.j2735.timstorage.FrameType.TravelerInfoType;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -127,8 +126,7 @@ public class WydotTimIncidentController extends WydotTimBaseController implement
                 var wydotTimIncident = (WydotTimIncident)wydotTim;
                 // set route
                 wydotTim.setRoute(wydotTimIncident.getRoute());
-                processRequest(wydotTimIncident, getTimType(type), startTime, null, wydotTimIncident.getPk(),
-                        TravelerInfoType.advisory);
+                processRequest(wydotTimIncident, getTimType(type), startTime, null, wydotTimIncident.getPk());
             }
         }).start();
     }
