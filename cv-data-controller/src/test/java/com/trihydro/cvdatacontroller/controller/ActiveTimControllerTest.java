@@ -34,6 +34,7 @@ import org.mockito.Mock;
 import org.mockito.Spy;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import us.dot.its.jpo.ode.plugin.j2735.timstorage.FrameType;
 
 import org.springframework.web.client.HttpServerErrorException;
 
@@ -58,6 +59,7 @@ public class ActiveTimControllerTest extends TestBase<ActiveTimController> {
         // we only set one property to verify its returned
         when(mockRs.getLong("ACTIVE_TIM_ID")).thenReturn(999L);
         when(mockRs.getInt(any())).thenReturn(0);
+        when(mockRs.getInt("FRAME_TYPE")).thenReturn(FrameType.TravelerInfoType.advisory.ordinal());
         String selectStatement = "SELECT atim.*, tt.type as tim_type_name, tt.description as tim_type_description";
         selectStatement += ", t.msg_cnt, t.url_b, t.is_satellite, t.sat_record_id, t.packet_id";
         selectStatement += ", df.data_frame_id, df.frame_type, df.duration_time, df.ssp_tim_rights, df.ssp_location_rights";
@@ -81,6 +83,7 @@ public class ActiveTimControllerTest extends TestBase<ActiveTimController> {
         Assertions.assertEquals(HttpStatus.OK, tums.getStatusCode());
         Assertions.assertEquals(1, tums.getBody().size());
         Assertions.assertEquals(Long.valueOf(999), tums.getBody().get(0).getActiveTimId());
+        Assertions.assertEquals(FrameType.TravelerInfoType.advisory, tums.getBody().get(0).getFrameType());
         verify(mockStatement).executeQuery(selectStatement);
     }
 
@@ -122,6 +125,7 @@ public class ActiveTimControllerTest extends TestBase<ActiveTimController> {
         // we only set one property to verify its returned
         when(mockRs.getLong("ACTIVE_TIM_ID")).thenReturn(999L);
         when(mockRs.getInt(any())).thenReturn(0);
+        when(mockRs.getInt("FRAME_TYPE")).thenReturn(FrameType.TravelerInfoType.roadSignage.ordinal());
 
         String selectStatement = "SELECT atim.*, tt.type AS tim_type_name, tt.description AS tim_type_description";
         selectStatement += ", t.msg_cnt, t.url_b, t.is_satellite, t.sat_record_id, t.packet_id";
@@ -144,6 +148,7 @@ public class ActiveTimControllerTest extends TestBase<ActiveTimController> {
         Assertions.assertEquals(HttpStatus.OK, tum.getStatusCode());
         Assertions.assertNotNull(tum.getBody());
         Assertions.assertEquals(Long.valueOf(999), tum.getBody().getActiveTimId());
+        Assertions.assertEquals(FrameType.TravelerInfoType.roadSignage, tum.getBody().getFrameType());
         verify(mockStatement).executeQuery(selectStatement);
     }
 
