@@ -1,14 +1,18 @@
 package com.trihydro.cvdatacontroller.controller;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.*;
 
+import com.trihydro.library.helpers.DateStringNotInISO8601FormatException;
+import com.trihydro.library.helpers.DateTimeHelper;
+import com.trihydro.library.helpers.DateTimeHelperImpl;
 import com.trihydro.library.model.ActiveTimHoldingDeleteModel;
 import java.math.BigDecimal;
 import java.sql.SQLException;
 import java.sql.Timestamp;
+import java.text.ParseException;
 import java.time.Instant;
 import java.util.List;
 
@@ -30,13 +34,17 @@ public class ActiveTimHoldingControllerTest extends TestBase<ActiveTimHoldingCon
     private TimDbTables mockTimDbTables = new TimDbTables();
     @Mock
     private SQLNullHandler mockSqlNullHandler;
+    @Mock
+    private DateTimeHelper dateTimeHelper;
 
     private Coordinate startCoord;
     private Coordinate endCoord;
 
+    private final DateTimeHelper actualDateTimeHelper = new DateTimeHelperImpl();
+
     @BeforeEach
     public void setupSubTest() {
-        uut.InjectDependencies(mockTimDbTables, mockSqlNullHandler);
+        uut.InjectDependencies(mockTimDbTables, mockSqlNullHandler, dateTimeHelper);
         startCoord = new Coordinate(BigDecimal.valueOf(1), BigDecimal.valueOf(2));
         endCoord = new Coordinate(BigDecimal.valueOf(5), BigDecimal.valueOf(6));
     }
@@ -58,18 +66,19 @@ public class ActiveTimHoldingControllerTest extends TestBase<ActiveTimHoldingCon
         activeTimHolding.setStartPoint(startCoord);
         activeTimHolding.setEndPoint(endCoord);
         activeTimHolding.setExpirationDateTime("2021-MAR-16'T'09:22'Z'");
+        activeTimHolding.setDateCreated("2021-01-01T00:00:00.000Z");
 
         var now = Instant.parse(activeTimHolding.getDateCreated());
         java.util.Date date_created = java.util.Date.from(now);
-        doReturn(date_created).when(mockUtility).convertDate(any());
-        mockUtility.timestampFormat = timestampFormat;
+        doReturn(date_created).when(dateTimeHelper).convertDate(any());
+        when(mockUtility.getTimestampFormat()).thenReturn(timestampFormat);
         Timestamp timestampDateCreated = new Timestamp(date_created.getTime());
 
         // Act
         ResponseEntity<Long> data = uut.InsertActiveTimHolding(activeTimHolding);
 
         // Assert
-        Assertions.assertEquals(HttpStatus.OK, data.getStatusCode());
+        assertEquals(HttpStatus.OK, data.getStatusCode());
         verify(mockSqlNullHandler).setStringOrNull(mockPreparedStatement, 2, activeTimHolding.getClientId());// CLIENT_ID
         verify(mockSqlNullHandler).setStringOrNull(mockPreparedStatement, 3, activeTimHolding.getDirection());// DIRECTION
         verify(mockSqlNullHandler).setStringOrNull(mockPreparedStatement, 4, activeTimHolding.getRsuTarget());// RSU_TARGET
@@ -96,13 +105,13 @@ public class ActiveTimHoldingControllerTest extends TestBase<ActiveTimHoldingCon
         activeTimHolding.setDirection("direction");
         activeTimHolding.setStartPoint(startCoord);
         activeTimHolding.setEndPoint(endCoord);
+        activeTimHolding.setDateCreated("2021-01-01T00:00:00.000Z");
         doReturn(null).when(mockDbInteractions).executeAndLog(mockPreparedStatement, "active tim holding");
         doReturn(-99l).when(mockRs).getLong("ACTIVE_TIM_HOLDING_ID");
 
         var now = Instant.parse(activeTimHolding.getDateCreated());
         java.util.Date date_created = java.util.Date.from(now);
-        doReturn(date_created).when(mockUtility).convertDate(activeTimHolding.getDateCreated());
-        mockUtility.timestampFormat = timestampFormat;
+        doReturn(date_created).when(dateTimeHelper).convertDate(activeTimHolding.getDateCreated());
         Timestamp timestampDateCreated = new Timestamp(date_created.getTime());
 
         String query = "select active_tim_holding_id from active_tim_holding";
@@ -114,8 +123,8 @@ public class ActiveTimHoldingControllerTest extends TestBase<ActiveTimHoldingCon
         ResponseEntity<Long> data = uut.InsertActiveTimHolding(activeTimHolding);
 
         // Assert
-        Assertions.assertEquals(HttpStatus.OK, data.getStatusCode());
-        Assertions.assertEquals(Long.valueOf(-99), data.getBody());
+        assertEquals(HttpStatus.OK, data.getStatusCode());
+        assertEquals(Long.valueOf(-99), data.getBody());
         verify(mockSqlNullHandler).setStringOrNull(mockPreparedStatement, 2, activeTimHolding.getClientId());// CLIENT_ID
         verify(mockSqlNullHandler).setStringOrNull(mockPreparedStatement, 3, activeTimHolding.getDirection());// DIRECTION
         verify(mockSqlNullHandler).setStringOrNull(mockPreparedStatement, 4, activeTimHolding.getRsuTarget());// RSU_TARGET
@@ -126,6 +135,7 @@ public class ActiveTimHoldingControllerTest extends TestBase<ActiveTimHoldingCon
         verify(mockSqlNullHandler).setBigDecimalOrNull(mockPreparedStatement, 9, activeTimHolding.getEndPoint().getLongitude());// END_LONGITUDE
         verify(mockSqlNullHandler).setIntegerOrNull(mockPreparedStatement, 10, activeTimHolding.getRsuIndex());// RSU_INDEX
         verify(mockSqlNullHandler).setTimestampOrNull(mockPreparedStatement, 11, timestampDateCreated);// DATE_CREATED
+        verify(mockSqlNullHandler).setIntegerOrNull(mockPreparedStatement, 12, activeTimHolding.getProjectKey());
 
         verify(mockStatement).executeQuery(query);
     }
@@ -136,18 +146,18 @@ public class ActiveTimHoldingControllerTest extends TestBase<ActiveTimHoldingCon
         setupInsertQueryStatement();
         setupPreparedStatement();
         ActiveTimHolding activeTimHolding = new ActiveTimHolding();
-        activeTimHolding.setRsuTargetId("10.10.10.1");
+        activeTimHolding.setRsuTarget("10.10.10.1");
         activeTimHolding.setClientId("clientId");
         activeTimHolding.setDirection("direction");
         activeTimHolding.setStartPoint(startCoord);
         activeTimHolding.setEndPoint(endCoord);
+        activeTimHolding.setDateCreated("2021-01-01T00:00:00.000Z");
         doReturn(null).when(mockDbInteractions).executeAndLog(mockPreparedStatement, "active tim holding");
         doReturn(-99l).when(mockRs).getLong("ACTIVE_TIM_HOLDING_ID");
 
         var now = Instant.parse(activeTimHolding.getDateCreated());
         java.util.Date date_created = java.util.Date.from(now);
-        doReturn(date_created).when(mockUtility).convertDate(activeTimHolding.getDateCreated());
-        mockUtility.timestampFormat = timestampFormat;
+        doReturn(date_created).when(dateTimeHelper).convertDate(activeTimHolding.getDateCreated());
         Timestamp timestampDateCreated = new Timestamp(date_created.getTime());
 
         String query = "select active_tim_holding_id from active_tim_holding";
@@ -159,8 +169,8 @@ public class ActiveTimHoldingControllerTest extends TestBase<ActiveTimHoldingCon
         ResponseEntity<Long> data = uut.InsertActiveTimHolding(activeTimHolding);
 
         // Assert
-        Assertions.assertEquals(HttpStatus.OK, data.getStatusCode());
-        Assertions.assertEquals(Long.valueOf(-99), data.getBody());
+        assertEquals(HttpStatus.OK, data.getStatusCode());
+        assertEquals(Long.valueOf(-99), data.getBody());
         verify(mockSqlNullHandler).setStringOrNull(mockPreparedStatement, 2, activeTimHolding.getClientId());// CLIENT_ID
         verify(mockSqlNullHandler).setStringOrNull(mockPreparedStatement, 3, activeTimHolding.getDirection());// DIRECTION
         verify(mockSqlNullHandler).setStringOrNull(mockPreparedStatement, 4, activeTimHolding.getRsuTarget());// RSU_TARGET
@@ -189,10 +199,70 @@ public class ActiveTimHoldingControllerTest extends TestBase<ActiveTimHoldingCon
         ResponseEntity<Long> data = uut.InsertActiveTimHolding(activeTimHolding);
 
         // Assert
-        Assertions.assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, data.getStatusCode());
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, data.getStatusCode());
         verify(mockPreparedStatement).close();
         verify(mockConnection).close();
 
+    }
+
+    @Test
+    public void testInsertActiveTimHolding_TimEndInTableFormat_Success_ReturnsId() throws DateStringNotInISO8601FormatException, ParseException {
+        // Arrange
+        ActiveTimHolding activeTimHolding = new ActiveTimHolding();
+        activeTimHolding.setDateCreated("2021-01-01T00:00:00.000Z");
+        activeTimHolding.setDesiredEndDateTime("2021-01-10 00:00:00");
+        doReturn(actualDateTimeHelper.convertDate(activeTimHolding.getDateCreated())).when(dateTimeHelper).convertDate(activeTimHolding.getDateCreated());
+        doReturn(actualDateTimeHelper.isInTableFormat(activeTimHolding.getDesiredEndDateTime())).when(dateTimeHelper).isInTableFormat(activeTimHolding.getDesiredEndDateTime());
+        doReturn(actualDateTimeHelper.convertDateStringFromTableFormatIntoISO8601Format(activeTimHolding.getDesiredEndDateTime())).when(dateTimeHelper).convertDateStringFromTableFormatIntoISO8601Format(activeTimHolding.getDesiredEndDateTime());
+        doReturn(actualDateTimeHelper.convertDateStringFromISO8601FormatIntoTimestampObject("2021-01-10T00:00:00.000Z")).when(dateTimeHelper).convertDateStringFromISO8601FormatIntoTimestampObject("2021-01-10T00:00:00.000Z");
+        doReturn(10L).when(mockDbInteractions).executeAndLog(mockPreparedStatement, "active tim holding");
+
+        // Act
+        ResponseEntity<Long> response = uut.InsertActiveTimHolding(activeTimHolding);
+
+        // Assert
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertEquals(10L, response.getBody());
+    }
+
+    @Test
+    public void testInsertActiveTimHolding_TimEndInTableFormat_FailedToConvert_ReturnsNegative2() throws ParseException {
+        // Arrange
+        ActiveTimHolding activeTimHolding = new ActiveTimHolding();
+        activeTimHolding.setDateCreated("2021-01-01T00:00:00.000Z");
+        activeTimHolding.setDesiredEndDateTime("2021-01-10 00:00:00");
+        doReturn(actualDateTimeHelper.convertDate(activeTimHolding.getDateCreated())).when(dateTimeHelper).convertDate(any());
+        doReturn(actualDateTimeHelper.isInTableFormat(activeTimHolding.getDesiredEndDateTime())).when(dateTimeHelper).isInTableFormat(activeTimHolding.getDesiredEndDateTime());
+        doThrow(new RuntimeException()).when(dateTimeHelper).convertDateStringFromTableFormatIntoISO8601Format(activeTimHolding.getDesiredEndDateTime());
+
+        // Act
+        ResponseEntity<Long> response = uut.InsertActiveTimHolding(activeTimHolding);
+
+        // Assert
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertEquals(-2L, response.getBody());
+    }
+
+    @Test
+    public void testInsertActiveTimHolding_TimEndInInvalidFormat_ReturnsNegativeThree() throws ParseException,
+        DateStringNotInISO8601FormatException {
+        // Arrange
+        ActiveTimHolding activeTimHolding = new ActiveTimHolding();
+        activeTimHolding.setDateCreated("2021-01-01T00:00:00.000Z");
+        activeTimHolding.setDesiredEndDateTime("banana");
+        doReturn(actualDateTimeHelper.convertDate(activeTimHolding.getDateCreated())).when(dateTimeHelper).convertDate(any());
+        doReturn(actualDateTimeHelper.isInTableFormat(activeTimHolding.getDesiredEndDateTime())).when(dateTimeHelper).isInTableFormat(activeTimHolding.getDesiredEndDateTime());
+        doThrow(new DateStringNotInISO8601FormatException("invalid format")).when(dateTimeHelper).convertDateStringFromISO8601FormatIntoTimestampObject(activeTimHolding.getDesiredEndDateTime());
+
+        // Act
+        ResponseEntity<Long> response = uut.InsertActiveTimHolding(activeTimHolding);
+
+        // Assert
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertEquals(-3L, response.getBody());
     }
 
     @Test
@@ -203,9 +273,9 @@ public class ActiveTimHoldingControllerTest extends TestBase<ActiveTimHoldingCon
         ResponseEntity<List<ActiveTimHolding>> data = uut.getActiveTimHoldingForRsu("ipv4Address");
 
         // Assert
-        Assertions.assertEquals(HttpStatus.OK, data.getStatusCode());
+        assertEquals(HttpStatus.OK, data.getStatusCode());
         Assertions.assertNotNull(data.getBody());
-        Assertions.assertEquals(1, data.getBody().size());
+        assertEquals(1, data.getBody().size());
         verify(mockRs).getLong("ACTIVE_TIM_HOLDING_ID");
         verify(mockRs).getString("CLIENT_ID");
         verify(mockRs).getString("DIRECTION");
@@ -231,9 +301,9 @@ public class ActiveTimHoldingControllerTest extends TestBase<ActiveTimHoldingCon
         ResponseEntity<List<ActiveTimHolding>> data = uut.getActiveTimHoldingForRsu("ipv4Address");
 
         // Assert
-        Assertions.assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, data.getStatusCode());
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, data.getStatusCode());
         Assertions.assertNotNull(data.getBody());
-        Assertions.assertEquals(0, data.getBody().size());
+        assertEquals(0, data.getBody().size());
         verify(mockStatement).close();
         verify(mockConnection).close();
         verify(mockRs).close();
@@ -245,9 +315,9 @@ public class ActiveTimHoldingControllerTest extends TestBase<ActiveTimHoldingCon
         ResponseEntity<List<ActiveTimHolding>> response = uut.getAllRecords();
 
         // verify
-        Assertions.assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals(HttpStatus.OK, response.getStatusCode());
         Assertions.assertNotNull(response.getBody());
-        Assertions.assertEquals(1, response.getBody().size());
+        assertEquals(1, response.getBody().size());
         verify(mockRs).getLong("ACTIVE_TIM_HOLDING_ID");
         verify(mockRs).getString("CLIENT_ID");
         verify(mockRs).getString("DIRECTION");

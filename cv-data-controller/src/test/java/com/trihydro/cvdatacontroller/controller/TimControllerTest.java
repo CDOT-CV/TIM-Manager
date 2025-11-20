@@ -7,6 +7,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.trihydro.library.helpers.DateTimeHelper;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.Instant;
@@ -46,10 +47,12 @@ public class TimControllerTest extends TestBase<TimController> {
         private SecurityResultCodeTypeController mockSecurityResultCodeTypeController;
         @Mock
         private ResponseEntity<List<SecurityResultCodeType>> mockResponseEntitySecurityResultCodeTypeList;
+        @Mock
+        private DateTimeHelper dateTimeHelper;
 
         @BeforeEach
         public void setupSubTest() {
-                uut.InjectDependencies(mockTimDbTables, mockSqlNullHandler, mockSecurityResultCodeTypeController);
+                uut.InjectDependencies(mockTimDbTables, mockSqlNullHandler, mockSecurityResultCodeTypeController, dateTimeHelper);
         }
 
         private void setupInsertQueryStatement() {
@@ -112,9 +115,8 @@ public class TimControllerTest extends TestBase<TimController> {
                 var recTime = Instant.parse(tim.getOdeTimMetadata().getOdeReceivedAt());
                 java.util.Date gen_at = java.util.Date.from(genTime);
                 java.util.Date rec_at = java.util.Date.from(recTime);
-                doReturn(gen_at).when(mockUtility).convertDate(tim.getOdeTimMetadata().getRecordGeneratedAt());
-                doReturn(rec_at).when(mockUtility).convertDate(tim.getOdeTimMetadata().getOdeReceivedAt());
-                mockUtility.timestampFormat = timestampFormat;
+                doReturn(gen_at).when(dateTimeHelper).convertDate(tim.getOdeTimMetadata().getRecordGeneratedAt());
+                doReturn(rec_at).when(dateTimeHelper).convertDate(tim.getOdeTimMetadata().getOdeReceivedAt());
 
                 // Act
                 Long timId = uut.AddTim(tim);
@@ -281,7 +283,7 @@ public class TimControllerTest extends TestBase<TimController> {
 
         private ReceivedMessageDetails getRxMsg() {
                 ReceivedMessageDetails rxMsg = new ReceivedMessageDetails();
-
+                
                 OdeLogMsgMetadataLocation locationData = new OdeLogMsgMetadataLocation();
                 locationData.setElevation("1.0");
                 locationData.setHeading("2.0");

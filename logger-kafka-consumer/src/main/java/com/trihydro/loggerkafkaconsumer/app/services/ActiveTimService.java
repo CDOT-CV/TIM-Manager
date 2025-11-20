@@ -1,5 +1,7 @@
 package com.trihydro.loggerkafkaconsumer.app.services;
 
+import com.trihydro.library.helpers.DateStringNotInISO8601FormatException;
+import com.trihydro.library.helpers.DateTimeHelper;
 import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -7,6 +9,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Timestamp;
+import java.sql.Types;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -30,14 +33,17 @@ public class ActiveTimService extends BaseService {
     private TimDbTables timDbTables;
     private SQLNullHandler sqlNullHandler;
     private final Calendar UTCCalendar = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
+    private DateTimeHelper dateTimeHelper;
 
     @Autowired
-    public void InjectDependencies(TimDbTables _timDbTables, SQLNullHandler _sqlNullHandler) { // TODO: use constructor instead of InjectDependencies
+    public void InjectDependencies(TimDbTables _timDbTables, SQLNullHandler _sqlNullHandler, DateTimeHelper dateTimeHelper) { // TODO: use constructor instead of InjectDependencies
         timDbTables = _timDbTables;
         sqlNullHandler = _sqlNullHandler;
+        this.dateTimeHelper = dateTimeHelper;
     }
 
     public Long insertActiveTim(ActiveTim activeTim) {
+        log.debug("Inserting active_tim record with client_id = {} and sat_record_id = {}", activeTim.getClientId(), activeTim.getSatRecordId());
 
         String insertQueryStatement = timDbTables.buildInsertQueryStatement("active_tim",
             timDbTables.getActiveTimTable());
@@ -55,24 +61,47 @@ public class ActiveTimService extends BaseService {
                     sqlNullHandler.setStringOrNull(preparedStatement, fieldNum, activeTim.getDirection());
                 } else if (col.equals("TIM_START")) {
                     log.info("Converting {} for TIM_START value", activeTim.getStartDateTime());
-                    java.util.Date tim_start_date = utility.convertDate(activeTim.getStartDateTime());
+                    Date tim_start_date = dateTimeHelper.convertDate(activeTim.getStartDateTime());
                     Timestamp ts = new Timestamp(tim_start_date.getTime());
                     sqlNullHandler.setTimestampOrNull(preparedStatement, fieldNum, ts);
                 } else if (col.equals("TIM_END")) {
-                    if (activeTim.getEndDateTime() != null) {
-                        java.util.Date tim_end_date = utility.convertDate(activeTim.getEndDateTime());
-                        Timestamp ts = new Timestamp(tim_end_date.getTime());
-                        sqlNullHandler.setTimestampOrNull(preparedStatement, fieldNum, ts);
-                    } else {
-                        preparedStatement.setNull(fieldNum, java.sql.Types.TIMESTAMP);
+                    String endDateTimeStr = activeTim.getEndDateTime();
+
+                    if (endDateTimeStr == null) {
+                        preparedStatement.setNull(fieldNum, Types.TIMESTAMP);
+                        fieldNum++;
+                        continue;
                     }
+                    log.trace("End date time string is not null. This is probably a planned condition with a long interval.");
+
+                    if (dateTimeHelper.isInTableFormat(endDateTimeStr)) {
+                        log.trace("End date time string is in table format. Attempting to convert to ISO8601 format.");
+                        try {
+                            endDateTimeStr = dateTimeHelper.convertDateStringFromTableFormatIntoISO8601Format(endDateTimeStr);
+                        } catch (Exception e) {
+                            log.error("TIM_END candidate value was identified to be in table format but failed to convert to ISO8601 format: {}. Unable to continue.", endDateTimeStr);
+                            return -2L;
+                        }
+                    }
+
+                    Timestamp timEndTimestamp;
+                    try {
+                        log.trace("Converting date string into timestamp object");
+                        timEndTimestamp = dateTimeHelper.convertDateStringFromISO8601FormatIntoTimestampObject(endDateTimeStr);
+                    }
+                    catch (DateStringNotInISO8601FormatException e) {
+                        log.error("TIM_END candidate value was not in ISO8601 format and failed to convert to timestamp object: {}. Unable to continue.", endDateTimeStr);
+                        return -3L;
+                    }
+                    log.trace("Converted date string from ISO8601 format into timestamp object. Setting TIM_END value in prepared statement.");
+                    sqlNullHandler.setTimestampOrNull(preparedStatement, fieldNum, timEndTimestamp);
                 } else if (col.equals("EXPIRATION_DATE")) {
                     if (activeTim.getExpirationDateTime() != null) {
-                        java.util.Date tim_exp_date = utility.convertDate(activeTim.getExpirationDateTime());
+                        Date tim_exp_date = dateTimeHelper.convertDate(activeTim.getExpirationDateTime());
                         Timestamp ts = new Timestamp(tim_exp_date.getTime());
                         sqlNullHandler.setTimestampOrNull(preparedStatement, fieldNum, ts);
                     } else {
-                        preparedStatement.setNull(fieldNum, java.sql.Types.TIMESTAMP);
+                        preparedStatement.setNull(fieldNum, Types.TIMESTAMP);
                     }
                 } else if (col.equals("TIM_TYPE_ID")) {
                     sqlNullHandler.setLongOrNull(preparedStatement, fieldNum, activeTim.getTimTypeId());
@@ -115,7 +144,9 @@ public class ActiveTimService extends BaseService {
                 fieldNum++;
             }
 
-            return dbInteractions.executeAndLog(preparedStatement, "active tim");
+            Long activeTimId = dbInteractions.executeAndLog(preparedStatement, "active tim");
+            log.trace("Done inserting active_tim record with client_id = {} and sat_record_id = {}", activeTim.getClientId(), activeTim.getSatRecordId());
+            return activeTimId;
         } catch (SQLException e) {
             log.error("Error inserting active_tim", e);
         }
@@ -124,6 +155,7 @@ public class ActiveTimService extends BaseService {
     }
 
     public boolean updateActiveTim(ActiveTim activeTim) {
+        log.debug("Updating active_tim record with client_id = {} and sat_record_id = {}", activeTim.getClientId(), activeTim.getSatRecordId());
 
         boolean activeTimIdResult = false;
         String updateTableSQL = "UPDATE ACTIVE_TIM SET TIM_ID = ?, START_LATITUDE = ?, START_LONGITUDE = ?, END_LATITUDE = ?,";
@@ -151,23 +183,41 @@ public class ActiveTimService extends BaseService {
             sqlNullHandler.setBigDecimalOrNull(preparedStatement, 4, end_lat);
             sqlNullHandler.setBigDecimalOrNull(preparedStatement, 5, end_lon);
 
-            java.util.Date tim_start_date = utility.convertDate(activeTim.getStartDateTime());
+            Date tim_start_date = dateTimeHelper.convertDate(activeTim.getStartDateTime());
             Timestamp ts = new Timestamp(tim_start_date.getTime());
             sqlNullHandler.setTimestampOrNull(preparedStatement, 6, ts);
 
-            if (activeTim.getEndDateTime() == null) {
-                preparedStatement.setNull(7, java.sql.Types.TIMESTAMP);
-            } else {
-                java.util.Date tim_end_date = utility.convertDate(activeTim.getEndDateTime());
-                Timestamp ts2 = new Timestamp(tim_end_date.getTime());
-                sqlNullHandler.setTimestampOrNull(preparedStatement, 7, ts2);
+            String endDateTimeStr = activeTim.getEndDateTime();
+            if (endDateTimeStr == null)
+                preparedStatement.setNull(7, Types.TIMESTAMP);
+            else {
+                if (dateTimeHelper.isInTableFormat(endDateTimeStr)) {
+                    log.trace("End date time string is in table format. Attempting to convert to ISO8601 format.");
+                    try {
+                        endDateTimeStr = dateTimeHelper.convertDateStringFromTableFormatIntoISO8601Format(endDateTimeStr);
+                    } catch (Exception e) {
+                        log.error("TIM_END candidate value was identified to be in table format but failed to convert to ISO8601 format: {}. Unable to continue.", endDateTimeStr);
+                        return false;
+                    }
+                }
+                Timestamp timEndTimestamp;
+                try {
+                    log.trace("Converting date string into timestamp object");
+                    timEndTimestamp = dateTimeHelper.convertDateStringFromISO8601FormatIntoTimestampObject(endDateTimeStr);
+                }
+                catch (DateStringNotInISO8601FormatException e) {
+                    log.error("TIM_END candidate value was not in ISO8601 format and failed to convert to timestamp object: {}. Unable to continue.", endDateTimeStr);
+                    return false;
+                }
+                log.trace("Converted date string from ISO8601 format into timestamp object. Setting TIM_END value in prepared statement.");
+                sqlNullHandler.setTimestampOrNull(preparedStatement, 7, timEndTimestamp);
             }
 
             sqlNullHandler.setIntegerOrNull(preparedStatement, 8, activeTim.getPk());
             sqlNullHandler.setIntegerOrNull(preparedStatement, 9, activeTim.getProjectKey());
             sqlNullHandler.setLongOrNull(preparedStatement, 10, activeTim.getActiveTimId());
             activeTimIdResult = dbInteractions.updateOrDelete(preparedStatement);
-            log.info("------ Updated active_tim with id: {} --------------", activeTim.getActiveTimId());
+            log.trace("Done updating active_tim record with client_id = {} and active_tim_id = {}", activeTim.getClientId(), activeTim.getActiveTimId());
         } catch (SQLException e) {
             log.error("Error updating active_tim with id: {}", activeTim.getActiveTimId(), e);
         }
@@ -388,7 +438,7 @@ public class ActiveTimService extends BaseService {
             // coalesce function with the expDate passed in value.
             while (rs.next()) {
                 var tmpTs = rs.getTimestamp("MINSTART", UTCCalendar);
-                minStart = utility.timestampFormat.format(tmpTs);
+                minStart = utility.getTimestampFormat().format(tmpTs);
             }
         } catch (SQLException e) {
             log.error("Error getting min expiration date with packetID: {}, expDate: {}", packetID, expDate, e);

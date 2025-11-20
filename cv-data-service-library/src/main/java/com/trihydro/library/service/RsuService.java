@@ -15,12 +15,15 @@ import org.gavaghan.geodesy.Ellipsoid;
 import org.gavaghan.geodesy.GeodeticCalculator;
 import org.gavaghan.geodesy.GeodeticCurve;
 import org.gavaghan.geodesy.GlobalCoordinates;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 
 @Component
 public class RsuService extends CvDataServiceLibrary {
+	private final Logger logger = LoggerFactory.getLogger(RsuService.class);
 
 	private Utility utility;
 
@@ -38,16 +41,34 @@ public class RsuService extends CvDataServiceLibrary {
 
 	public List<WydotRsu> selectRsusByRoute(String route) {
 		String url = String.format("%s/rsus-by-route/%s", config.getCvRestService(), route);
-		ResponseEntity<WydotRsu[]> response = restTemplateProvider.GetRestTemplate().getForEntity(url,
-				WydotRsu[].class);
-		return Arrays.asList(response.getBody());
+		logger.debug("Selecting RSUs by route: {} from URL: {}", route, url);
+		WydotRsu[] rsus = new WydotRsu[0];
+		try {
+			ResponseEntity<WydotRsu[]> response = restTemplateProvider.GetRestTemplate().getForEntity(url, WydotRsu[].class);
+			if (response.getBody() != null) {
+				rsus = response.getBody();
+			}
+		} catch (Exception e) {
+			logger.error("Error selecting RSUs by route: {} from URL: {}", route, url, e);
+		}
+		logger.debug("Number of RSUs selected in selectRsusByRoute(): {}", rsus.length);
+		return Arrays.asList(rsus);
 	}
 
 	public List<WydotRsuTim> getFullRsusTimIsOn(Long timId) {
 		String url = String.format("%s/rsus-for-tim/%d", config.getCvRestService(), timId);
-		ResponseEntity<WydotRsuTim[]> response = restTemplateProvider.GetRestTemplate().getForEntity(url,
-				WydotRsuTim[].class);
-		return Arrays.asList(response.getBody());
+		logger.debug("Getting RSUs for TIM: {} from URL: {}", timId, url);
+		WydotRsuTim[] rsus = new WydotRsuTim[0];
+		try {
+			ResponseEntity<WydotRsuTim[]> response = restTemplateProvider.GetRestTemplate().getForEntity(url, WydotRsuTim[].class);
+			if (response.getBody() != null) {
+				rsus = response.getBody();
+			}
+		} catch (Exception e) {
+			logger.error("Error getting RSUs for TIM: {} from URL: {}", timId, url, e);
+		}
+		logger.debug("Number of RSUs selected in getFullRsusTimIsOn(): {}", rsus.length);
+		return Arrays.asList(rsus);
 	}
 
 	public List<Integer> getActiveRsuTimIndexes(Integer rsuId) {
@@ -67,11 +88,11 @@ public class RsuService extends CvDataServiceLibrary {
 		// if there are no rsus on this route
 		List<WydotRsu> mainRsus = getRsusByRouteWithRetryAndTimeout(route);
 		if (mainRsus.size() == 0) {
-			utility.logWithDate("No RSUs found for route " + route);
-			return rsus;
+            logger.info("No RSUs found for route {}", route);
+            return rsus;
 		} else {
-			utility.logWithDate("Found " + mainRsus.size() + " RSUs for route " + route);
-		}
+            logger.info("Found {} RSUs for route {}", mainRsus.size(), route);
+        }
 
 		Ellipsoid reference = Ellipsoid.WGS84;
 		if (direction.equalsIgnoreCase("i")) {
@@ -146,8 +167,8 @@ public class RsuService extends CvDataServiceLibrary {
 				}
 
 				if (rsusHigher.size() == 0) {
-					utility.logWithDate("No RSUs found higher than 'low' point");
-				}
+                    logger.info("No RSUs found higher than 'low' point");
+                }
 
 			} else {
 				if (numericRoute % 2 == 0) {

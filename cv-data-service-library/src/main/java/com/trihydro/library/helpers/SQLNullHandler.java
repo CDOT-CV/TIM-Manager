@@ -56,7 +56,7 @@ public class SQLNullHandler {
 
 	public void setTimestampOrNull(PreparedStatement ps, int column, Timestamp value) throws SQLException {
 		if (value != null)
-			ps.setTimestamp(column, value);
+			ps.setTimestamp(column, value, java.util.Calendar.getInstance(java.util.TimeZone.getTimeZone("UTC")));
 		else
 			ps.setNull(column, java.sql.Types.TIMESTAMP);
 	}

@@ -20,6 +20,7 @@ import com.trihydro.library.factory.KafkaFactory;
 import com.trihydro.library.helpers.EmailHelper;
 import com.trihydro.library.helpers.Utility;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.MockConsumer;
 import org.apache.kafka.clients.consumer.OffsetResetStrategy;
@@ -37,6 +38,7 @@ import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
+@Slf4j
 public class CertExpirationConsumerTest {
     private static final String TOPIC = "topic";
     private static final String PRODUCERTOPIC = "producerTopic";
@@ -51,8 +53,6 @@ public class CertExpirationConsumerTest {
 
     @Mock
     private CertExpirationConfiguration mockConfigProperties;
-    @Mock
-    private Utility mockUtility;
     @Mock
     private EmailHelper mockEmailHelper;
     @Mock
@@ -115,11 +115,6 @@ public class CertExpirationConsumerTest {
 
         // Assert
         Assertions.assertEquals(1, mockProducer.history().size());
-        
-        verify(mockUtility).logWithDate("starting..............");
-        verify(mockUtility).logWithDate("Found topic topic, submitting to producerTopic for later consumption");
-
-        verifyNoMoreInteractions(mockUtility);
         Assertions.assertTrue(mockConsumer.closed());
         Assertions.assertTrue(mockProducer.closed());
     }
@@ -130,16 +125,11 @@ public class CertExpirationConsumerTest {
         configureConsumerException("Network error");
 
         // Act
-        Exception ex = assertThrows(KafkaException.class, () -> uut.startKafkaConsumer());
+        assertThrows(KafkaException.class, () -> uut.startKafkaConsumer());
 
         // Assert
-        Assertions.assertEquals("Network error", ex.getMessage());
-        verify(mockUtility).logWithDate("starting..............");
-        
-        verify(mockUtility).logWithDate("Network error");
         verify(mockEmailHelper).ContainerRestarted(any(), any(), any(), any(), any());
 
-        verifyNoMoreInteractions(mockUtility);
         Assertions.assertTrue(mockConsumer.closed());
         Assertions.assertTrue(mockProducer.closed());
     }
@@ -156,12 +146,8 @@ public class CertExpirationConsumerTest {
         // Assert
         Assertions.assertEquals("Mail Exception", ex.getMessage());
 
-        verify(mockUtility).logWithDate("starting..............");
-
-        verify(mockUtility).logWithDate("Network error");
         verify(mockEmailHelper).ContainerRestarted(any(), any(), any(), any(), any());
 
-        verifyNoMoreInteractions(mockUtility);
         Assertions.assertTrue(mockConsumer.closed());
         Assertions.assertTrue(mockProducer.closed());
     }

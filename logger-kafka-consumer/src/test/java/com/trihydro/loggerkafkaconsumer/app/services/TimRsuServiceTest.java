@@ -1,5 +1,11 @@
 package com.trihydro.loggerkafkaconsumer.app.services;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+
+import java.sql.PreparedStatement;
 import com.trihydro.library.helpers.DbInteractions;
 import com.trihydro.library.helpers.SQLNullHandler;
 import com.trihydro.library.tables.TimDbTables;
@@ -10,7 +16,6 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 
 import java.sql.Connection;
-import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
 import static org.mockito.Mockito.*;

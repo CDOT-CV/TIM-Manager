@@ -1,8 +1,6 @@
 package com.trihydro.cvlogger.app;
 
 import java.io.IOException;
-import java.sql.PreparedStatement;
-import java.sql.Statement;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -13,9 +11,9 @@ import java.util.concurrent.ExecutionException;
 import com.google.gson.Gson;
 import com.trihydro.cvlogger.config.DataLoggerConfiguration;
 import com.trihydro.library.helpers.EmailHelper;
-import com.trihydro.library.helpers.Utility;
 import com.trihydro.library.model.TopicDataWrapper;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.admin.Admin;
 import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -27,21 +25,16 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 @Component
+@Slf4j
 public class OdeLoggingConsumer {
-
-	static PreparedStatement preparedStatement = null;
-	static Statement statement = null;
 	private DataLoggerConfiguration configProperties;
-	private Utility utility;
 	private EmailHelper emailHelper;
 
 	@Autowired
-	public OdeLoggingConsumer(DataLoggerConfiguration configProperties, Utility _utility,
-			EmailHelper _emailHelper) throws IOException, Exception {
+	public OdeLoggingConsumer(DataLoggerConfiguration configProperties, EmailHelper _emailHelper) throws IOException, Exception {
 		this.configProperties = configProperties;
-		utility = _utility;
 		emailHelper = _emailHelper;
-		System.out.println("starting..............");
+    log.info("starting..............");
 		setupTopic();
 		startKafkaConsumer();
 	}
@@ -69,10 +62,10 @@ public class OdeLoggingConsumer {
 
 			}
 		} catch (InterruptedException e) {
-			e.printStackTrace();
+      log.error("Exception", e);
 			return;
 		} catch (ExecutionException e) {
-			e.printStackTrace();
+      log.error("Exception", e);
 			return;
 		} finally {
 			admin.close();
@@ -93,7 +86,7 @@ public class OdeLoggingConsumer {
 		KafkaConsumer<String, String> stringConsumer = new KafkaConsumer<String, String>(consumerProps);
 		String consumerTopic = configProperties.getDepositTopic();
 		stringConsumer.subscribe(Arrays.asList(consumerTopic));
-		System.out.println("Subscribed to topic " + consumerTopic);
+    log.info("Subscribed to topic {}", consumerTopic);
 
 		Properties producerProps = new Properties();
 		producerProps.put("bootstrap.servers", endpoint);
@@ -109,9 +102,7 @@ public class OdeLoggingConsumer {
 				Duration polTime = Duration.ofMillis(100);
 				ConsumerRecords<String, String> records = stringConsumer.poll(polTime);
 				for (ConsumerRecord<String, String> record : records) {
-					String logTxt = String.format("Found topic %s, submitting to %s for later consumption",
-							record.topic(), producerTopic);
-					utility.logWithDate(logTxt);
+					log.info("Found topic {}, submitting to {} for later consumption", record.topic(), producerTopic);
 					TopicDataWrapper tdw = new TopicDataWrapper();
 					tdw.setTopic(record.topic());
 					tdw.setData(record.value());
@@ -121,20 +112,20 @@ public class OdeLoggingConsumer {
 				}
 			}
 		} catch (Exception ex) {
-			utility.logWithDate(ex.getMessage());
-			emailHelper.ContainerRestarted(configProperties.getAlertAddresses(), configProperties.getMailPort(),
+          log.info(ex.getMessage());
+          emailHelper.ContainerRestarted(configProperties.getAlertAddresses(), configProperties.getMailPort(),
 					configProperties.getMailHost(), configProperties.getFromEmail(), consumerTopic + " Consumer");
 			throw (ex);
 		} finally {
 			try {
 				stringConsumer.close();
 			} catch (Exception consumerEx) {
-				consumerEx.printStackTrace();
+          log.error("Exception", consumerEx);
 			}
 			try {
 				stringProducer.close();
 			} catch (Exception producerEx) {
-				producerEx.printStackTrace();
+          log.error("Exception", producerEx);
 			}
 		}
 	}

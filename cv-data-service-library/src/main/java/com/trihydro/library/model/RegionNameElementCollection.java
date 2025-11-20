@@ -54,7 +54,7 @@ public class RegionNameElementCollection {
             return;
         }
     }
-
+    
     public RegionNameElementCollection (String direction, String route, String rsuOrSat, String timType, String timId) {
         this.direction = direction;
         this.route = route;

@@ -1,6 +1,7 @@
 package com.trihydro.tasks.actions;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.contains;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -21,7 +22,12 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
 @ExtendWith(MockitoExtension.class)
@@ -32,8 +38,6 @@ public class RemoveExpiredActiveTimsTest {
     @Mock
     private RestTemplate mockRestTemplate;
     @Mock
-    Utility mockUtility;
-    @Mock
     ActiveTimService mockActiveTimService;
     @Mock
     RestTemplateProvider mockRestTemplateProvider;
@@ -41,8 +45,9 @@ public class RemoveExpiredActiveTimsTest {
     @InjectMocks
     public RemoveExpiredActiveTims uut;
 
-    @BeforeEach
-    public void setup() {
+    @Test
+    public void run_ShouldCallRestTemplateExchangeTwice_WhenTwoExpiredActiveTimsExist() {
+        // Arrange
         when(mockRestTemplateProvider.GetRestTemplate()).thenReturn(mockRestTemplate);
 
         List<ActiveTim> expiredTims = new ArrayList<ActiveTim>();
@@ -50,14 +55,44 @@ public class RemoveExpiredActiveTimsTest {
         expiredTims.add(new ActiveTim());
         when(mockActiveTimService.getExpiredActiveTims(500)).thenReturn(expiredTims).thenReturn(
             new ArrayList<>());
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        ResponseEntity<String> response = new ResponseEntity<>("success", headers, HttpStatus.OK);
+        when(mockRestTemplate.exchange(contains("/delete-tim/"), any(HttpMethod.class),
+                Mockito.<HttpEntity<String>>any(), Mockito.<Class<String>>any())).thenReturn(response);
+
+        // Act
+        uut.run();
+
+        // Assert
+        verify(mockRestTemplate, Mockito.times(2)).exchange(any(String.class), any(HttpMethod.class),
+                Mockito.<HttpEntity<String>>any(), Mockito.<Class<String>>any());
     }
 
     @Test
-    public void cleanupActiveTims_runTest() {
+    public void run_ShouldCallRestTemplateExchangeTwice_WhenTwoExpiredActiveTimsExist_AndFirstRequestReturnsBadRequest() {
+        // Arrange
+        when(mockRestTemplateProvider.GetRestTemplate()).thenReturn(mockRestTemplate);
+
+        List<ActiveTim> expiredTims = new ArrayList<ActiveTim>();
+        expiredTims.add(new ActiveTim());
+        expiredTims.add(new ActiveTim());
+        when(mockActiveTimService.getExpiredActiveTims(500)).thenReturn(expiredTims).thenReturn(new ArrayList<>());
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        ResponseEntity<String> secondResponse = new ResponseEntity<>("success", headers, HttpStatus.OK);
+
+        when(mockRestTemplate.exchange(contains("/delete-tim/"), any(HttpMethod.class),
+                Mockito.<HttpEntity<String>>any(), Mockito.<Class<String>>any())).thenThrow(new HttpClientErrorException(HttpStatus.BAD_REQUEST))
+                .thenReturn(secondResponse);
+
+        // Act
         uut.run();
 
-        // assert exchange called twice
-        verify(mockRestTemplate, Mockito.times(2)).exchange(any(String.class), any(HttpMethod.class),
+        // Assert
+        verify(mockRestTemplate, Mockito.times(2)).exchange(contains("/delete-tim/"), any(HttpMethod.class),
                 Mockito.<HttpEntity<String>>any(), Mockito.<Class<String>>any());
     }
 }

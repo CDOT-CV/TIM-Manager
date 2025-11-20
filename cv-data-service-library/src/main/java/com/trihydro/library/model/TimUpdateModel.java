@@ -3,8 +3,10 @@ package com.trihydro.library.model;
 import java.math.BigDecimal;
 import java.sql.Timestamp;
 
+import lombok.ToString;
 import us.dot.its.jpo.ode.plugin.j2735.timstorage.FrameType.TravelerInfoType;
 
+@ToString(callSuper = true)
 public class TimUpdateModel extends ActiveTim {
     // Tim properties
     private int msgCnt;

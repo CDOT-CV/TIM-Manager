@@ -155,6 +155,7 @@ public class SetItisCodes {
   }
 
   public List<String> setItisCodesIncident(WydotTimIncident wydotTim) {
+    log.debug("Setting ITIS codes for incident TIM with client id: {}", wydotTim.getClientId());
     List<String> items = new ArrayList<>();
 
     // action
@@ -194,9 +195,11 @@ public class SetItisCodes {
 
     // If no incident problem is provided, default to "Incident" (ITIS code 531)
     if (items.isEmpty()) {
+      log.info("Incident problem is null or not found, defaulting to 'Incident' (ITIS code 531)");
       items.add("531"); // 531 is "Incident"
     }
 
+    log.trace("Done setting ITIS codes for incident TIM with client id: {}. ITIS codes: {}", wydotTim.getClientId(), items);
     return items;
   }
 
@@ -209,7 +212,7 @@ public class SetItisCodes {
     String problemOtherText = wydotTim.getProblemOtherText();
 
     if (!problemOtherText.contains("GVW")) {
-      log.error("Unsupported problemOtherText: {}", problemOtherText);
+      log.warn("Unsupported problemOtherText: {}", problemOtherText);
       return items;
     }
 
