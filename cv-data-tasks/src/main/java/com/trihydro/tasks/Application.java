@@ -1,15 +1,7 @@
 
 package com.trihydro.tasks;
 
-import com.trihydro.tasks.actions.CleanupStaleActiveTimHoldingRecords;
 import com.trihydro.library.exceptionhandlers.IdenticalPointsExceptionHandler;
-import java.io.IOException;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
-
-import javax.annotation.PostConstruct;
-
 import com.trihydro.library.helpers.CreateBaseTimUtil;
 import com.trihydro.library.helpers.EmailHelper;
 import com.trihydro.library.helpers.GsonFactory;
@@ -38,6 +30,7 @@ import com.trihydro.library.service.TimTypeService;
 import com.trihydro.library.service.TmddService;
 import com.trihydro.library.service.WydotTimService;
 import com.trihydro.tasks.actions.CleanupActiveTims;
+import com.trihydro.tasks.actions.CleanupStaleActiveTimHoldingRecords;
 import com.trihydro.tasks.actions.RemoveExpiredActiveTims;
 import com.trihydro.tasks.actions.RetentionPolicyEnforcement;
 import com.trihydro.tasks.actions.ValidateRsus;
@@ -45,12 +38,17 @@ import com.trihydro.tasks.actions.ValidateSdx;
 import com.trihydro.tasks.actions.ValidateTmdd;
 import com.trihydro.tasks.actions.VerifyHSMFunctional;
 import com.trihydro.tasks.config.DataTasksConfiguration;
-
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Import;
+
+import javax.annotation.PostConstruct;
+import java.io.IOException;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 @SpringBootApplication
 @Import({ SdwService.class, Utility.class, EmailHelper.class, JavaMailSenderImplProvider.class, ActiveTimService.class,

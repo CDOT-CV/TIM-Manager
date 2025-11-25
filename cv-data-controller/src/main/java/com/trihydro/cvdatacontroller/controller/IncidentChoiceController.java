@@ -9,6 +9,7 @@ import java.util.List;
 
 import com.trihydro.library.model.IncidentChoice;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -20,6 +21,7 @@ import springfox.documentation.annotations.ApiIgnore;
 
 @CrossOrigin
 @RestController
+@Slf4j
 @RequestMapping("incident-choice")
 @ApiIgnore
 public class IncidentChoiceController extends BaseController {
@@ -51,7 +53,7 @@ public class IncidentChoiceController extends BaseController {
             }
 
         } catch (SQLException e) {
-            e.printStackTrace();
+            log.error("Exception", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(incidentActions);
         } finally {
             try {
@@ -65,7 +67,7 @@ public class IncidentChoiceController extends BaseController {
                 if (rs != null)
                     rs.close();
             } catch (SQLException e) {
-                e.printStackTrace();
+                log.error("Exception", e);
             }
         }
         return ResponseEntity.ok(incidentActions);
@@ -95,7 +97,7 @@ public class IncidentChoiceController extends BaseController {
             }
 
         } catch (SQLException e) {
-            e.printStackTrace();
+            log.error("Exception", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(incidentEffects);
         } finally {
             try {
@@ -109,7 +111,7 @@ public class IncidentChoiceController extends BaseController {
                 if (rs != null)
                     rs.close();
             } catch (SQLException e) {
-                e.printStackTrace();
+                log.error("Exception", e);
             }
         }
         return ResponseEntity.ok(incidentEffects);
@@ -140,7 +142,7 @@ public class IncidentChoiceController extends BaseController {
             }
             return ResponseEntity.ok(incidentProblems);
         } catch (SQLException e) {
-            e.printStackTrace();
+            log.error("Exception", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(incidentProblems);
         } finally {
             try {
@@ -154,7 +156,7 @@ public class IncidentChoiceController extends BaseController {
                 if (rs != null)
                     rs.close();
             } catch (SQLException e) {
-                e.printStackTrace();
+                log.error("Exception", e);
             }
         }
     }

@@ -668,7 +668,7 @@ class TimGenerationHelperTest {
     }
 
     @Test
-    public void c_updatesDurationTimeToFiveMinutes() throws Utility.IdenticalPointsException {
+    public void testExpireTimAndResubmitToOde_updatesDurationTimeToFiveMinutes() throws Utility.IdenticalPointsException {
         // Arrange
         List<Long> activeTimIds = new ArrayList<>();
         activeTimIds.add(-1L);
@@ -704,6 +704,46 @@ class TimGenerationHelperTest {
 
         // Duration Time should be 5 since resetExpirationTime is set to True
         Assertions.assertEquals(5, dataFrame.getDurationTime());
+    }
+
+    @Test
+    public void testExpireTimAndResubmitToOde_setStartDateToCurrentTime() throws Utility.IdenticalPointsException {
+        // Arrange
+        List<Long> activeTimIds = new ArrayList<>();
+        activeTimIds.add(-1L);
+        setupActiveTimModel();
+        setupMilepostReturn();
+        tum.setRoute("I 80");
+        tum.setSatRecordId("satRecordId");
+        tum.setStartDateTime("");
+
+        // Given a TIM with a durationTime of an hour
+        var originalStartTime = Instant.parse("2021-01-01T00:00:00.000Z");
+        tum.setDurationTime(60);
+        tum.setEndDateTime("2021-01-01T01:00:00.000Z");
+        tum.setStartDate_Timestamp(new Timestamp(originalStartTime.toEpochMilli()));
+
+        doReturn(new String[] {"1234"}).when(mockDataFrameService)
+            .getItisCodesForDataFrameId(any());
+        doReturn("").when(mockOdeService).updateTimOnSdw(any());
+
+        doReturn(new Coordinate(BigDecimal.valueOf(1), BigDecimal.valueOf(2))).when(mockUtility)
+            .calculateAnchorCoordinate(any(), any());
+
+        // Act
+        uut.expireTimAndResubmitToOde(activeTimIds);
+
+        // Assert
+        verify(mockOdeService).updateTimOnSdw(timCaptor.capture());
+        verify(mockActiveTimHoldingService).insertActiveTimHolding(any());
+        var timSent = timCaptor.getValue();
+        var dataFrame = timSent.getTim().getDataframes()[0];
+
+        Assertions.assertNotNull(dataFrame.getStartDateTime());
+        var newStartTime = Instant.parse(dataFrame.getStartDateTime());
+
+        // A different startTime should have been used
+        Assertions.assertTrue(newStartTime.getEpochSecond() != originalStartTime.getEpochSecond());
     }
 
     @Test
@@ -1266,9 +1306,36 @@ class TimGenerationHelperTest {
     }
 
     @Test
+    public void isValidTim_FALSE_NULL() {
+        // Arrange
+        TimUpdateModel tum = null;
+
+        // Act
+        var success = uut.isValidTim(tum);
+
+        // Assert
+        Assertions.assertFalse(success);
+    }
+
+    @Test
     public void isValidTim_FALSE_StartPoint() {
         // Arrange
         var tum = new TimUpdateModel();
+        tum.setDirection("I");
+        tum.setRoute("I 80");
+
+        // Act
+        var success = uut.isValidTim(tum);
+
+        // Assert
+        Assertions.assertFalse(success);
+    }
+
+    @Test
+    public void isValidTim_FALSE_InvalidCoordinates() {
+        // Arrange
+        var tum = new TimUpdateModel();
+        tum.setStartPoint(new Coordinate(null, null));
         tum.setDirection("I");
         tum.setRoute("I 80");
 

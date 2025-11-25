@@ -1,16 +1,11 @@
 package com.trihydro.library.service;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import com.google.gson.Gson;
-import com.trihydro.library.helpers.Utility;
 import com.trihydro.library.model.AdvisorySituationDataDeposit;
 import com.trihydro.library.model.SDXDecodeRequest;
 import com.trihydro.library.model.SDXDecodeResponse;
@@ -18,7 +13,8 @@ import com.trihydro.library.model.SDXQuery;
 import com.trihydro.library.model.SdwProps;
 import com.trihydro.library.model.SemiDialogID;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -31,18 +27,12 @@ import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClientException;
 
 @Component
+@Slf4j
+@RequiredArgsConstructor
 public class SdwService {
-    public Gson gson = new Gson();
-    private SdwProps configProperties;
-    private Utility utility;
-    private RestTemplateProvider restTemplateProvider;
-
-    @Autowired
-    public void InjectDependencies(SdwProps _config, Utility _utility, RestTemplateProvider _restTemplateProvider) {
-        configProperties = _config;
-        utility = _utility;
-        restTemplateProvider = _restTemplateProvider;
-    }
+    public final Gson gson = new Gson();
+    private final SdwProps configProperties;
+    private final RestTemplateProvider restTemplateProvider;
 
     /**
      * Fetches messages deposited into the SDX, by the ODE User (identified by
@@ -50,40 +40,48 @@ public class SdwService {
      * 
      * @param type Type of message to retrieve
      */
-    public List<AdvisorySituationDataDeposit> getMsgsForOdeUser(SemiDialogID type) throws RestClientException {
+    public List<AdvisorySituationDataDeposit> getMsgsForOdeUser(SemiDialogID type) throws RestClientException, SdwServiceException {
+        log.info("Fetching SDX messages for dialog type: {}", type);
+
+        if (type == null) {
+            throw new SdwServiceException("Null dialog type passed to getMsgsForOdeUser");
+        }
+
         List<AdvisorySituationDataDeposit> results = null;
 
         String url = String.format("%s/api/deposited-by-me/%d", configProperties.getSdwRestUrl(), type.getValue());
         HttpHeaders headers = new HttpHeaders();
-        headers.setAccept(Arrays.asList(MediaType.APPLICATION_JSON));
+        headers.setAccept(List.of(MediaType.APPLICATION_JSON));
         headers.add("apikey", configProperties.getSdwApiKey());
 
-        HttpEntity<SDXQuery> entity = new HttpEntity<SDXQuery>(null, headers);
+        HttpEntity<SDXQuery> entity = new HttpEntity<>(null, headers);
         try {
             ResponseEntity<AdvisorySituationDataDeposit[]> response = restTemplateProvider.GetRestTemplate()
                     .exchange(url, HttpMethod.GET, entity, AdvisorySituationDataDeposit[].class);
 
             results = Arrays.asList(response.getBody());
+            log.info("Successfully retrieved {} SDX messages", results.size());
         } catch (RestClientException ex) {
-            utility.logWithDate("An exception occurred while attempting to get messages from SDX: " + ex.getMessage());
-            utility.logWithDate("Is the SDX API key valid?");
-            ex.printStackTrace();
+            log.error("GET messages failed - {}. DialogType={}, URL={}", ex.getMessage(), type, url);
+            throw new SdwServiceException("SDX GET messages request failed: " + ex.getMessage(), ex);
         }
 
         return results;
     }
 
-    public List<Integer> getItisCodesFromAdvisoryMessage(String advisoryMessage) throws IllegalArgumentException {
+    public List<Integer> getItisCodesFromAdvisoryMessage(String advisoryMessage) throws SdwServiceException {
         if (advisoryMessage == null) {
-            throw new IllegalArgumentException("advisoryMessage cannot be null");
+            log.error("Null advisory message provided");
+            throw new SdwServiceException("Null advisory message provided");
         }
-
+        log.trace("Processing advisory message for ITIS codes, message length: {}", advisoryMessage.length());
         int idx = advisoryMessage.indexOf("001F");
         if (idx < 0) {
-            throw new IllegalArgumentException("Cannot determine start of MessageFrame");
+            log.error("Invalid message format - missing MessageFrame marker");
+            throw new SdwServiceException("Invalid message format - missing MessageFrame marker");
         }
 
-        List<Integer> results = new ArrayList<Integer>();
+        List<Integer> results = new ArrayList<>();
         SDXDecodeResponse decodeResponse = null;
 
         // Build request
@@ -91,7 +89,7 @@ public class SdwService {
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.setAccept(Arrays.asList(MediaType.APPLICATION_JSON));
+        headers.setAccept(List.of(MediaType.APPLICATION_JSON));
         headers.add("apikey", configProperties.getSdwApiKey());
 
         SDXDecodeRequest request = new SDXDecodeRequest();
@@ -101,16 +99,20 @@ public class SdwService {
 
         // Execute request
         try {
-            HttpEntity<SDXDecodeRequest> entity = new HttpEntity<SDXDecodeRequest>(request, headers);
+            log.trace("Sending decode request to SDX API");
+            HttpEntity<SDXDecodeRequest> entity = new HttpEntity<>(request, headers);
             ResponseEntity<SDXDecodeResponse> response = restTemplateProvider.GetRestTemplate().exchange(url,
                     HttpMethod.POST, entity, SDXDecodeResponse.class);
 
             decodeResponse = response.getBody();
+            if (decodeResponse == null || decodeResponse.getDecodedMessage() == null) {
+                log.warn("Received null decode response from SDX");
+                throw new SdwServiceException("SDX decode response is null");
+            }
+
         } catch (RestClientException ex) {
-            utility.logWithDate("An exception occurred while attempting to decode message: " + ex.getMessage());
-            utility.logWithDate("Is the SDX API key valid?");
-            ex.printStackTrace();
-            return null;
+            log.error("POST decode failed - {}. Message length={}, URL={}", ex.getMessage(), advisoryMessage.length(), url);
+            throw new SdwServiceException("SDX decode request failed: " + ex.getMessage(), ex);
         }
 
         // Process request (convert decodedMessage into an array of ITIS codes)
@@ -123,10 +125,11 @@ public class SdwService {
             try {
                 results.add(Integer.parseInt(itisCode));
             } catch (NumberFormatException ex) {
-                ex.printStackTrace();
+                log.error("Failed to parse ITIS code: {}", m.group(2), ex);
             }
         }
 
+        log.trace("Successfully extracted {} ITIS codes from message", results.size());
         return results;
     }
 
@@ -134,8 +137,7 @@ public class SdwService {
      * Returns a pseudo-random 4 byte hex value representing recordId. This 4 byte
      * limitation comes from asn1_codec SEMI_v2.3.0_070616.asn found at
      * https://github.com/usdot-jpo-ode/asn1_codec/blob/master/asn1c_combined/SEMI_v2.3.0_070616.asn
-     * 
-     * @return
+     *
      */
     public String getNewRecordId() {
         String hexChars = "ABCDEF1234567890";
@@ -145,18 +147,23 @@ public class SdwService {
             int index = (int) (rnd.nextFloat() * hexChars.length());
             hexStrB.append(hexChars.charAt(index));
         }
-        String hexStr = hexStrB.toString();
-        return hexStr;
+        return hexStrB.toString();
     }
 
     public HashMap<Integer, Boolean> deleteSdxDataBySatRecordId(List<String> satRecordIds) {
+        log.trace("deleteSdxDataBySatRecordId called with satRecordIds: {}", satRecordIds);
+
+        log.info("Attempting to delete {} SDX record(s)",
+                satRecordIds != null ? satRecordIds.size() : 0);
+
         HashMap<Integer, Boolean> results = null;
-        if (satRecordIds == null || satRecordIds.size() == 0 || configProperties.getSdwApiKey() == null) {
+        if (satRecordIds == null || satRecordIds.isEmpty() || configProperties.getSdwApiKey() == null) {
             if (configProperties.getSdwApiKey() == null) {
-                utility.logWithDate("Attempting to delete satellite records failed due to null apiKey");
+                log.error("Attempting to delete satellite records failed due to null apiKey");
             } else {
-                utility.logWithDate("Attempting to delete satellite records failed due to no satRecordIds passed in");
+                log.error("Attempting to delete satellite records failed due to no satRecordIds passed in");
             }
+            log.trace("Returning null results");
             return results;
         }
 
@@ -172,27 +179,26 @@ public class SdwService {
         };
         ResponseEntity<HashMap<Integer, Boolean>> response;
         try {
+            log.debug("Sending request to delete satellite records with IDs: {}", satRecordIds);
             response = restTemplateProvider.GetRestTemplate().exchange(url, HttpMethod.DELETE, entity, responseType);
         } catch (HttpClientErrorException ex) {
-            utility.logWithDate("An exception occurred while attempting to delete satellite records: " + ex.getMessage());
-            utility.logWithDate("Is the SDX API key valid?");
-            ex.printStackTrace();
-            response = new ResponseEntity<HashMap<Integer, Boolean>>(ex.getStatusCode());
+            log.error("DELETE records failed - {}. recordIds={}", ex.getMessage(), satRecordIds);
+            response = new ResponseEntity<>(ex.getStatusCode());
         }
 
         if (response.getStatusCode() != HttpStatus.OK) {
-            utility.logWithDate("Failed to call delete-multiple-by-id on SDX api");
+            log.error("Delete operation failed with status: {}", response.getStatusCode());
         }
         return response.getBody();
     }
 
     public HashMap<Integer, Boolean> deleteSdxDataByRecordIdIntegers(List<Integer> satRecordInts) {
         HashMap<Integer, Boolean> results = null;
-        if (satRecordInts == null || satRecordInts.size() == 0 || configProperties.getSdwApiKey() == null) {
+        if (satRecordInts == null || satRecordInts.isEmpty() || configProperties.getSdwApiKey() == null) {
             if (configProperties.getSdwApiKey() == null) {
-                utility.logWithDate("Attempting to delete satellite records failed due to null apiKey");
+                log.info("Attempting to delete satellite records failed due to null apiKey");
             } else {
-                utility.logWithDate("Attempting to delete satellite records failed due to no satRecordIds passed in");
+                log.info("Attempting to delete satellite records failed due to no satRecordIds passed in");
             }
             return results;
         }
@@ -202,20 +208,19 @@ public class SdwService {
         headers.setContentType(MediaType.APPLICATION_JSON);
         headers.add("apikey", configProperties.getSdwApiKey());
         HttpEntity<List<Integer>> entity = new HttpEntity<List<Integer>>(satRecordInts, headers);
-        ParameterizedTypeReference<HashMap<Integer, Boolean>> responseType = new ParameterizedTypeReference<HashMap<Integer, Boolean>>() {
+        ParameterizedTypeReference<HashMap<Integer, Boolean>> responseType = new ParameterizedTypeReference<>() {
         };
         ResponseEntity<HashMap<Integer, Boolean>> response;
         try {
             response = restTemplateProvider.GetRestTemplate().exchange(url, HttpMethod.DELETE, entity, responseType);
         } catch (HttpClientErrorException ex) {
-            utility.logWithDate("An exception occurred while attempting to delete satellite records: " + ex.getMessage());
-            utility.logWithDate("Is the SDX API key valid?");
-            ex.printStackTrace();
-            response = new ResponseEntity<HashMap<Integer, Boolean>>(ex.getStatusCode());
+            log.error("DELETE records failed - {}. recordIds={}", ex.getMessage(), satRecordInts);
+
+            response = new ResponseEntity<>(ex.getStatusCode());
         }
 
         if (response.getStatusCode() != HttpStatus.OK) {
-            utility.logWithDate("Failed to call delete-multiple-by-id on SDX api");
+            log.error("Delete operation failed with status: {}", response.getStatusCode());
         }
         return response.getBody();
     }
@@ -227,5 +232,15 @@ public class SdwService {
         }
         baseUrl += end;
         return baseUrl;
+    }
+
+    public static class SdwServiceException extends Exception {
+        public SdwServiceException(String message) {
+            super(message);
+        }
+
+        public SdwServiceException(String message, Throwable cause) {
+            super(message, cause);
+        }
     }
 }

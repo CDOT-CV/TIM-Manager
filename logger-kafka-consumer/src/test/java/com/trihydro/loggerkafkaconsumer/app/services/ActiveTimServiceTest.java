@@ -1,15 +1,17 @@
 package com.trihydro.loggerkafkaconsumer.app.services;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
+import com.trihydro.library.helpers.DateStringNotInISO8601FormatException;
+import com.trihydro.library.helpers.DateTimeHelper;
+import com.trihydro.library.helpers.DateTimeHelperImpl;
 import java.math.BigDecimal;
 import java.sql.SQLException;
 import java.sql.Timestamp;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.Instant;
 
@@ -33,16 +35,21 @@ public class ActiveTimServiceTest extends TestBase<ActiveTimService> {
 
     private Coordinate startPoint;
     private Coordinate endPoint;
+    
+    @Mock
+    private DateTimeHelper dateTimeHelper;
+
+    private final DateTimeHelper actualDateTimeHelper = new DateTimeHelperImpl();
 
     @BeforeEach
     public void setupSubTest() {
-        uut.InjectDependencies(mockTimDbTables, mockSqlNullHandler);
+        uut.InjectDependencies(mockTimDbTables, mockSqlNullHandler, dateTimeHelper);
         startPoint = new Coordinate(BigDecimal.valueOf(-1), BigDecimal.valueOf(-2));
         endPoint = new Coordinate(BigDecimal.valueOf(-3), BigDecimal.valueOf(-4));
     }
 
     @Test
-    public void insertActiveTim_SUCCESS() throws SQLException {
+    public void insertActiveTim_SUCCESS() throws SQLException, DateStringNotInISO8601FormatException {
         // Arrange
         ActiveTim activeTim = new ActiveTim();
         activeTim.setStartPoint(startPoint);
@@ -58,15 +65,14 @@ public class ActiveTimServiceTest extends TestBase<ActiveTimService> {
         java.util.Date endDate = java.util.Date.from(endTime);
         Timestamp startDateTimestamp = Timestamp.from(stTime);
         Timestamp endDateTimestamp = Timestamp.from(endTime);
-        doReturn(stDate).when(mockUtility).convertDate(activeTim.getStartDateTime());
-        doReturn(endDate).when(mockUtility).convertDate(activeTim.getEndDateTime());
-        mockUtility.timestampFormat = timestampFormat;
+        doReturn(stDate).when(dateTimeHelper).convertDate(activeTim.getStartDateTime());
+        doReturn(endDateTimestamp).when(dateTimeHelper).convertDateStringFromISO8601FormatIntoTimestampObject(activeTim.getEndDateTime());
 
         // Act
         Long data = uut.insertActiveTim(activeTim);
 
         // Assert
-        Assertions.assertEquals(Long.valueOf(-1), data);
+        assertEquals(Long.valueOf(-1), data);
         verify(mockSqlNullHandler).setLongOrNull(mockPreparedStatement, 1, activeTim.getTimId());// TIM_ID
         verify(mockSqlNullHandler).setStringOrNull(mockPreparedStatement, 2, null);// DIRECTION
 
@@ -102,13 +108,66 @@ public class ActiveTimServiceTest extends TestBase<ActiveTimService> {
         Long data = uut.insertActiveTim(activeTim);
 
         // Assert
-        Assertions.assertEquals(Long.valueOf(0), data);
+        assertEquals(Long.valueOf(0), data);
         verify(mockPreparedStatement).close();
         verify(mockConnection).close();
     }
 
     @Test
-    public void updateActiveTim_SUCCESS() throws SQLException {
+    public void insertActiveTim_TimEndInTableFormat_Success_ReturnsId() throws DateStringNotInISO8601FormatException, ParseException {
+        // Arrange
+        ActiveTim activeTim = new ActiveTim();
+        activeTim.setStartDateTime("2020-02-03T16:22:23.000Z");
+        activeTim.setEndDateTime("2020-02-05 16:22:23");
+        doReturn(actualDateTimeHelper.convertDate(activeTim.getStartDateTime())).when(dateTimeHelper).convertDate(activeTim.getStartDateTime());
+        doReturn(actualDateTimeHelper.isInTableFormat(activeTim.getEndDateTime())).when(dateTimeHelper).isInTableFormat(activeTim.getEndDateTime());
+        doReturn(actualDateTimeHelper.convertDateStringFromTableFormatIntoISO8601Format(activeTim.getEndDateTime())).when(dateTimeHelper).convertDateStringFromTableFormatIntoISO8601Format(activeTim.getEndDateTime());
+        doReturn(actualDateTimeHelper.convertDateStringFromISO8601FormatIntoTimestampObject("2020-02-05T16:22:23.000Z")).when(dateTimeHelper).convertDateStringFromISO8601FormatIntoTimestampObject("2020-02-05T16:22:23.000Z");
+        doReturn(10L).when(mockDbInteractions).executeAndLog(mockPreparedStatement, "active tim");
+
+        // Act
+        Long id = uut.insertActiveTim(activeTim);
+
+        // Assert
+        assertEquals(10L, id);
+    }
+
+    @Test
+    public void insertActiveTim_TimEndInTableFormat_FailedToConvert_ReturnsNegativeTwo() throws ParseException {
+        // Arrange
+        ActiveTim activeTim = new ActiveTim();
+        activeTim.setStartDateTime("2020-02-03T16:22:23.000Z");
+        activeTim.setEndDateTime("2020-02-05 16:22:23");
+        doReturn(actualDateTimeHelper.convertDate(activeTim.getStartDateTime())).when(dateTimeHelper).convertDate(activeTim.getStartDateTime());
+        doReturn(actualDateTimeHelper.isInTableFormat(activeTim.getEndDateTime())).when(dateTimeHelper).isInTableFormat(activeTim.getEndDateTime());
+        doThrow(new RuntimeException()).when(dateTimeHelper).convertDateStringFromTableFormatIntoISO8601Format(activeTim.getEndDateTime());
+
+        // Act
+        Long result = uut.insertActiveTim(activeTim);
+
+        // Assert
+        assertEquals(-2L, result);
+    }
+
+    @Test
+    public void insertActiveTim_TimEndInvalidFormat_FailedToConvert_ReturnsNegativeThree() throws
+        DateStringNotInISO8601FormatException {
+        // Arrange
+        ActiveTim activeTim = new ActiveTim();
+        activeTim.setStartDateTime("2020-02-03T16:22:23.000Z");
+        activeTim.setEndDateTime("banana");
+        doReturn(actualDateTimeHelper.convertDate(activeTim.getStartDateTime())).when(dateTimeHelper).convertDate(activeTim.getStartDateTime());
+        doThrow(new DateStringNotInISO8601FormatException("not in ISO8601 format")).when(dateTimeHelper).convertDateStringFromISO8601FormatIntoTimestampObject(activeTim.getEndDateTime());
+
+        // Act
+        Long result = uut.insertActiveTim(activeTim);
+
+        // Assert
+        assertEquals(-3L, result);
+    }
+
+    @Test
+    public void updateActiveTim_SUCCESS() throws SQLException, DateStringNotInISO8601FormatException {
         // Arrange
         doReturn(true).when(mockDbInteractions).updateOrDelete(mockPreparedStatement);
         ActiveTim activeTim = new ActiveTim();
@@ -121,12 +180,10 @@ public class ActiveTimServiceTest extends TestBase<ActiveTimService> {
         var stTime = Instant.parse(activeTim.getStartDateTime());
         var endTime = Instant.parse(activeTim.getEndDateTime());
         java.util.Date stDate = java.util.Date.from(stTime);
-        java.util.Date endDate = java.util.Date.from(endTime);
         Timestamp startDateTimestamp = Timestamp.from(stTime);
         Timestamp endDateTimestamp = Timestamp.from(endTime);
-        doReturn(stDate).when(mockUtility).convertDate(activeTim.getStartDateTime());
-        doReturn(endDate).when(mockUtility).convertDate(activeTim.getEndDateTime());
-        mockUtility.timestampFormat = timestampFormat;
+        doReturn(stDate).when(dateTimeHelper).convertDate(activeTim.getStartDateTime());
+        doReturn(endDateTimestamp).when(dateTimeHelper).convertDateStringFromISO8601FormatIntoTimestampObject(activeTim.getEndDateTime());
 
         // Act
         boolean data = uut.updateActiveTim(activeTim);
@@ -181,8 +238,8 @@ public class ActiveTimServiceTest extends TestBase<ActiveTimService> {
 
         // Assert
         Assertions.assertNotNull(data, "Null ActiveTim returned");
-        Assertions.assertEquals(Long.valueOf(99), data.getActiveTimId());
-        Assertions.assertEquals(Long.valueOf(-99), data.getTimId());
+        assertEquals(Long.valueOf(99), data.getActiveTimId());
+        assertEquals(Long.valueOf(-99), data.getTimId());
         verify(mockStatement).executeQuery(query);
         verify(mockStatement).close();
         verify(mockRs).close();
@@ -227,8 +284,8 @@ public class ActiveTimServiceTest extends TestBase<ActiveTimService> {
 
         // Assert
         Assertions.assertNotNull(data, "Null ActiveTim returned");
-        Assertions.assertEquals(Long.valueOf(99), data.getActiveTimId());
-        Assertions.assertEquals(Long.valueOf(-99), data.getTimId());
+        assertEquals(Long.valueOf(99), data.getActiveTimId());
+        assertEquals(Long.valueOf(-99), data.getTimId());
         verify(mockStatement).executeQuery(query);
         verify(mockStatement).close();
         verify(mockRs).close();
@@ -257,7 +314,8 @@ public class ActiveTimServiceTest extends TestBase<ActiveTimService> {
         Timestamp dbValue = Timestamp.valueOf("2021-01-01 00:00:00");
         String expDate = "2021-01-03T00:00:00.000Z"; // Later than dbValue
         when(mockRs.getTimestamp(eq("MINSTART"), any())).thenReturn(dbValue);
-        mockUtility.timestampFormat = new SimpleDateFormat("dd-MMM-yy hh.mm.ss.SSS a");
+        mockUtility.setTimestampFormat(new SimpleDateFormat("dd-MMM-yy hh.mm.ss.SSS a"));
+        when(mockUtility.getTimestampFormat()).thenReturn(timestampFormat);
 
         String query = "SELECT LEAST((SELECT TO_TIMESTAMP('03-Jan-21 12.00.00.000 AM', 'DD-MON-YYYY HH12.MI.SS a')), "
                 + "(COALESCE((SELECT MIN(EXPIRATION_DATE) FROM ACTIVE_TIM atim INNER JOIN TIM ON atim.TIM_ID = TIM.TIM_ID "
@@ -269,7 +327,7 @@ public class ActiveTimServiceTest extends TestBase<ActiveTimService> {
 
         // Assert
         verify(mockStatement).executeQuery(query);
-        Assertions.assertEquals("01-Jan-21 12.00.00.000 AM", minExp);
+        assertEquals("01-Jan-21 12.00.00.000 AM", minExp);
         verify(mockStatement).close();
         verify(mockRs).close();
         verify(mockConnection).close();

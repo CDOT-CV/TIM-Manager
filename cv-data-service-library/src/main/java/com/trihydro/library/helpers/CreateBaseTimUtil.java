@@ -8,6 +8,8 @@ import java.util.List;
 import com.grum.geocalc.Coordinate;
 import com.grum.geocalc.EarthCalc;
 import com.grum.geocalc.Point;
+import lombok.extern.slf4j.Slf4j;
+
 import com.trihydro.library.model.ContentEnum;
 import com.trihydro.library.model.Milepost;
 import com.trihydro.library.model.WydotTim;
@@ -28,6 +30,7 @@ import us.dot.its.jpo.ode.plugin.j2735.timstorage.FrameType.TravelerInfoType;
 import us.dot.its.jpo.ode.plugin.j2735.timstorage.MutcdCode.MutcdCodeEnum;
 
 @Component
+@Slf4j
 public class CreateBaseTimUtil {
 
     private Utility utility;
@@ -115,20 +118,20 @@ public class CreateBaseTimUtil {
      */
     protected List<OdeTravelerInformationMessage.DataFrame.Region> buildRegions(BigDecimal defaultLaneWidth, List<Milepost> allMileposts, List<Milepost> reducedMileposts, Milepost anchor) {
         if (reducedMileposts.size() <= 63) {
-            utility.logWithDate("Less than 63 mileposts, building a single region.", CreateBaseTimUtil.class);
+            log.info("Less than 63 mileposts, building a single region.");
             List<OdeTravelerInformationMessage.DataFrame.Region> regions = new ArrayList<OdeTravelerInformationMessage.DataFrame.Region>();
             OdeTravelerInformationMessage.DataFrame.Region singleRegion = buildSingleRegion(defaultLaneWidth, allMileposts, reducedMileposts, anchor);
             regions.add(singleRegion);
             return regions;
         } else {
-            utility.logWithDate("More than 63 mileposts, building multiple regions.", CreateBaseTimUtil.class);
+          log.info("More than 63 mileposts, building multiple regions.");
             return buildMultipleRegions(defaultLaneWidth, allMileposts, reducedMileposts, anchor);
         }
     }
 
     /**
      * Builds multiple regions based on the given parameters.
-     * 
+     *
      * @param defaultLaneWidth    the default lane width
      * @param allMileposts        a list of all mileposts
      * @param reducedMileposts    a list of reduced mileposts
@@ -154,7 +157,7 @@ public class CreateBaseTimUtil {
             }
         }
 
-        utility.logWithDate("Built " + regions.size() + " regions.", CreateBaseTimUtil.class);
+        log.info("Built {} regions.", regions.size());
         return regions;
     }
 

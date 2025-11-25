@@ -15,6 +15,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 
+import com.trihydro.library.helpers.DateTimeHelper;
 import java.math.BigDecimal;
 import java.sql.SQLException;
 import java.text.ParseException;
@@ -96,16 +97,18 @@ public class TimServiceTest extends TestBase<TimService> {
     private NodeLLService mockNodeLLService;
     @Mock
     private PathNodeLLService mockPathNodeLLService;
+    @Mock
+    private DateTimeHelper dateTimeHelper;
 
     private WydotRsu rsu;
-    private Long pathId = -99l;
+    private final Long pathId = -99l;
 
     @BeforeEach
     public void setupSubTest() {
         uut.InjectDependencies(mockActiveTimService, mockTimDbTables, mockSqlNullHandler, mockPathService,
                 mockRegionService, mockDataFrameService, mockRsuService, mockTts, mockItisCodesService,
                 mockTimRsuService, mockDataFrameItisCodeService, mockPathNodeXYService, mockNodeXYService, mockUtility,
-                mockActiveTimHoldingService, mockPathNodeLLService, mockNodeLLService);
+                mockActiveTimHoldingService, mockPathNodeLLService, mockNodeLLService, dateTimeHelper);
 
         ArrayList<WydotRsu> rsus = new ArrayList<>();
         rsu = new WydotRsu();
@@ -364,7 +367,7 @@ public class TimServiceTest extends TestBase<TimService> {
         verifyNoInteractions(mockDataFrameItisCodeService);
         // verify only these were called on the uut
         verify(uut).InjectDependencies(any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(),
-                any(), any(), any(), any(), any(), any());
+                any(), any(), any(), any(), any(), any(), any());
         verify(uut).InjectBaseDependencies(any(), any());
         verify(uut).addTimToDatabase(odeData);
         verify(uut).AddTim(any(), any(), any(), any(), any(), any(), any(), any());

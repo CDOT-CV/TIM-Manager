@@ -3,7 +3,7 @@ export default [
     timRcList: [
       {
         route: "WY 233",
-        roadCode: "233-Test",
+        roadCode: "test-KEMWYO233B",
         advisory: [5895, 5907],
         direction: "B",
         startPoint: { latitude: 41.80825184, longitude: -110.5341319 },
@@ -15,7 +15,7 @@ export default [
     timRcList: [
       {
         route: "US 20",
-        roadCode: "20-Test",
+        roadCode: "test-THERUS20WYO789SB",
         advisory: [5895, 5907],
         direction: "B",
         startPoint: { latitude: 43.40291046, longitude: -108.1676454 },
@@ -27,7 +27,7 @@ export default [
     timRcList: [
       {
         route: "WY 387",
-        roadCode: "387-Test",
+        roadCode: "test-RJWYO387WB",
         advisory: [5907],
         direction: "B",
         startPoint: { latitude: 43.61739936, longitude: -105.78594247 },
@@ -39,7 +39,7 @@ export default [
     timRcList: [
       {
         route: "US 20",
-        roadCode: "20-Test-2",
+        roadCode: "test-LUUS20EB",
         advisory: [5906],
         direction: "B",
         startPoint: { latitude: 42.76189009, longitude: -104.44152876 },
@@ -47,7 +47,7 @@ export default [
       },
       {
         route: "WY 270",
-        roadCode: "270-Test",
+        roadCode: "test-LUW270NB",
         advisory: [5906],
         direction: "B",
         startPoint: { latitude: 42.78126098, longitude: -104.6179708 },
@@ -55,7 +55,7 @@ export default [
       },
       {
         route: "US 85",
-        roadCode: "85-Test",
+        roadCode: "test-LUUS85NB",
         advisory: [5906],
         direction: "B",
         startPoint: { latitude: 42.77033909, longitude: -104.44953692 },
@@ -63,7 +63,7 @@ export default [
       },
       {
         route: "WY 270",
-        roadCode: "270-Test-2",
+        roadCode: "test-LUW270GB",
         advisory: [5906],
         direction: "B",
         startPoint: { latitude: 42.60951184, longitude: -104.66387969 },
@@ -71,7 +71,7 @@ export default [
       },
       {
         route: "US 20",
-        roadCode: "20-Test-3",
+        roadCode: "test-LUUS1820WB",
         advisory: [5906],
         direction: "B",
         startPoint: { latitude: 42.7599073, longitude: -104.89314146 },
@@ -79,7 +79,7 @@ export default [
       },
       {
         route: "US 85",
-        roadCode: "85-Test-2",
+        roadCode: "test-LUUS85SB",
         advisory: [5906],
         direction: "B",
         startPoint: { latitude: 42.60991089, longitude: -104.43064063 },
@@ -91,7 +91,7 @@ export default [
     timRcList: [
       {
         route: "WY 222",
-        roadCode: "222-Test",
+        roadCode: "test-CHEYW222FTAB",
         advisory: [5895],
         direction: "B",
         startPoint: { latitude: 41.10533726, longitude: -104.88640271 },
@@ -99,7 +99,7 @@ export default [
       },
       {
         route: "WY 212",
-        roadCode: "212-Test",
+        roadCode: "test-CHEYW212FMRB",
         advisory: [5895],
         direction: "B",
         startPoint: { latitude: 41.1889919, longitude: -104.76461603 },
@@ -107,7 +107,7 @@ export default [
       },
       {
         route: "WY 212",
-        roadCode: "212-Test-2",
+        roadCode: "test-CHEYW212CLDB",
         advisory: [5895],
         direction: "B",
         startPoint: { latitude: 41.0992874, longitude: -104.8477219 },
