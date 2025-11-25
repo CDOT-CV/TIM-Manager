@@ -6,12 +6,13 @@ import java.util.List;
 
 import com.google.gson.Gson;
 import com.trihydro.library.helpers.Utility;
-import com.trihydro.library.model.Milepost;
 import com.trihydro.library.model.OdeProps;
 import com.trihydro.library.model.TimQuery;
 import com.trihydro.library.model.WydotRsu;
 import com.trihydro.library.model.WydotTravelerInputData;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import us.dot.its.jpo.ode.plugin.RoadSideUnit.RSU;
 import us.dot.its.jpo.ode.plugin.SnmpProtocol;
 
@@ -27,8 +28,8 @@ import org.springframework.web.client.RestClientException;
 
 @Component
 public class OdeService {
-
-    private Gson gson = new Gson();
+    private final Logger logger = LoggerFactory.getLogger(OdeService.class);
+    private final Gson gson = new Gson();
     private RestTemplateProvider restTemplateProvider;
     private Utility utility;
     private OdeProps odeProps;
@@ -41,7 +42,7 @@ public class OdeService {
     }
 
     public String sendNewTimToRsu(WydotTravelerInputData timToSend) {
-        utility.logWithDate("Sending the following new TIM to ODE for processing: " + gson.toJson(timToSend));
+        logger.info("Sending the following new TIM to ODE for processing: {}", gson.toJson(timToSend));
         String exMsg = "";
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
@@ -50,39 +51,33 @@ public class OdeService {
                 .exchange(odeProps.getOdeUrl() + "/tim", HttpMethod.POST, entity, String.class);
         if (response.getStatusCode().series() != HttpStatus.Series.SUCCESSFUL) {
             exMsg = "Failed to send new TIM to RSU: " + response.getBody();
-            utility.logWithDate(exMsg);
-        }
-        return exMsg;
-    }
-
-    public String sendNewTimToSdw(WydotTravelerInputData timToSend, String recordId, List<Milepost> mps) {
-        String exMsg = "";
-
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        HttpEntity<WydotTravelerInputData> entity = new HttpEntity<WydotTravelerInputData>(timToSend, headers);
-        ResponseEntity<String> response = restTemplateProvider.GetRestTemplate_NoErrors()
-                .exchange(odeProps.getOdeUrl() + "/tim", HttpMethod.POST, entity, String.class);
-        if (response.getStatusCode().series() != HttpStatus.Series.SUCCESSFUL) {
-            exMsg = "Failed to send new TIM to SDX: " + response.getBody();
-            utility.logWithDate(exMsg);
+            logger.info(exMsg);
         }
         return exMsg;
     }
 
     public String updateTimOnSdw(WydotTravelerInputData timToSend) {
-
-        String exMsg = "";
+        String exceptionMessage = "";
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         HttpEntity<WydotTravelerInputData> entity = new HttpEntity<WydotTravelerInputData>(timToSend, headers);
-        ResponseEntity<String> response = restTemplateProvider.GetRestTemplate_NoErrors()
-                .exchange(odeProps.getOdeUrl() + "/tim", HttpMethod.PUT, entity, String.class);
-        if (response.getStatusCode().series() != HttpStatus.Series.SUCCESSFUL) {
-            exMsg = "Failed to update TIM on SDX: " + response.getBody();
-            utility.logWithDate(exMsg);
+        logger.debug("Sending updated TIM {} to ODE for processing", gson.toJson(timToSend));
+        try {
+            ResponseEntity<String> response = restTemplateProvider.GetRestTemplate_NoErrors()
+                    .exchange(odeProps.getOdeUrl() + "/tim", HttpMethod.PUT, entity, String.class);
+            if (response.getStatusCode().series() != HttpStatus.Series.SUCCESSFUL) {
+                if (response.getBody() != null) {
+                    exceptionMessage = "Failed to update TIM on SDX: " + response.getBody();
+                } else {
+                    exceptionMessage = "Failed to update TIM on SDX: " + response.getStatusCode();
+                }
+                logger.error(exceptionMessage);
+            }
+        } catch (RestClientException e) {
+            exceptionMessage = "An exception occurred while updating TIM on SDX";
+            logger.error(exceptionMessage, e);
         }
-        return exMsg;
+        return exceptionMessage;
     }
 
     public Integer findFirstAvailableIndexWithRsuIndex(List<Integer> indicies) {
@@ -102,8 +97,10 @@ public class OdeService {
     public TimQuery submitTimQuery(WydotRsu rsu, int counter) {
 
         // stop if this fails twice
-        if (counter == 2)
+        if (counter == 2) {
+            logger.error("Failed to contact ODE to query TIMs on RSU {} after 2 attempts", rsu.getRsuTarget());
             return null;
+        }
 
         // tim query to ODE
         var odeRsu = new RSU();
@@ -118,9 +115,9 @@ public class OdeService {
         headers.setContentType(MediaType.APPLICATION_JSON);
         HttpEntity<String> entity = new HttpEntity<String>(rsuJson, headers);
 
-        String responseStr = null;
-
+        String responseStr;
         try {
+            logger.debug("Sending TIM query to ODE for RSU with rsuJson: {} and headers: {}", rsuJson, headers);
             responseStr = restTemplateProvider.GetRestTemplate().postForObject(odeProps.getOdeUrl() + "/tim/query",
                     entity, String.class);
         } catch (RestClientException e) {
@@ -131,13 +128,13 @@ public class OdeService {
                 .replaceAll("\\{", "").replaceAll("\\}", "").replaceAll("\\[", "").replaceAll(" ", "")
                 .replaceAll("\\]", "").replaceAll("\\s", "").split(",");
 
-        List<Integer> results = new ArrayList<Integer>();
+        List<Integer> results = new ArrayList<>();
 
         for (int i = 0; i < items.length; i++) {
             try {
                 results.add(Integer.parseInt(items[i]));
             } catch (NumberFormatException nfe) {
-                // NOTE: write something here if you need to recover from formatting errors
+                logger.warn("Failed to parse TIM index from ODE response: {}", items[i]);
             }
         }
 
@@ -145,6 +142,7 @@ public class OdeService {
 
         TimQuery timQuery = new TimQuery();
         timQuery.setIndicies_set(results);
+        logger.debug("Received TIM query response from ODE: {}", timQuery);
         return timQuery;
     }
 
@@ -157,7 +155,7 @@ public class OdeService {
         headers.setContentType(MediaType.APPLICATION_JSON);
         HttpEntity<String> entity = new HttpEntity<String>(rsuJson, headers);
 
-        utility.logWithDate("Deleting TIM on index " + index.toString() + " from rsu " + rsu.getRsuTarget());
+        logger.info("Deleting TIM on index {} from rsu {}", index.toString(), rsu.getRsuTarget());
 
         try {
             // ODE response is misleading due to poor interpretation of SNMP results. If we
@@ -167,7 +165,7 @@ public class OdeService {
                     odeProps.getOdeUrl() + "/tim?index=" + index.toString(), HttpMethod.DELETE, entity, String.class);
         } catch (RestClientException ex) {
             exMsg = "Failed to contact ODE to delete message from index " + index + " on RSU " + rsu.getRsuTarget();
-            utility.logWithDate(exMsg);
+            logger.info(exMsg);
         }
 
         return exMsg;

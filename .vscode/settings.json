@@ -8,5 +8,9 @@
     "java.test.config": {
         "name": "Allow Reflection",
         "vmArgs": ["--add-opens", "java.base/java.time=ALL-UNNAMED"] // allows the ValidateSdx tests, which use reflection, to run
-    }
+    },
+    "coverage-gutters.coverageFileNames": [
+        "jacoco.xml"
+    ],
+    "coverage-gutters.coverageBaseDir": "**/target/site/jacoco"
 }

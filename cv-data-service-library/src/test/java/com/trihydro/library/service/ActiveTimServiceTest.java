@@ -1,5 +1,6 @@
 package com.trihydro.library.service;
 
+import static org.mockito.Mockito.lenient;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Matchers.any;
@@ -7,10 +8,11 @@ import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
+import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import com.trihydro.library.model.ActiveRsuTimQueryModel;
@@ -24,80 +26,41 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.ResponseEntity;
+import org.mockito.Mockito;
+import org.springframework.test.web.client.MockRestServiceServer;
 import org.springframework.web.client.RestClientException;
+import org.springframework.web.client.RestTemplate;
 
-public class ActiveTimServiceTest extends BaseServiceTest {
+class ActiveTimServiceTest {
     @Mock
-    private ResponseEntity<TimUpdateModel[]> mockResponseEntity;
-    @Mock
-    private ResponseEntity<Boolean> mockResponseEntityBoolean;
-    @Mock
-    private ResponseEntity<ActiveTim[]> mockResponseEntityActiveTims;
-    @Mock
-    private ResponseEntity<Integer[]> mockResponseEntityIntegerArray;
-    @Mock
-    private ResponseEntity<String> mockResponseEntityString;
-    @Mock
-    private ResponseEntity<TimUpdateModel[]> mockResponseEntityTimUpdateModelArray;
-    @Mock
-    private ResponseEntity<ActiveTim> mockResponseEntityActiveTim;
-    @Mock
-    private CVRestServiceProps mockConfig;
+    RestTemplateProvider mockRestTemplateProvider;
 
-    private Long timTypeId = -1l;
-    private List<WydotTim> wydotTims;
-    private ActiveTim[] aTims;
-    private ActiveTim aTim;
-    private TimUpdateModel[] tumArr;
-    private String baseUrl = "baseUrl";
+    @Mock
+    CVRestServiceProps mockConfig;
+
+    Long timTypeId = -1L;
+    List<WydotTim> wydotTims;
 
     @InjectMocks
-    private ActiveTimService uut;
+    ActiveTimService uut;
+
+    String baseUrl = "http://localhost:8080";
+    RestTemplate restTemplate = new RestTemplate();
+
+    @Mock
+    MockRestServiceServer mockServer = MockRestServiceServer.bindTo(restTemplate).build();
 
     @BeforeEach
-    public void setupSubTest() throws SQLException {
-        doReturn(baseUrl).when(mockConfig).getCvRestService();
+    void setupSubTest() {
+        mockRestTemplateProvider = Mockito.mock(RestTemplateProvider.class);
+        mockConfig = Mockito.mock(CVRestServiceProps.class);
+        uut = new ActiveTimService();
+        uut.InjectDependencies(mockConfig, mockRestTemplateProvider);
+        lenient().when(mockRestTemplateProvider.GetRestTemplate()).thenReturn(restTemplate);
+        when(mockConfig.getCvRestService()).thenReturn(baseUrl);
     }
 
-    private void setupBooleanReturn() {
-        doReturn(true).when(mockResponseEntityBoolean).getBody();
-    }
-
-    private void setupIntegerArrayReturn() {
-        Integer[] intArray = new Integer[3];
-        intArray[0] = 0;
-        intArray[1] = 1;
-        intArray[2] = 2;
-        when(mockResponseEntityIntegerArray.getBody()).thenReturn(intArray);
-    }
-
-    private void setupActiveTimArrayReturn() {
-        aTims = new ActiveTim[1];
-        aTim = new ActiveTim();
-        aTim.setActiveTimId(-1l);
-        aTims[0] = aTim;
-        doReturn(aTims).when(mockResponseEntityActiveTims).getBody();
-    }
-
-    private void setupActiveTimReturn() {
-        aTim = new ActiveTim();
-        aTim.setActiveTimId(-1l);
-        doReturn(aTim).when(mockResponseEntityActiveTim).getBody();
-    }
-
-    private void setupTUMReturn() {
-        tumArr = new TimUpdateModel[1];
-        TimUpdateModel tum = new TimUpdateModel();
-        tum.setActiveTimId(-1l);
-        tum.setClientId("testClient");
-        tumArr[0] = tum;
-        when(mockResponseEntityTimUpdateModelArray.getBody()).thenReturn(tumArr);
-    }
-
-    private void setupWydotTims() {
+    void setupWydotTims() {
         wydotTims = new ArrayList<>();
         WydotTim wydotTim = new WydotTim();
         wydotTim.setDirection("d");
@@ -110,37 +73,37 @@ public class ActiveTimServiceTest extends BaseServiceTest {
     }
 
     @Test
-    public void updateActiveTim_SatRecordId() {
-        // Arrange
-        setupBooleanReturn();
-        Long activeTimId = -1l;
+    void updateActiveTim_SatRecordId() {
+        // prepare
+        Long activeTimId = -1L;
         String satRecordId = "asdf";
-        HttpEntity<String> entity = getEntity(null, String.class);
         String url = String.format("%s/active-tim/update-sat-record-id/%d/%s", baseUrl, activeTimId, satRecordId);
-        when(mockRestTemplate.exchange(url, HttpMethod.PUT, entity, Boolean.class)).thenReturn(mockResponseEntityBoolean);
+        String jsonString = "true";
+        mockServer.expect(requestTo(url)).andRespond(withSuccess(jsonString, org.springframework.http.MediaType.APPLICATION_JSON));
 
-        // Act
+        // execute
         Boolean data = uut.updateActiveTim_SatRecordId(activeTimId, satRecordId);
 
-        // Assert
-        verify(mockRestTemplate).exchange(url, HttpMethod.PUT, entity, Boolean.class);
+        // verify
+        mockServer.verify();
         Assertions.assertTrue(data, "Update failed when should have succeeded");
     }
 
     @Test
-    public void addItisCodesToActiveTim() {
-        // Arrange
-        setupIntegerArrayReturn();
+    void addItisCodesToActiveTim() {
+        // prepare
         ActiveTim activeTim = new ActiveTim();
-        activeTim.setActiveTimId(-1l);
+        activeTim.setActiveTimId(-1L);
         String url = String.format("%s/active-tim/itis-codes/%d", baseUrl, activeTim.getActiveTimId());
-        when(mockRestTemplate.getForEntity(url, Integer[].class)).thenReturn(mockResponseEntityIntegerArray);
+        String jsonString = "[0, 1, 2]";
+        mockServer.expect(requestTo(url))
+            .andRespond(withSuccess(jsonString, org.springframework.http.MediaType.APPLICATION_JSON));
 
-        // Act
+        // execute
         uut.addItisCodesToActiveTim(activeTim);
 
-        // Assert
-        verify(mockRestTemplate).getForEntity(url, Integer[].class);
+        // verify
+        mockServer.verify();
         Assertions.assertEquals(3, activeTim.getItisCodes().size());
         Assertions.assertEquals(Integer.valueOf(0), activeTim.getItisCodes().get(0));
         Assertions.assertEquals(Integer.valueOf(1), activeTim.getItisCodes().get(1));
@@ -148,52 +111,53 @@ public class ActiveTimServiceTest extends BaseServiceTest {
     }
 
     @Test
-    public void deleteActiveTim() {
-        // Arrange
-        setupBooleanReturn();
-        Long activeTimId = -1l;
+    void deleteActiveTim() {
+        // prepare
+        Long activeTimId = -1L;
         String url = String.format("%s/active-tim/delete-id/%d", baseUrl, activeTimId);
-        HttpEntity<String> entity = getEntity(null, String.class);
-        when(mockRestTemplate.exchange(url, HttpMethod.DELETE, entity, Boolean.class)).thenReturn(mockResponseEntityBoolean);
+        String jsonString = "true";
+        mockServer.expect(requestTo(url)).andRespond(withSuccess(jsonString, org.springframework.http.MediaType.APPLICATION_JSON));
 
-        // Act
+        // execute
         boolean data = uut.deleteActiveTim(activeTimId);
 
-        // Assert
-        verify(mockRestTemplate).exchange(url, HttpMethod.DELETE, entity, Boolean.class);
+        // verify
+        mockServer.verify();
         Assertions.assertTrue(data, "Reported failure when success");
     }
 
     @Test
-    public void deleteActiveTimsById() throws SQLException {
-        // Arrange
-        setupBooleanReturn();
+    void deleteActiveTimsById() throws SQLException {
+        // prepare
         List<Long> activeTimIds = new ArrayList<Long>();
-        activeTimIds.add(-1l);
-        activeTimIds.add(-2l);
-        HttpEntity<List<Long>> entity = new HttpEntity<List<Long>>(activeTimIds, getDefaultHeaders());
-        when(mockRestTemplate.exchange(baseUrl + "/active-tim/delete-ids", HttpMethod.DELETE, entity, Boolean.class)).thenReturn(mockResponseEntityBoolean);
+        activeTimIds.add(-1L);
+        activeTimIds.add(-2L);
+        String url = String.format("%s/active-tim/delete-ids", baseUrl);
+        String jsonString = "true";
+        mockServer.expect(requestTo(url))
+                .andRespond(withSuccess(jsonString, org.springframework.http.MediaType.APPLICATION_JSON));
 
-        // Act
+        // execute
         boolean success = uut.deleteActiveTimsById(activeTimIds);
 
-        // Assert
+        // verify
         Assertions.assertTrue(success);
     }
 
     @Test
-    public void getActiveTimIndicesByRsu() {
-        // Arrange
-        setupIntegerArrayReturn();
+    void getActiveTimIndicesByRsu() {
+        // prepare
         String rsuTarget = "10.10.10.10";
         String url = String.format("%s/active-tim/indices-rsu/%s", baseUrl, rsuTarget);
-        when(mockRestTemplate.getForEntity(url, Integer[].class)).thenReturn(mockResponseEntityIntegerArray);
+        String jsonString = "[0, 1, 2]";
+        mockServer.expect(requestTo(url))
+                .andRespond(withSuccess(jsonString, org.springframework.http.MediaType.APPLICATION_JSON));
 
-        // Act
+        // execute
         List<Integer> data = uut.getActiveTimIndicesByRsu(rsuTarget);
 
-        // Assert
-        verify(mockRestTemplate).getForEntity(url, Integer[].class);
+        // verify
+        mockServer.verify();
         Assertions.assertEquals(3, data.size());
         Assertions.assertEquals(Integer.valueOf(0), data.get(0));
         Assertions.assertEquals(Integer.valueOf(1), data.get(1));
@@ -201,302 +165,492 @@ public class ActiveTimServiceTest extends BaseServiceTest {
     }
 
     @Test
-    public void getActiveTimsByWydotTim() throws SQLException {
-        // Arrange
+    void getActiveTimsByWydotTim() throws SQLException {
+        // prepare
         setupWydotTims();
-        setupActiveTimArrayReturn();
-        HttpEntity<List<WydotTim>> entity = new HttpEntity<List<WydotTim>>(wydotTims, getDefaultHeaders());
-        when(mockRestTemplate.exchange(baseUrl + "/active-tim/get-by-wydot-tim/" + timTypeId, HttpMethod.POST, entity, ActiveTim[].class)).thenReturn(mockResponseEntityActiveTims);
+        String url = String.format("%s/active-tim/get-by-wydot-tim/%d", baseUrl, timTypeId);
+        String jsonString = "[{\"activeTimId\":-1,\"direction\":\"d\",\"clientId\":\"unit_test_id1\"}]";
+        mockServer.expect(requestTo(url))
+                .andRespond(withSuccess(jsonString, org.springframework.http.MediaType.APPLICATION_JSON));
 
-        // Act
+        // execute
         List<ActiveTim> data = uut.getActiveTimsByWydotTim(wydotTims, timTypeId);
 
-        // Assert
+        // verify
         Assertions.assertNotNull(data);
         Assertions.assertEquals(1, data.size());
-        Assertions.assertEquals(aTim, data.get(0));
+        Assertions.assertEquals(-1L, data.get(0).getActiveTimId());
     }
 
     @Test
-    public void getActiveTimsByClientIdDirection() {
-        // Arrange
-        setupActiveTimArrayReturn();
+    void getActiveTimsByClientIdDirection_SingleTim() {
+        // prepare
+        String clientId = "clientId";
+        String direction = "westward";
+        String url = String.format("%s/active-tim/client-id-direction/%s/%d/%s", baseUrl, clientId, timTypeId,
+                direction);
+        String jsonString = "[{\"activeTimId\":-1,\"direction\":\"d\",\"clientId\":\"unit_test_id1\"}]";
+        mockServer.expect(requestTo(url))
+                .andRespond(withSuccess(jsonString, org.springframework.http.MediaType.APPLICATION_JSON));
+
+        // execute
+        List<ActiveTim> data = uut.getActiveTimsByClientIdDirection(clientId, timTypeId, direction);
+
+        // verify
+        mockServer.verify();
+        Assertions.assertEquals(1, data.size());
+        Assertions.assertEquals(-1L, data.get(0).getActiveTimId());
+    }
+
+    @Test
+    void getActiveTimByClientIdDirection_MultipleTims() {
+        // prepare
         String clientId = "clientId";
         String direction = "westward";
         String url = String.format("%s/active-tim/client-id-direction/%s/%d/%s", baseUrl, clientId, timTypeId, direction);
-        when(mockRestTemplate.getForEntity(url, ActiveTim[].class)).thenReturn(mockResponseEntityActiveTims);
+        String jsonString = "[{\"activeTimId\":-1,\"direction\":\"d\",\"clientId\":\"unit_test_id1\"},"
+                + "{\"activeTimId\":-2,\"direction\":\"d\",\"clientId\":\"unit_test_id2\"}]";
+        mockServer.expect(requestTo(url))
+                .andRespond(withSuccess(jsonString, org.springframework.http.MediaType.APPLICATION_JSON));
 
-        // Act
+        // execute
         List<ActiveTim> data = uut.getActiveTimsByClientIdDirection(clientId, timTypeId, direction);
 
-        // Assert
-        verify(mockRestTemplate).getForEntity(url, ActiveTim[].class);
-        Assertions.assertEquals(Arrays.asList(aTims), data);
+        // verify
+        mockServer.verify();
+        Assertions.assertEquals(2, data.size());
+        Assertions.assertEquals(-1L, data.get(0).getActiveTimId());
+        Assertions.assertEquals(-2L, data.get(1).getActiveTimId());
     }
 
     @Test
-    public void getBufferTimsByClientId() {
-        // Arrange
-        setupActiveTimArrayReturn();
+    void getActiveTimByClientIdDirection_NoTims() {
+        // prepare
+        String clientId = "clientId";
+        String direction = "westward";
+        String url = String.format("%s/active-tim/client-id-direction/%s/%d/%s", baseUrl, clientId, timTypeId,
+                direction);
+        String jsonString = "[]";
+        mockServer.expect(requestTo(url))
+                .andRespond(withSuccess(jsonString, org.springframework.http.MediaType.APPLICATION_JSON));
+
+        // execute
+        List<ActiveTim> data = uut.getActiveTimsByClientIdDirection(clientId, timTypeId, direction);
+
+        // verify
+        mockServer.verify();
+        Assertions.assertEquals(0, data.size());
+    }
+
+    @Test
+    void getActiveTimByClientIdDirection_ObjectInsteadOfArray() {
+        // prepare
+        String clientId = "clientId";
+        String direction = "westward";
+        String url = String.format("%s/active-tim/client-id-direction/%s/%d/%s", baseUrl, clientId, timTypeId,
+                direction);
+        String jsonString = "{\"key\": \"value\"}";
+        mockServer.expect(requestTo(url))
+                .andRespond(withSuccess(jsonString, org.springframework.http.MediaType.APPLICATION_JSON));
+
+        // execute
+        List<ActiveTim> data = uut.getActiveTimsByClientIdDirection(clientId, timTypeId, direction);
+
+        // verify
+        mockServer.verify();
+        Assertions.assertEquals(0, data.size());
+    }
+
+    @Test
+    void getBufferTimsByClientId_SingleTim() {
+        // prepare
         String clientId = "clientId";
         String url = String.format("%s/active-tim/buffer-tims/%s", baseUrl, clientId);
-        when(mockRestTemplate.getForEntity(url, ActiveTim[].class)).thenReturn(mockResponseEntityActiveTims);
+        String jsonString = "[{\"activeTimId\":-1,\"direction\":\"d\",\"clientId\":\"unit_test_id1\"}]";
+        mockServer.expect(requestTo(url))
+                .andRespond(withSuccess(jsonString, org.springframework.http.MediaType.APPLICATION_JSON));
 
-        // Act
+        // execute
         List<ActiveTim> data = uut.getBufferTimsByClientId(clientId);
 
-        // Assert
-        verify(mockRestTemplate).getForEntity(url, ActiveTim[].class);
-        Assertions.assertEquals(Arrays.asList(aTims), data);
+        // verify
+        mockServer.verify();
+        Assertions.assertEquals(1, data.size());
+        Assertions.assertEquals(-1L, data.get(0).getActiveTimId());
     }
 
     @Test
-    public void getExpiredActiveTims() {
-        // Arrange
-        setupActiveTimArrayReturn();
-        String url = String.format("%s/active-tim/expired?limit=500", baseUrl);
-        when(mockRestTemplate.getForEntity(url, ActiveTim[].class)).thenReturn(mockResponseEntityActiveTims);
+    void getBufferTimsByClientId_MultipleTims() {
+        // prepare
+        String clientId = "clientId";
+        String url = String.format("%s/active-tim/buffer-tims/%s", baseUrl, clientId);
+        String jsonString = "[{\"activeTimId\":-1,\"direction\":\"d\",\"clientId\":\"unit_test_id1\"},"
+                + "{\"activeTimId\":-2,\"direction\":\"d\",\"clientId\":\"unit_test_id2\"}]";
+        mockServer.expect(requestTo(url))
+                .andRespond(withSuccess(jsonString, org.springframework.http.MediaType.APPLICATION_JSON));
 
-        // Act
+        // execute
+        List<ActiveTim> data = uut.getBufferTimsByClientId(clientId);
+
+        // verify
+        mockServer.verify();
+        Assertions.assertEquals(2, data.size());
+        Assertions.assertEquals(-1L, data.get(0).getActiveTimId());
+        Assertions.assertEquals(-2L, data.get(1).getActiveTimId());
+    }
+
+    @Test
+    void getBufferTimsByClientId_NoTims() {
+        // prepare
+        String clientId = "clientId";
+        String url = String.format("%s/active-tim/buffer-tims/%s", baseUrl, clientId);
+        String jsonString = "[]";
+        mockServer.expect(requestTo(url))
+                .andRespond(withSuccess(jsonString, org.springframework.http.MediaType.APPLICATION_JSON));
+
+        // execute
+        List<ActiveTim> data = uut.getBufferTimsByClientId(clientId);
+
+        // verify
+        mockServer.verify();
+        Assertions.assertEquals(0, data.size());
+    }
+
+    @Test
+    void getBufferTimsByClientId_ObjectInsteadOfArray() {
+        // prepare
+        String clientId = "clientId";
+        String url = String.format("%s/active-tim/buffer-tims/%s", baseUrl, clientId);
+        String jsonString = "{\"key\": \"value\"}";
+        mockServer.expect(requestTo(url))
+                .andRespond(withSuccess(jsonString, org.springframework.http.MediaType.APPLICATION_JSON));
+
+        // execute
+        List<ActiveTim> data = uut.getBufferTimsByClientId(clientId);
+
+        // verify
+        mockServer.verify();
+        Assertions.assertEquals(0, data.size());
+    }
+
+    @Test
+    void getExpiredActiveTims() {
+        // prepare
+        String url = String.format("%s/active-tim/expired?limit=500", baseUrl);
+        String jsonString = "[{\"activeTimId\":-1,\"direction\":\"d\",\"clientId\":\"unit_test_id1\"}]";
+        mockServer.expect(requestTo(url))
+                .andRespond(withSuccess(jsonString, org.springframework.http.MediaType.APPLICATION_JSON));
+
+        // execute
         List<ActiveTim> data = uut.getExpiredActiveTims(500);
 
-        // Assert
-        verify(mockRestTemplate).getForEntity(url, ActiveTim[].class);
+        // verify
+        mockServer.verify();
         Assertions.assertEquals(1, data.size());
-        Assertions.assertEquals(Arrays.asList(aTims), data);
+        Assertions.assertEquals(-1L, data.get(0).getActiveTimId());
     }
 
     @Test
-    public void getActivesTimByType() {
-        // Arrange
-        setupActiveTimArrayReturn();
+    void getActivesTimByType() {
+        // prepare
         String url = String.format("%s/active-tim/tim-type-id/%d", baseUrl, timTypeId);
-        when(mockRestTemplate.getForEntity(url, ActiveTim[].class)).thenReturn(mockResponseEntityActiveTims);
+        String jsonString = "[{\"activeTimId\":-1,\"direction\":\"d\",\"clientId\":\"unit_test_id1\"}]";
+        mockServer.expect(requestTo(url))
+                .andRespond(withSuccess(jsonString, org.springframework.http.MediaType.APPLICATION_JSON));
 
-        // Act
+        // execute
         List<ActiveTim> data = uut.getActivesTimByType(timTypeId);
 
-        // Assert
-        verify(mockRestTemplate).getForEntity(url, ActiveTim[].class);
-        Assertions.assertEquals(Arrays.asList(aTims), data);
+        // verify
+        mockServer.verify();
+        Assertions.assertEquals(1, data.size());
+        Assertions.assertEquals(-1L, data.get(0).getActiveTimId());
     }
 
     @Test
-    public void getActiveRsuTim() {
-        // Arrange
-        setupActiveTimReturn();
+    void getActiveRsuTim() {
+        // prepare
         String clientId = "clientId";
         String direction = "westward";
         String ipv4Address = "10.10.10.10";
         String url = String.format("%s/active-tim/active-rsu-tim", baseUrl);
         ActiveRsuTimQueryModel artqm = new ActiveRsuTimQueryModel(direction, clientId, ipv4Address);
-        HttpEntity<ActiveRsuTimQueryModel> entity = getEntity(artqm, ActiveRsuTimQueryModel.class);
-        when(mockRestTemplate.exchange(url, HttpMethod.POST, entity, ActiveTim.class)).thenReturn(mockResponseEntityActiveTim);
+        String jsonString = "{\"activeTimId\":-1,\"direction\":\"d\",\"clientId\":\"unit_test_id1\"}";
+        mockServer.expect(requestTo(url)).andRespond(withSuccess(jsonString, org.springframework.http.MediaType.APPLICATION_JSON));
 
-        // Act
+        // execute
         ActiveTim data = uut.getActiveRsuTim(artqm);
 
-        // Assert
-        verify(mockRestTemplate).exchange(url, HttpMethod.POST, entity, ActiveTim.class);
-        Assertions.assertEquals(aTim, data);
+        // verify
+        mockServer.verify();
+        Assertions.assertNotNull(data);
+        Assertions.assertEquals(-1L, data.getActiveTimId());
     }
 
     @Test
-    public void getExpiringActiveTims() {
-        // Arrange
-        setupTUMReturn();
+    void getExpiringActiveTims() {
+        // prepare
         String url = String.format("%s/active-tim/expiring", baseUrl);
-        when(mockRestTemplate.getForEntity(url, TimUpdateModel[].class)).thenReturn(mockResponseEntityTimUpdateModelArray);
+        String jsonString = "[{\"activeTimId\":-1,\"direction\":\"d\",\"clientId\":\"unit_test_id1\"}]";
+        mockServer.expect(requestTo(url)).andRespond(withSuccess(jsonString, org.springframework.http.MediaType.APPLICATION_JSON));
 
-        // Act
+        // execute
         List<TimUpdateModel> data = uut.getExpiringActiveTims();
 
-        // Assert
-        verify(mockRestTemplate).getForEntity(url, TimUpdateModel[].class);
+        // verify
+        mockServer.verify();
         Assertions.assertEquals(1, data.size());
-        Assertions.assertEquals(Arrays.asList(tumArr), data);
+        Assertions.assertEquals(-1L, data.get(0).getActiveTimId());
     }
 
     @Test
-    public void getActiveTimsMissingItisCodes() throws SQLException {
-        // Arrange
-        TimUpdateModel[] tums = new TimUpdateModel[1];
-        TimUpdateModel tum = new TimUpdateModel();
-        tum.setTimId(1l);
-        tum.setDirection("both");
-        tum.setRoute("I 80");
-        tum.setClientId("123");
-        tum.setSatRecordId("HEX");
-        tum.setActiveTimId(1l);
-        tums[0] = tum;
+    void getActiveTimsMissingItisCodes() throws SQLException {
+        // prepare
+        String url = String.format("%s/active-tim/missing-itis", baseUrl);
+        String jsonString = "[{\"timId\":1,\"direction\":\"both\",\"route\":\"I 80\",\"clientId\":\"123\",\"satRecordId\":\"HEX\",\"activeTimId\":1}]";
+        mockServer.expect(requestTo(url))
+                .andRespond(withSuccess(jsonString, org.springframework.http.MediaType.APPLICATION_JSON));
 
-        when(mockRestTemplate.getForEntity(baseUrl + "/active-tim/missing-itis", TimUpdateModel[].class)).thenReturn(mockResponseEntity);
-        when(mockResponseEntity.getBody()).thenReturn(tums);
-        // Act
+        // execute
         List<ActiveTim> ats = uut.getActiveTimsMissingItisCodes();
 
-        // Assert
+        // verify
+        mockServer.verify();
         Assertions.assertEquals(1, ats.size());
         ActiveTim tim = ats.get(0);
-        Assertions.assertEquals(tum, tim);
+        Assertions.assertEquals(1, tim.getTimId());
+        Assertions.assertEquals("both", tim.getDirection());
+        Assertions.assertEquals("I 80", tim.getRoute());
+        Assertions.assertEquals("123", tim.getClientId());
+        Assertions.assertEquals("HEX", tim.getSatRecordId());
+        Assertions.assertEquals(1, tim.getActiveTimId());
     }
 
     @Test
-    public void getActiveTimsNotSent() {
-        // Arrange
-        TimUpdateModel[] tums = new TimUpdateModel[1];
-        TimUpdateModel tum = new TimUpdateModel();
-        tum.setTimId(1l);
-        tum.setDirection("both");
-        tum.setRoute("I 80");
-        tum.setClientId("123");
-        tum.setSatRecordId("HEX");
-        tum.setActiveTimId(1l);
-        tums[0] = tum;
-        when(mockRestTemplate.getForEntity(baseUrl + "/active-tim/not-sent", TimUpdateModel[].class)).thenReturn(mockResponseEntity);
-        when(mockResponseEntity.getBody()).thenReturn(tums);
+    void getActiveTimsNotSent() {
+        // prepare
+        String url = String.format("%s/active-tim/not-sent", baseUrl);
+        String jsonString = "[{\"timId\":1,\"direction\":\"both\",\"route\":\"I 80\",\"clientId\":\"123\",\"satRecordId\":\"HEX\",\"activeTimId\":1}]";
+        mockServer.expect(requestTo(url))
+                .andRespond(withSuccess(jsonString, org.springframework.http.MediaType.APPLICATION_JSON));
 
-        // Act
+        // execute
         List<ActiveTim> ats = uut.getActiveTimsNotSent();
 
-        // Assert
+        // verify
+        mockServer.verify();
         Assertions.assertEquals(1, ats.size());
         ActiveTim tim = ats.get(0);
-        Assertions.assertEquals(tum, tim);
+        Assertions.assertEquals(1, tim.getTimId());
+        Assertions.assertEquals("both", tim.getDirection());
+        Assertions.assertEquals("I 80", tim.getRoute());
+        Assertions.assertEquals("123", tim.getClientId());
+        Assertions.assertEquals("HEX", tim.getSatRecordId());
+        Assertions.assertEquals(1, tim.getActiveTimId());
     }
 
     @Test
-    public void getActiveTimsForSDX_success() {
-        // Arrange
-        setupActiveTimArrayReturn();
-        when(mockRestTemplate.getForEntity(baseUrl + "/active-tim/all-sdx", ActiveTim[].class)).thenReturn(mockResponseEntityActiveTims);
+    void getActiveTimsForSDX_success() {
+        // prepare
+        String url = String.format("%s/active-tim/all-sdx", baseUrl);
+        String jsonString = "[{\"activeTimId\":-1,\"direction\":\"d\",\"clientId\":\"unit_test_id1\"}]";
+        mockServer.expect(requestTo(url))
+                .andRespond(withSuccess(jsonString, org.springframework.http.MediaType.APPLICATION_JSON));
 
-        // Act
+        // execute
         List<ActiveTim> result = uut.getActiveTimsForSDX();
 
-        // Assert
-        Assertions.assertEquals(aTims.length, result.size());
-        Assertions.assertEquals(aTim, result.get(0));
+        // verify
+        mockServer.verify();
+        Assertions.assertEquals(1, result.size());
+        Assertions.assertEquals(-1L, result.get(0).getActiveTimId());
     }
 
     @Test
-    public void getActiveTimsForSDX_throwsError() {
-        // Arrange
-        when(mockRestTemplate.getForEntity(baseUrl + "/active-tim/all-sdx", ActiveTim[].class)).thenThrow(new RestClientException("timeout"));
+    void getActiveTimsForSDX_throwsError() {
+        // prepare
+        String url = String.format("%s/active-tim/all-sdx", baseUrl);
+        String jsonString = "{}";
+        mockServer.expect(requestTo(url))
+                .andRespond(withSuccess(jsonString, org.springframework.http.MediaType.APPLICATION_JSON));
 
-        // Act
+        // execute
         Assertions.assertThrows(RestClientException.class, () -> {
             uut.getActiveTimsForSDX();
         });
     }
 
     @Test
-    public void getActiveTimsWithItisCodesWithExclusions_success() {
-        // Arrange
-        setupActiveTimArrayReturn();
-        when(mockRestTemplate.getForEntity(baseUrl + "/active-tim/all-with-itis?excludeVslAndParking=true", ActiveTim[].class)).thenReturn(mockResponseEntityActiveTims);
+    void getActiveTimsWithItisCodesWithExclusions_success() {
+        // prepare
+        String url = String.format("%s/active-tim/all-with-itis?excludeVslAndParking=true", baseUrl);
+        String jsonString = "[{\"activeTimId\":-1,\"direction\":\"d\",\"clientId\":\"unit_test_id1\"}]";
+        mockServer.expect(requestTo(url))
+                .andRespond(withSuccess(jsonString, org.springframework.http.MediaType.APPLICATION_JSON));
 
-        // Act
+        // execute
         List<ActiveTim> result = uut.getActiveTimsWithItisCodes(true);
 
-        // Assert
-        Assertions.assertEquals(aTims.length, result.size());
-        Assertions.assertEquals(aTim, result.get(0));
+        // verify
+        mockServer.verify();
+        Assertions.assertEquals(1, result.size());
+        Assertions.assertEquals(-1L, result.get(0).getActiveTimId());
     }
 
     @Test
-    public void getActiveTimsWithItisCodes_success() {
-        // Arrange
-        setupActiveTimArrayReturn();
-        when(mockRestTemplate.getForEntity(baseUrl + "/active-tim/all-with-itis?excludeVslAndParking=false", ActiveTim[].class)).thenReturn(mockResponseEntityActiveTims);
+    void getActiveTimsWithItisCodes_success() {
+        // prepare
+        String url = String.format("%s/active-tim/all-with-itis?excludeVslAndParking=false", baseUrl);
+        String jsonString = "[{\"activeTimId\":-1,\"direction\":\"d\",\"clientId\":\"unit_test_id1\"}]";
+        mockServer.expect(requestTo(url))
+                .andRespond(withSuccess(jsonString, org.springframework.http.MediaType.APPLICATION_JSON));
 
-        // Act
+        // execute
         List<ActiveTim> result = uut.getActiveTimsWithItisCodes(false);
 
-        // Assert
-        Assertions.assertEquals(aTims.length, result.size());
-        Assertions.assertEquals(aTim, result.get(0));
+        // verify
+        mockServer.verify();
+        Assertions.assertEquals(1, result.size());
+        Assertions.assertEquals(-1L, result.get(0).getActiveTimId());
     }
 
     @Test
-    public void getActiveTimsWithItisCodes_throwsError() {
-        // Arrange
-        when(mockRestTemplate.getForEntity(anyString(), eq(ActiveTim[].class))).thenThrow(new RestClientException("timeout"));
+    void getActiveTimsWithItisCodes_throwsError() {
+        // prepare
+        String url = String.format("%s/active-tim/all-with-itis?excludeVslAndParking=true", baseUrl);
+        String jsonString = "{}";
+        mockServer.expect(requestTo(url))
+                .andRespond(withSuccess(jsonString, org.springframework.http.MediaType.APPLICATION_JSON));
 
-        // Act
+        // execute
         Assertions.assertThrows(RestClientException.class, () -> {
             uut.getActiveTimsWithItisCodes(true);
         });
     }
 
     @Test
-    public void updateActiveTimExpiration_SUCCESS() {
-        // Arrange
-        setupBooleanReturn();
+    void updateActiveTimExpiration_SUCCESS() {
+        // prepare
         String packetID = "3C8E8DF2470B1A772E";
         String expDate = "2020-10-20T16:26:07.000Z";
-        HttpEntity<String> entity = getEntity(null, String.class);
         String url = String.format("%s/active-tim/update-expiration/%s/%s", baseUrl, packetID, expDate);
-        when(mockRestTemplate.exchange(url, HttpMethod.PUT, entity, Boolean.class)).thenReturn(mockResponseEntityBoolean);
+        String jsonString = "true";
+        mockServer.expect(requestTo(url)).andRespond(withSuccess(jsonString, org.springframework.http.MediaType.APPLICATION_JSON));
 
-        // Act
+        // execute
         Boolean data = uut.updateActiveTimExpiration(packetID, expDate);
 
-        // Assert
-        verify(mockRestTemplate).exchange(url, HttpMethod.PUT, entity, Boolean.class);
+        // verify
+        mockServer.verify();
         Assertions.assertTrue(data, "Update failed when should have succeeded");
     }
 
     @Test
-    public void updateActiveTimExpiration_FAIL() {
-        // Arrange
-        doReturn(false).when(mockResponseEntityBoolean).getBody();
+    void updateActiveTimExpiration_FAIL() {
+        // prepare
         String packetID = "3C8E8DF2470B1A772E";
         String expDate = "2020-10-20T16:26:07.000Z";
-        HttpEntity<String> entity = getEntity(null, String.class);
         String url = String.format("%s/active-tim/update-expiration/%s/%s", baseUrl, packetID, expDate);
-        when(mockRestTemplate.exchange(url, HttpMethod.PUT, entity, Boolean.class)).thenReturn(mockResponseEntityBoolean);
+        String jsonString = "false";
+        mockServer.expect(requestTo(url)).andRespond(withSuccess(jsonString, org.springframework.http.MediaType.APPLICATION_JSON));
 
-        // Act
+        // execute
         Boolean data = uut.updateActiveTimExpiration(packetID, expDate);
 
-        // Assert
-        verify(mockRestTemplate).exchange(url, HttpMethod.PUT, entity, Boolean.class);
+        // verify
+        mockServer.verify();
         Assertions.assertFalse(data, "Update succeeded when should have failed");
     }
 
     @Test
-    public void getMinExpiration_SUCCESS() {
-        // Arrange
+    void getMinExpiration_SUCCESS() {
+        // prepare
         String packetID = "3C8E8DF2470B1A772E";
         String expDate = "2020-10-20T16:26:07.000Z";
         String minDate = "27-OCT-20 06.21.00.000 PM";
         String url = String.format("%s/active-tim/get-min-expiration/%s/%s", baseUrl, packetID, expDate);
-        doReturn(minDate).when(mockResponseEntityString).getBody();
-        when(mockRestTemplate.getForEntity(url, String.class)).thenReturn(mockResponseEntityString);
+        mockServer.expect(requestTo(url))
+                .andRespond(withSuccess(minDate, org.springframework.http.MediaType.APPLICATION_JSON));
 
-        // Act
+        // execute
         String data = uut.getMinExpiration(packetID, expDate);
 
-        // Assert
-        verify(mockRestTemplate).getForEntity(url, String.class);
+        // verify
+        mockServer.verify();
         Assertions.assertEquals(minDate, data);
+    }
+
+    @Test
+    void markForDeletion_True() {
+        // prepare
+        long activeTimId = 1L;
+        String url = String.format("%s/active-tim/mark-for-deletion/%d", baseUrl, activeTimId);
+        String jsonString = "true";
+        mockServer.expect(requestTo(url))
+            .andRespond(
+                withSuccess(jsonString, org.springframework.http.MediaType.APPLICATION_JSON));
+
+        // execute
+        uut.markForDeletion(activeTimId);
+
+        // verify
+        mockServer.verify();
+    }
+
+    @Test
+    void markForDeletion_False() {
+        // prepare
+        long activeTimId = 1L;
+        String url = String.format("%s/active-tim/mark-for-deletion/%d", baseUrl, activeTimId);
+        String jsonString = "false";
+        mockServer.expect(requestTo(url))
+            .andRespond(
+                withSuccess(jsonString, org.springframework.http.MediaType.APPLICATION_JSON));
+
+        // execute
+        uut.markForDeletion(activeTimId);
+
+        // verify
+        mockServer.verify();
     }
 
     @Test
     void getAllRecords_SuccessfulRetrieval_ShouldReturnRecords() {
         // prepare
-        ActiveTim[] mockActiveTims = new ActiveTim[1];
-        ActiveTim mockActiveTim = new ActiveTim();
-        mockActiveTims[0] = mockActiveTim;
-        ResponseEntity<ActiveTim[]> mockResponseEntity = mock(ResponseEntity.class);
-        when(mockResponseEntity.getBody()).thenReturn(mockActiveTims);
-        when(mockRestTemplate.exchange(anyString(), any(HttpMethod.class), any(HttpEntity.class), eq(ActiveTim[].class))).thenReturn(mockResponseEntity);
+        String url = String.format("%s/active-tim/all", baseUrl);
+        String jsonString = "[{\"activeTimId\":-1,\"direction\":\"d\",\"clientId\":\"unit_test_id1\"}]";
+        mockServer.expect(requestTo(url))
+                .andRespond(withSuccess(jsonString, org.springframework.http.MediaType.APPLICATION_JSON));
 
         // execute
-        List<ActiveTim> records = uut.getAllRecords();
+        List<ActiveTim> data = uut.getAllRecords();
 
         // verify
-        Assertions.assertEquals(mockActiveTims[0], records.get(0));
+        mockServer.verify();
+        Assertions.assertNotNull(data);
+        Assertions.assertEquals(1, data.size());
+        Assertions.assertEquals(-1L, data.get(0).getActiveTimId());
+        Assertions.assertEquals("d", data.get(0).getDirection());
+        Assertions.assertEquals("unit_test_id1", data.get(0).getClientId());
+    }
+
+    @Test
+    void getActivePlannedConditionTims_Success() {
+        // prepare
+        String url = String.format("%s/active-tim/get-active-planned-condition-tims", baseUrl);
+        String jsonString = "[{\"activeTimId\":-1,\"direction\":\"d\",\"clientId\":\"planned-10_trgd_10\"}]";
+        mockServer.expect(requestTo(url))
+                .andRespond(withSuccess(jsonString, org.springframework.http.MediaType.APPLICATION_JSON));
+
+        // execute
+        List<ActiveTim> data = uut.getActivePlannedConditionTims();
+
+        // verify
+        mockServer.verify();
+        Assertions.assertNotNull(data);
+        Assertions.assertEquals(1, data.size());
+        Assertions.assertEquals(-1L, data.get(0).getActiveTimId());
+        Assertions.assertEquals("d", data.get(0).getDirection());
+        Assertions.assertEquals("planned-10_trgd_10", data.get(0).getClientId());
     }
 }

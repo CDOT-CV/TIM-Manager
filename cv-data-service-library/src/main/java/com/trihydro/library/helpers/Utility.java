@@ -4,62 +4,24 @@ import static java.lang.Math.toIntExact;
 
 import java.math.BigDecimal;
 import java.text.DateFormat;
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeParseException;
 import java.util.Date;
-import java.util.TimeZone;
 
+import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
 import org.springframework.stereotype.Component;
 
-import com.google.gson.Gson;
 import com.trihydro.library.model.Coordinate;
 import com.trihydro.library.model.Milepost;
 
 @Component
+@Slf4j
 public class Utility {
-    private final DateFormat utcFormatMilliSec =
-        new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
-    private final DateFormat utcFormatSec = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
-    private final DateFormat utcFormatMin = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm'Z'");
-    public DateFormat timestampFormat = new SimpleDateFormat("dd-MMM-yy hh.mm.ss.SSS a");
-    public DateFormat utcTextFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z[UTC]'");
 
-    public Gson gson = new Gson();
-
-    public Date convertDate(String incomingDate) {
-        Date convertedDate = null;
-        try {
-            if (incomingDate != null) {
-                if (incomingDate.contains("UTC")) {
-                    utcTextFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
-                    convertedDate = utcTextFormat.parse(incomingDate);
-                } else if (incomingDate.contains(".")) {
-                    utcFormatMilliSec.setTimeZone(TimeZone.getTimeZone("UTC"));
-                    convertedDate = utcFormatMilliSec.parse(incomingDate);
-                } else if (incomingDate.length() == 17) {
-                    utcFormatMin.setTimeZone(TimeZone.getTimeZone("UTC"));
-                    convertedDate = utcFormatMin.parse(incomingDate);
-                } else {
-                    utcFormatSec.setTimeZone(TimeZone.getTimeZone("UTC"));
-                    convertedDate = utcFormatSec.parse(incomingDate);
-                }
-            }
-        } catch (ParseException e1) {
-            e1.printStackTrace();
-        }
-        return convertedDate;
-    }
-
-    public <T> void logWithDate(String msg, Class<T> clazz) {
-        logWithDate(clazz.getSimpleName() + ": " + msg);
-    }
-
-    public void logWithDate(String msg) {
-        Date date = new Date();
-        System.out.println(date + " " + msg);
-    }
+    @Deprecated(forRemoval = true)
+    private DateFormat timestampFormat = new SimpleDateFormat("dd-MMM-yy hh.mm.ss.SSS a");
 
     public int getMinutesDurationBetweenTwoDates(String startDateTime, String endDateTime) {
         int duration = getMinutesDurationWithSimpleDateFormat(startDateTime, endDateTime);
@@ -75,8 +37,7 @@ public class Utility {
             try {
                 startDateTimeInZonedDateTime = translateToZonedDateTime(startDateTime);
             } catch (UnrecognizedDateFormatException e) {
-                logWithDate("Failed to parse dates when getting minutes between: " + startDateTime +
-                    " and " + endDateTime + ". Unrecognized date format: " + startDateTime);
+                log.info("Failed to parse dates when getting minutes between: {} and {}. Unrecognized date format: {}", startDateTime, endDateTime, startDateTime);
                 return -1;
             }
 
@@ -84,8 +45,7 @@ public class Utility {
             try {
                 endDateTimeInZonedDateTime = translateToZonedDateTime(endDateTime);
             } catch (UnrecognizedDateFormatException e) {
-                logWithDate("Failed to parse dates when getting minutes between: " + startDateTime +
-                    " and " + endDateTime + ". Unrecognized date format: " + startDateTime);
+                log.info("Failed to parse dates when getting minutes between: {} and {}. Unrecognized date format: {}", startDateTime, endDateTime, startDateTime);
                 return -1;
             }
 
@@ -93,9 +53,7 @@ public class Utility {
                 endDateTimeInZonedDateTime);
         }
         if (duration == -1) {
-            logWithDate(
-                "Failed to parse dates when getting minutes between: " + startDateTime + " and " +
-                    endDateTime);
+            log.info("Failed to parse dates when getting minutes between: {} and {}", startDateTime, endDateTime);
         }
         return duration;
     }
@@ -157,7 +115,7 @@ public class Utility {
      */
     private int getMinutesDurationWithYyMmDdFormat(String startDateTime, String endDateTime) {
         try {
-            SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss"); // TODO: use TABLE_FORMAT here
             Date startDate = simpleDateFormat.parse(startDateTime);
             Date endDate = simpleDateFormat.parse(endDateTime);
 
@@ -199,7 +157,7 @@ public class Utility {
 
         // if not ZonedDateTime or SimpleDateFormat, check for YyMmDdFormat
         try {
-            SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss"); // TODO: use TABLE_FORMAT here
             Date startDate = simpleDateFormat.parse(dateTimeString);
 
             // translate to ZonedDateTime
@@ -326,6 +284,23 @@ public class Utility {
 
         // 9) The anchor coordinate is (anchor latitude, anchor longitude).
         return new Coordinate(anchorLatitude, anchorLongitude);
+    }
+
+    /**
+     * A {@link DateFormat} instance used to represent timestamps in the application
+     * using a custom, possibly legacy format.
+     *
+     * Format pattern: "dd-MMM-yy hh.mm.ss.SSS a"
+     * Example value:  "24-Apr-25 03.45.12.123 PM"
+     *
+     * ⚠ NOTE: The origin and intended use case of this format are unclear, and it may be a candidate for replacement.
+     */
+    public DateFormat getTimestampFormat() {
+        return timestampFormat;
+    }
+
+    public void setTimestampFormat(DateFormat timestampFormat) {
+        this.timestampFormat = timestampFormat;
     }
 
     private static class UnrecognizedDateFormatException extends Exception {

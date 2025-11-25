@@ -1,3 +1,4 @@
 ode-wrapper-*.jar
+*.crt
 *.jks
 *.p12

@@ -7,6 +7,7 @@ import java.sql.SQLException;
 import com.trihydro.library.helpers.SQLNullHandler;
 import com.trihydro.library.tables.TimDbTables;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -21,6 +22,7 @@ import us.dot.its.jpo.ode.plugin.j2735.OdeTravelerInformationMessage;
 
 @CrossOrigin
 @RestController
+@Slf4j
 @RequestMapping("nodexy")
 @ApiIgnore
 public class NodeXYController extends BaseController {
@@ -76,7 +78,7 @@ public class NodeXYController extends BaseController {
             Long nodeXYId = dbInteractions.executeAndLog(preparedStatement, "nodexy");
             return ResponseEntity.ok(nodeXYId);
         } catch (SQLException e) {
-            e.printStackTrace();
+            log.error("Exception", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Long.valueOf(0));
         } finally {
             try {
@@ -87,7 +89,7 @@ public class NodeXYController extends BaseController {
                 if (connection != null)
                     connection.close();
             } catch (SQLException e) {
-                e.printStackTrace();
+                log.error("Exception", e);
             }
         }
     }

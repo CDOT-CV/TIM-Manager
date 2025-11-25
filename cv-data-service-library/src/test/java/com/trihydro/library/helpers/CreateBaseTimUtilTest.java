@@ -319,4 +319,4 @@ public class CreateBaseTimUtilTest {
         Assertions.assertEquals(lastMilepostOfSecondRegion.getLatitude().doubleValue(), anchorOfThirdRegion.getLatitude().doubleValue());
         Assertions.assertEquals(lastMilepostOfSecondRegion.getLongitude().doubleValue(), anchorOfThirdRegion.getLongitude().doubleValue());
     }
-} 
+}

@@ -1,5 +1,7 @@
 package com.trihydro.cvdatacontroller.controller;
 
+import com.trihydro.library.helpers.DateStringNotInISO8601FormatException;
+import com.trihydro.library.helpers.DateTimeHelper;
 import com.trihydro.library.model.ActiveTimHoldingDeleteModel;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -37,16 +39,18 @@ import springfox.documentation.annotations.ApiIgnore;
 public class ActiveTimHoldingController extends BaseController {
     private TimDbTables timDbTables;
     private SQLNullHandler sqlNullHandler;
+    private DateTimeHelper dateTimeHelper;
 
     @Autowired
-    public void InjectDependencies(TimDbTables _timDbTables, SQLNullHandler _sqlNullHandler) {
+    public void InjectDependencies(TimDbTables _timDbTables, SQLNullHandler _sqlNullHandler, DateTimeHelper dateTimeHelper) {
         timDbTables = _timDbTables;
         sqlNullHandler = _sqlNullHandler;
+        this.dateTimeHelper = dateTimeHelper;
     }
 
     @RequestMapping(value = "/add", method = RequestMethod.POST, produces = "application/json")
     public ResponseEntity<Long> InsertActiveTimHolding(@RequestBody ActiveTimHolding activeTimHolding) {
-
+        log.debug("Inserting active_tim_holding record with client_id = {} and sat_record_id = {}", activeTimHolding.getClientId(), activeTimHolding.getSatRecordId());
         Long activeTimHoldingId = 0L;
 
         String insertQueryStatement = timDbTables.buildInsertQueryStatement("active_tim_holding", timDbTables.getActiveTimHoldingTable());
@@ -85,20 +89,51 @@ public class ActiveTimHoldingController extends BaseController {
                 } else if (col.equals("RSU_INDEX")) {
                     sqlNullHandler.setIntegerOrNull(preparedStatement, fieldNum, activeTimHolding.getRsuIndex());
                 } else if (col.equals("DATE_CREATED")) {
-                    java.util.Date dateCreated = utility.convertDate(activeTimHolding.getDateCreated());
+                    java.util.Date dateCreated = dateTimeHelper.convertDate(activeTimHolding.getDateCreated());
                     Timestamp dateCreatedTimestamp = new Timestamp(dateCreated.getTime());
                     sqlNullHandler.setTimestampOrNull(preparedStatement, fieldNum, dateCreatedTimestamp);
                 } else if (col.equals("PROJECT_KEY")) {
                     sqlNullHandler.setIntegerOrNull(preparedStatement, fieldNum, activeTimHolding.getProjectKey());
                 } else if (col.equals("EXPIRATION_DATE")) {
                     if (activeTimHolding.getExpirationDateTime() != null) {
-                        java.util.Date tim_exp_date = utility.convertDate(activeTimHolding.getExpirationDateTime());
-                        sqlNullHandler.setStringOrNull(preparedStatement, fieldNum, utility.timestampFormat.format(tim_exp_date));
+                        java.util.Date tim_exp_date = dateTimeHelper.convertDate(activeTimHolding.getExpirationDateTime());
+                        sqlNullHandler.setStringOrNull(preparedStatement, fieldNum, utility.getTimestampFormat().format(tim_exp_date));
                     } else {
                         preparedStatement.setNull(fieldNum, java.sql.Types.TIMESTAMP);
                     }
                 } else if (col.equals("PACKET_ID")) {
                     sqlNullHandler.setStringOrNull(preparedStatement, fieldNum, activeTimHolding.getPacketId());
+                }
+                else if (col.equals("TIM_END")) { // record tim_end for planned conditions with long intervals (or any other TIMs with long intervals) to ensure identity checks work as expected
+                    String desiredEndDateTime = activeTimHolding.getDesiredEndDateTime();
+                    if (desiredEndDateTime == null) {
+                        preparedStatement.setNull(fieldNum, java.sql.Types.TIMESTAMP);
+                        fieldNum++;
+                        continue;
+                    }
+                    log.trace("End date time string is not null. If this is a planned condition with a long interval, the desired end date time will need to be recorded for post-processing.");
+
+                    if (dateTimeHelper.isInTableFormat(desiredEndDateTime)) {
+                        log.trace("End date time string is in table format. Attempting to convert to ISO8601 format.");
+                        try {
+                            desiredEndDateTime = dateTimeHelper.convertDateStringFromTableFormatIntoISO8601Format(desiredEndDateTime);
+                        } catch (Exception e) {
+                            log.error("Desired end date time candidate value is in table format but unable to convert to ISO8601 format: {}. Unable to continue.", desiredEndDateTime);
+                            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(-2L);
+                        }
+                    }
+
+                    Timestamp timEndTimestamp;
+                    try {
+                        log.trace("Converting date string into timestamp object");
+                        timEndTimestamp = dateTimeHelper.convertDateStringFromISO8601FormatIntoTimestampObject(desiredEndDateTime);
+                    }
+                    catch (DateStringNotInISO8601FormatException e) {
+                        log.error("Desired end date time candidate value was not in ISO8601 format and failed to convert to timestamp object: {}. Unable to continue.", desiredEndDateTime);
+                        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(-3L);
+                    }
+                    log.trace("Converted date string from ISO8601 format into timestamp object. Setting TIM_END value in prepared statement.");
+                    sqlNullHandler.setTimestampOrNull(preparedStatement, fieldNum, timEndTimestamp);
                 }
 
                 fieldNum++;
@@ -131,6 +166,7 @@ public class ActiveTimHoldingController extends BaseController {
                     return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(activeTimHoldingId);
                 }
             }
+            log.trace("Done inserting active_tim_holding record with client_id = {} and sat_record_id = {}", activeTimHolding.getClientId(), activeTimHolding.getSatRecordId());
             return ResponseEntity.ok(activeTimHoldingId);
         } catch (SQLException e) {
             log.error("Error inserting active tim holding", e);
@@ -154,7 +190,7 @@ public class ActiveTimHoldingController extends BaseController {
                 activeTimHolding.setActiveTimHoldingId(rs.getLong("ACTIVE_TIM_HOLDING_ID"));
                 activeTimHolding.setClientId(rs.getString("CLIENT_ID"));
                 activeTimHolding.setDirection(rs.getString("DIRECTION"));
-                activeTimHolding.setRsuTargetId(rs.getString("RSU_TARGET"));
+                activeTimHolding.setRsuTarget(rs.getString("RSU_TARGET"));
                 activeTimHolding.setSatRecordId(rs.getString("SAT_RECORD_ID"));
                 activeTimHolding.setStartPoint(new Coordinate(rs.getBigDecimal("START_LATITUDE"), rs.getBigDecimal("START_LONGITUDE")));
                 activeTimHolding.setEndPoint(new Coordinate(rs.getBigDecimal("END_LATITUDE"), rs.getBigDecimal("END_LONGITUDE")));
@@ -187,7 +223,7 @@ public class ActiveTimHoldingController extends BaseController {
                 activeTimHolding.setActiveTimHoldingId(rs.getLong("ACTIVE_TIM_HOLDING_ID"));
                 activeTimHolding.setClientId(rs.getString("CLIENT_ID"));
                 activeTimHolding.setDirection(rs.getString("DIRECTION"));
-                activeTimHolding.setRsuTargetId(rs.getString("RSU_TARGET"));
+                activeTimHolding.setRsuTarget(rs.getString("RSU_TARGET"));
                 activeTimHolding.setSatRecordId(rs.getString("SAT_RECORD_ID"));
                 activeTimHolding.setStartPoint(new Coordinate(rs.getBigDecimal("START_LATITUDE"), rs.getBigDecimal("START_LONGITUDE")));
                 activeTimHolding.setEndPoint(new Coordinate(rs.getBigDecimal("END_LATITUDE"), rs.getBigDecimal("END_LONGITUDE")));

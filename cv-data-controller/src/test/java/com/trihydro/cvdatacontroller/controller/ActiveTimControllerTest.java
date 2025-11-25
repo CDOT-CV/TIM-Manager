@@ -1,16 +1,20 @@
 package com.trihydro.cvdatacontroller.controller;
 
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.isA;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.trihydro.library.helpers.*;
+import com.trihydro.library.model.*;
+import com.trihydro.library.tables.TimDbTables;
 import java.math.BigDecimal;
-import java.sql.SQLException;
-import java.sql.Timestamp;
+import java.sql.*;
 import java.text.ParseException;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -18,24 +22,16 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 
-import com.trihydro.library.helpers.SQLNullHandler;
-import com.trihydro.library.model.ActiveRsuTimQueryModel;
-import com.trihydro.library.model.ActiveTim;
-import com.trihydro.library.model.ContentEnum;
-import com.trihydro.library.model.Coordinate;
-import com.trihydro.library.model.TimUpdateModel;
-import com.trihydro.library.model.WydotTim;
-import com.trihydro.library.tables.TimDbTables;
-
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-
 import org.springframework.web.client.HttpServerErrorException;
+import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
 import us.dot.its.jpo.ode.plugin.j2735.timstorage.FrameType;
 
 public class ActiveTimControllerTest extends TestBase<ActiveTimController> {
@@ -43,10 +39,12 @@ public class ActiveTimControllerTest extends TestBase<ActiveTimController> {
     private TimDbTables mockTimDbTables = new TimDbTables();
     @Mock
     private SQLNullHandler mockSqlNullHandler;
+    @Mock
+    private DateTimeHelper dateTimeHelper;
 
     @BeforeEach
     public void setupSubTest() {
-        uut.InjectDependencies(mockTimDbTables, mockSqlNullHandler);
+        uut.InjectDependencies(mockTimDbTables, mockSqlNullHandler, dateTimeHelper);
     }
 
     private void setupPreparedStatement() {
@@ -428,21 +426,23 @@ public class ActiveTimControllerTest extends TestBase<ActiveTimController> {
     }
 
     @Test
-    public void GetActiveTimsByClientIdDirection_SUCCESS() throws SQLException {
+    public void getActiveTimsByClientIdDirection_SUCCESS() throws SQLException {
         // Arrange
         String clientId = "clientId";
-        Long timTypeId = -1l;
+        long timTypeId = -1L;
         String direction = "eastward";
-        String selectStatement = "select * from active_tim where CLIENT_ID like '" + clientId + "' and TIM_TYPE_ID = " + timTypeId;
-        selectStatement += " and DIRECTION = '" + direction + "'";
-        selectStatement += " and MARKED_FOR_DELETION = '0'";
+        String selectStatement = "SELECT * FROM active_tim WHERE CLIENT_ID = ? AND TIM_TYPE_ID = ? AND DIRECTION = ? AND MARKED_FOR_DELETION = '0'";
 
         // Act
-        ResponseEntity<List<ActiveTim>> data = uut.GetActiveTimsByClientIdDirection(clientId, timTypeId, direction);
+        ResponseEntity<List<ActiveTim>> data = uut.getActiveTimsByClientIdDirection(clientId, timTypeId, direction);
 
         // Assert
         Assertions.assertEquals(HttpStatus.OK, data.getStatusCode());
-        verify(mockStatement).executeQuery(selectStatement);
+        verify(mockConnection).prepareStatement(selectStatement);
+        verify(mockPreparedStatement).setString(1, clientId);
+        verify(mockPreparedStatement).setLong(2, timTypeId);
+        verify(mockPreparedStatement).setString(3, direction);
+        verify(mockPreparedStatement).executeQuery();
         verify(mockRs).getLong("ACTIVE_TIM_ID");
         verify(mockRs).getLong("TIM_ID");
         verify(mockRs).getString("SAT_RECORD_ID");
@@ -456,29 +456,31 @@ public class ActiveTimControllerTest extends TestBase<ActiveTimController> {
         verify(mockRs).getBigDecimal("END_LONGITUDE");
         verify(mockRs).getString("ROUTE");
         verify(mockRs).getInt("PK");
-        verify(mockStatement).close();
+        verify(mockPreparedStatement).close();
         verify(mockConnection).close();
         verify(mockRs).close();
     }
 
     @Test
-    public void GetActiveTimsByClientIdDirection_FAIL() throws SQLException {
+    public void getActiveTimsByClientIdDirection_FAIL() throws SQLException {
         // Arrange
         String clientId = "clientId";
-        Long timTypeId = -1l;
+        long timTypeId = -1L;
         String direction = "eastward";
-        String selectStatement = "select * from active_tim where CLIENT_ID like '" + clientId + "' and TIM_TYPE_ID = " + timTypeId;
-        selectStatement += " and DIRECTION = '" + direction + "'";
-        selectStatement += " and MARKED_FOR_DELETION = '0'";
+        String selectStatement = "SELECT * FROM active_tim WHERE CLIENT_ID = ? AND TIM_TYPE_ID = ? AND DIRECTION = ? AND MARKED_FOR_DELETION = '0'";
         doThrow(new SQLException()).when(mockRs).getLong("ACTIVE_TIM_ID");
 
         // Act
-        ResponseEntity<List<ActiveTim>> data = uut.GetActiveTimsByClientIdDirection(clientId, timTypeId, direction);
+        ResponseEntity<List<ActiveTim>> data = uut.getActiveTimsByClientIdDirection(clientId, timTypeId, direction);
 
         // Assert
         Assertions.assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, data.getStatusCode());
-        verify(mockStatement).executeQuery(selectStatement);
-        verify(mockStatement).close();
+        verify(mockConnection).prepareStatement(selectStatement);
+        verify(mockPreparedStatement).setString(1, clientId);
+        verify(mockPreparedStatement).setLong(2, timTypeId);
+        verify(mockPreparedStatement).setString(3, direction);
+        verify(mockPreparedStatement).executeQuery();
+        verify(mockPreparedStatement).close();
         verify(mockConnection).close();
         verify(mockRs).close();
     }
@@ -487,14 +489,15 @@ public class ActiveTimControllerTest extends TestBase<ActiveTimController> {
     public void GetBufferTimsByClientId_SUCCESS() throws SQLException {
         // Arrange
         String clientId = "clientId";
-        String selectStatement = "select * from active_tim where CLIENT_ID like '" + clientId + "\\%BUFF_-%' ESCAPE '\\'";
-
         // Act
         ResponseEntity<List<ActiveTim>> data = uut.GetBufferTimsByClientId(clientId);
 
         // Assert
         Assertions.assertEquals(HttpStatus.OK, data.getStatusCode());
-        verify(mockStatement).executeQuery(selectStatement);
+        verify(mockPreparedStatement).setString(1, clientId);
+        verify(mockPreparedStatement).executeQuery();
+        verify(mockPreparedStatement).close();
+        verify(mockConnection).close();
         verify(mockRs).getLong("ACTIVE_TIM_ID");
         verify(mockRs).getLong("TIM_ID");
         verify(mockRs).getString("SAT_RECORD_ID");
@@ -508,9 +511,6 @@ public class ActiveTimControllerTest extends TestBase<ActiveTimController> {
         verify(mockRs).getBigDecimal("END_LONGITUDE");
         verify(mockRs).getString("ROUTE");
         verify(mockRs).getInt("PK");
-        verify(mockStatement).close();
-        verify(mockConnection).close();
-        verify(mockRs).close();
     }
 
     @Test
@@ -518,8 +518,6 @@ public class ActiveTimControllerTest extends TestBase<ActiveTimController> {
 
         // Arrange
         String clientId = "clientId";
-        String selectStatement = "select * from active_tim where CLIENT_ID like '" + clientId + "\\%BUFF_-%' ESCAPE '\\'";
-
         doThrow(new SQLException()).when(mockRs).getLong("ACTIVE_TIM_ID");
 
         // Act
@@ -527,10 +525,11 @@ public class ActiveTimControllerTest extends TestBase<ActiveTimController> {
 
         // Assert
         Assertions.assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, data.getStatusCode());
-        verify(mockStatement).executeQuery(selectStatement);
-        verify(mockStatement).close();
+        verify(mockPreparedStatement).setString(1, clientId);
+        verify(mockPreparedStatement).executeQuery();
+        verify(mockPreparedStatement).close();
         verify(mockConnection).close();
-        verify(mockRs).close();
+        verify(mockRs).getLong("ACTIVE_TIM_ID");
     }
 
     @Test
@@ -612,13 +611,13 @@ public class ActiveTimControllerTest extends TestBase<ActiveTimController> {
     }
 
     @Test
-    public void DeleteActiveTimsById_SUCCESS() throws SQLException {
+    public void deleteActiveTimsById_SUCCESS() throws SQLException {
         // Arrange
         List<Long> activeTimIds = new ArrayList<>();
         activeTimIds.add(Long.valueOf(-1));
 
         // Act
-        ResponseEntity<Boolean> data = uut.DeleteActiveTimsById(activeTimIds);
+        ResponseEntity<Boolean> data = uut.deleteActiveTimsById(activeTimIds);
 
         // Assert
         Assertions.assertEquals(HttpStatus.OK, data.getStatusCode());
@@ -630,14 +629,14 @@ public class ActiveTimControllerTest extends TestBase<ActiveTimController> {
     }
 
     @Test
-    public void DeleteActiveTimsById_FAIL() throws SQLException {
+    public void deleteActiveTimsById_FAIL() throws SQLException {
         // Arrange
         List<Long> activeTimIds = new ArrayList<>();
         activeTimIds.add(Long.valueOf(-1));
         doThrow(new SQLException()).when(mockPreparedStatement).setLong(1, -1l);
 
         // Act
-        ResponseEntity<Boolean> data = uut.DeleteActiveTimsById(activeTimIds);
+        ResponseEntity<Boolean> data = uut.deleteActiveTimsById(activeTimIds);
 
         // Assert
         Assertions.assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, data.getStatusCode());
@@ -645,6 +644,24 @@ public class ActiveTimControllerTest extends TestBase<ActiveTimController> {
         verify(mockConnection).prepareStatement("DELETE FROM ACTIVE_TIM WHERE ACTIVE_TIM_ID in (?)");
         verify(mockPreparedStatement).close();
         verify(mockConnection).close();
+    }
+
+    @Test
+    public void testDeleteActiveTimsById_WithEmptyList_ShouldHandleGracefully() throws SQLException {
+        // Arrange
+        List<Long> emptyList = new ArrayList<>();
+
+        // Act
+        ResponseEntity<Boolean> response = uut.deleteActiveTimsById(emptyList);
+
+        // Assert
+        Assertions.assertEquals(HttpStatus.OK, response.getStatusCode());
+        Assertions.assertTrue(response.getBody());
+
+        // Verify that the connection pool was not accessed
+        verify(mockDbInteractions, never()).getConnectionPool();
+        // Verify no SQL was executed
+        verify(mockDbInteractions, never()).updateOrDelete(any(PreparedStatement.class));
     }
 
     @Test
@@ -993,7 +1010,7 @@ public class ActiveTimControllerTest extends TestBase<ActiveTimController> {
         var minVal = "27-Oct-20 06.21.00.000 PM";
         var ts = Timestamp.valueOf("2020-10-27 18:21:00");
         doReturn(ts).when(mockRs).getTimestamp("MINSTART", uut.UTCCalendar);
-        mockUtility.timestampFormat = timestampFormat;
+        when(mockUtility.getTimestampFormat()).thenReturn(timestampFormat);
 
         // Act
         ResponseEntity<String> response = uut.GetMinExpiration(packetID, expDate);
@@ -1048,7 +1065,7 @@ public class ActiveTimControllerTest extends TestBase<ActiveTimController> {
         Timestamp ts = new Timestamp(date.getTime());
         doReturn(mockPreparedStatement).when(mockConnection).prepareStatement(any());
         doReturn(true).when(mockDbInteractions).updateOrDelete(mockPreparedStatement);
-        doReturn(date).when(mockUtility).convertDate(expDate);
+        doReturn(date).when(dateTimeHelper).convertDate(expDate);
 
         String updateStatement = "UPDATE ACTIVE_TIM SET EXPIRATION_DATE = ? WHERE ACTIVE_TIM_ID IN (";
         updateStatement += "SELECT ACTIVE_TIM_ID FROM ACTIVE_TIM atim";
@@ -1079,7 +1096,7 @@ public class ActiveTimControllerTest extends TestBase<ActiveTimController> {
         Date date = Date.from(Instant.parse(expDate));
         doReturn(mockPreparedStatement).when(mockConnection).prepareStatement(any());
         doReturn(false).when(mockDbInteractions).updateOrDelete(mockPreparedStatement);
-        doReturn(date).when(mockUtility).convertDate(expDate);
+        doReturn(date).when(dateTimeHelper).convertDate(expDate);
 
         String updateStatement = "UPDATE ACTIVE_TIM SET EXPIRATION_DATE = ? WHERE ACTIVE_TIM_ID IN (";
         updateStatement += "SELECT ACTIVE_TIM_ID FROM ACTIVE_TIM atim";
@@ -1128,8 +1145,8 @@ public class ActiveTimControllerTest extends TestBase<ActiveTimController> {
 
         java.util.Date tim_end_date = java.util.Date.from(now.plusSeconds(60));
         java.util.Date tim_start_date = java.util.Date.from(now);
-        doReturn(tim_start_date).when(mockUtility).convertDate(startTime);
-        doReturn(tim_end_date).when(mockUtility).convertDate(endTime);
+        doReturn(tim_start_date).when(dateTimeHelper).convertDate(startTime);
+        doReturn(tim_end_date).when(dateTimeHelper).convertDate(endTime);
         Timestamp startTimestamp = new Timestamp(tim_start_date.getTime());
         Timestamp endTimestamp = new Timestamp(tim_end_date.getTime());
 
@@ -1250,5 +1267,197 @@ public class ActiveTimControllerTest extends TestBase<ActiveTimController> {
         verify(mockConnection).prepareStatement("UPDATE ACTIVE_TIM SET EXPIRATION_DATE = NULL WHERE ACTIVE_TIM_ID IN (?)");
         verify(mockPreparedStatement).close();
         verify(mockConnection).close();
+    }
+
+    @Test
+    void getActivePlannedConditionTims_NoTims_ShouldReturnEmptyList() throws SQLException {
+        // Arrange
+        String expectedQuery = "select * from active_tim where client_id like '%planned%'";
+        doReturn(mockConnection).when(mockDbInteractions).getConnectionPool();
+        doReturn(mockPreparedStatement).when(mockConnection).prepareStatement(expectedQuery);
+        doReturn(mockRs).when(mockPreparedStatement).executeQuery();
+        doReturn(false).when(mockRs).next();
+
+        // Act
+        ResponseEntity<List<ActiveTim>> response = uut.getActivePlannedConditionTims();
+
+        // Assert
+        Assertions.assertEquals(HttpStatus.OK, response.getStatusCode());
+        Assertions.assertEquals(0, response.getBody().size());
+        verify(mockConnection).prepareStatement(expectedQuery);
+        verify(mockPreparedStatement).close();
+        verify(mockConnection).close();
+    }
+
+    @Test
+    void getActivePlannedConditionTims_OneTim_ShouldReturnNonEmptyList() throws SQLException {
+        // Arrange
+        String expectedQuery = "select * from active_tim where client_id like '%planned%'";
+        doReturn(mockConnection).when(mockDbInteractions).getConnectionPool();
+        doReturn(mockPreparedStatement).when(mockConnection).prepareStatement(expectedQuery);
+        doReturn(mockRs).when(mockPreparedStatement).executeQuery();
+        when(mockRs.next()).thenReturn(true).thenReturn(false);
+
+        // Act
+        ResponseEntity<List<ActiveTim>> response = uut.getActivePlannedConditionTims();
+
+        // Assert
+        Assertions.assertEquals(HttpStatus.OK, response.getStatusCode());
+        Assertions.assertEquals(1, response.getBody().size());
+        verify(mockConnection).prepareStatement(expectedQuery);
+        verify(mockPreparedStatement).close();
+        verify(mockConnection).close();
+    }
+
+    @Test
+    void getActivePlannedConditionTims_SQLException_ShouldReturnInternalServerError() throws SQLException {
+        // Arrange
+        String expectedQuery = "select * from active_tim where client_id like '%planned%'";
+        doReturn(mockConnection).when(mockDbInteractions).getConnectionPool();
+        doReturn(mockPreparedStatement).when(mockConnection).prepareStatement(expectedQuery);
+        doThrow(new SQLException()).when(mockPreparedStatement).executeQuery();
+
+        // Act
+        ResponseEntity<List<ActiveTim>> response = uut.getActivePlannedConditionTims();
+
+        // Assert
+        Assertions.assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
+        Assertions.assertNull(response.getBody(), "ActiveTim list should be null");
+        verify(mockConnection).prepareStatement(expectedQuery);
+        verify(mockPreparedStatement).close();
+        verify(mockConnection).close();
+    }
+
+    @Nested
+    @Testcontainers
+    class ActiveTimControllerIntegrationTest {
+        private ActiveTimController uut;
+
+        @Container
+        PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:16-alpine")
+                .withDatabaseName("test")
+                .withUsername("test")
+                .withPassword("test");
+
+        @Mock
+        private TimDbTables timDbTables;
+
+        @Mock
+        private SQLNullHandler sqlNullHandler;
+
+        @Mock
+        private DateTimeHelper dateTimeHelper;
+
+        @Mock
+        private Utility utility;
+
+        @Mock
+        private DbInteractionsProps dbConfig;
+
+        @Mock
+        private EmailHelper emailHelper;
+
+        @BeforeEach
+        void setUp() throws Exception {
+            MockitoAnnotations.initMocks(this);
+            when(dbConfig.getDbUrl()).thenReturn(postgres.getJdbcUrl());
+            when(dbConfig.getDbUsername()).thenReturn(postgres.getUsername());
+            when(dbConfig.getDbPassword()).thenReturn(postgres.getPassword());
+            when(dbConfig.getMaximumPoolSize()).thenReturn(10);
+            when(dbConfig.getConnectionTimeout()).thenReturn(1000);
+
+            // Initialize the controller
+            uut = new ActiveTimController();
+
+            // Manually inject dependencies
+            DbInteractions dbInteractions = new DbInteractions(dbConfig, emailHelper);
+            uut.InjectBaseDependencies(dbInteractions, utility);
+            uut.InjectDependencies(timDbTables, sqlNullHandler, dateTimeHelper);
+
+            // Create the active_tim table
+            try (Connection connection = DriverManager.getConnection(
+                    postgres.getJdbcUrl(),
+                    postgres.getUsername(),
+                    postgres.getPassword());
+                 Statement statement = connection.createStatement()
+            ) {
+                // note: this is not the standard/accepted practice, this is a one-off instance to get a test
+                // to prevent a regression of a production bug
+                statement.execute(
+                        "CREATE TABLE IF NOT EXISTS active_tim (" +
+                                "  active_tim_id SERIAL PRIMARY KEY," +
+                                "  tim_id BIGINT," +
+                                "  client_id VARCHAR(255)," +
+                                "  direction VARCHAR(10)," +
+                                "  tim_start TIMESTAMP," +
+                                "  tim_end TIMESTAMP," +
+                                "  expiration_date TIMESTAMP," +
+                                "  route VARCHAR(255)," +
+                                "  sat_record_id VARCHAR(255)," +
+                                "  pk INTEGER," +
+                                "  start_latitude DECIMAL," +
+                                "  start_longitude DECIMAL," +
+                                "  end_latitude DECIMAL," +
+                                "  end_longitude DECIMAL," +
+                                "  tim_type_id BIGINT," +
+                                "  project_key INTEGER," +
+                                "  marked_for_deletion CHAR(1) DEFAULT '0'" +
+                                ")"
+                );
+            }
+        }
+
+        @Test
+        void testGetBufferTimsByClientId_ShouldFindBufferTimsSuccessfully() throws Exception {
+            // Arrange
+            try (Connection connection = DriverManager.getConnection(
+                    postgres.getJdbcUrl(),
+                    postgres.getUsername(),
+                    postgres.getPassword());
+                 Statement statement = connection.createStatement()
+            ) {
+                statement.execute(
+                        "INSERT INTO active_tim (client_id, direction, tim_type_id) " +
+                                "VALUES ('59009%BUFF0', 'I', 1)"
+                );
+                statement.execute(
+                        "INSERT INTO active_tim (client_id, direction, tim_type_id) " +
+                                "VALUES ('59009%BUFF1', 'I', 1)"
+                );
+                // Insert a non-buffer TIM for the same client
+                statement.execute(
+                        "INSERT INTO active_tim (client_id, direction, tim_type_id) " +
+                                "VALUES ('59009', 'I', 1)"
+                );
+            }
+
+
+            // Act
+            ResponseEntity<List<ActiveTim>> response = uut.GetBufferTimsByClientId("59009");
+
+            // Assert
+            Assertions.assertNotNull(response);
+            assertEquals(HttpStatus.OK, response.getStatusCode());
+            List<ActiveTim> results = response.getBody();
+            Assertions.assertNotNull(results);
+            assertEquals(2, results.size(),
+                    "Expected to find 2 buffer TIMs matching pattern '59009%BUFF*', but found " + results.size());
+
+            // Verify that the buffer TIMs were found
+            boolean found59009BUFF0 = results.stream()
+                    .anyMatch(tim -> "59009%BUFF0".equals(tim.getClientId()));
+            Assertions.assertTrue(found59009BUFF0,
+                    "Should match '59009%BUFF0'");
+            boolean found59009BUFF1 = results.stream()
+                    .anyMatch(tim -> "59009%BUFF1".equals(tim.getClientId()));
+            Assertions.assertTrue(found59009BUFF1,
+                    "Should match '59009%BUFF1'");
+
+            // Verify the non-buffer TIM is NOT included
+            boolean foundNonBuffer = results.stream()
+                    .anyMatch(tim -> "59009".equals(tim.getClientId()));
+            Assertions.assertFalse(foundNonBuffer,
+                    "Should NOT match '59009' - this is the anchor TIM, not a buffer TIM");
+        }
     }
 }

@@ -1,6 +1,5 @@
 package com.trihydro.tasks.actions;
 
-//import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -9,7 +8,6 @@ import java.util.Map;
 import com.google.gson.Gson;
 import com.trihydro.library.helpers.EmailHelper;
 import com.trihydro.library.helpers.TimGenerationHelper;
-import com.trihydro.library.helpers.Utility;
 import com.trihydro.library.model.ActiveTim;
 import com.trihydro.library.model.ActiveTimError;
 import com.trihydro.library.model.ActiveTimErrorType;
@@ -30,15 +28,13 @@ import com.trihydro.tasks.config.DataTasksConfiguration;
 import com.trihydro.tasks.helpers.EmailFormatter;
 import com.trihydro.tasks.helpers.IdNormalizer;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-//import org.gavaghan.geodesy.Ellipsoid;
-//import org.gavaghan.geodesy.GeodeticCalculator;
-//import org.gavaghan.geodesy.GeodeticCurve;
-//import org.gavaghan.geodesy.GlobalCoordinates;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 @Component
+@Slf4j
 public class ValidateTmdd implements Runnable {
     private DataTasksConfiguration config;
     private TmddService tmddService;
@@ -47,7 +43,6 @@ public class ValidateTmdd implements Runnable {
     private IdNormalizer idNormalizer;
     private EmailFormatter emailFormatter;
     private EmailHelper mailHelper;
-    private Utility utility;
     private WydotTimService wydotTimService;
     private TimGenerationHelper timGenerationHelper;
     private Map<String, Integer> tmddItisCodes;
@@ -56,9 +51,9 @@ public class ValidateTmdd implements Runnable {
 
     @Autowired
     public void InjectDependencies(DataTasksConfiguration config, TmddService tmddService,
-            ActiveTimService activeTimService, ItisCodeService itisCodeService, IdNormalizer idNormalizer,
-            EmailFormatter emailFormatter, EmailHelper mailHelper, Utility utility, WydotTimService _wydotTimService,
-            TimGenerationHelper _timGenerationHelper) {
+                                   ActiveTimService activeTimService, ItisCodeService itisCodeService, IdNormalizer idNormalizer,
+                                   EmailFormatter emailFormatter, EmailHelper mailHelper, WydotTimService _wydotTimService,
+                                   TimGenerationHelper _timGenerationHelper) {
         this.config = config;
         this.tmddService = tmddService;
         this.activeTimService = activeTimService;
@@ -66,20 +61,19 @@ public class ValidateTmdd implements Runnable {
         this.idNormalizer = idNormalizer;
         this.emailFormatter = emailFormatter;
         this.mailHelper = mailHelper;
-        this.utility = utility;
         wydotTimService = _wydotTimService;
         timGenerationHelper = _timGenerationHelper;
     }
 
     public void run() {
-        utility.logWithDate("Running...", this.getClass());
+        log.info("{}: " + "Running...", this.getClass().getSimpleName());
         errors = new ArrayList<>();
 
         try {
             validateTmdd();
         } catch (Exception ex) {
-            utility.logWithDate("Error while validating Database with TMDD:", this.getClass());
-            ex.printStackTrace();
+            log.info("{}: " + "Error while validating Database with TMDD:", this.getClass().getSimpleName());
+            log.error("Exception", ex);
             errors.add(ex.getMessage());
 
             // don't rethrow error, or the task won't be reran until the service is
@@ -93,8 +87,8 @@ public class ValidateTmdd implements Runnable {
 
                 mailHelper.SendEmail(config.getAlertAddresses(), "TMDD Validation Error(s)", email);
             } catch (Exception ex) {
-                utility.logWithDate("Failed to send error summary email:", this.getClass());
-                ex.printStackTrace();
+                log.info("{}: " + "Failed to send error summary email:", this.getClass().getSimpleName());
+                log.error("Exception", ex);
             }
         }
     }
@@ -105,8 +99,8 @@ public class ValidateTmdd implements Runnable {
         try {
             feus = tmddService.getTmddEvents();
         } catch (Exception ex) {
-            utility.logWithDate("Error fetching FEUs from TMDD:", this.getClass());
-            ex.printStackTrace();
+            log.info("{}: " + "Error fetching FEUs from TMDD:", this.getClass().getSimpleName());
+            log.error("Exception", ex);
             errors.add("Error fetching FEUs from TMDD: " + ex.getMessage());
 
             return;
@@ -117,8 +111,8 @@ public class ValidateTmdd implements Runnable {
         try {
             activeTims = activeTimService.getActiveTimsWithItisCodes(true);
         } catch (Exception ex) {
-            utility.logWithDate("Error fetching Active Tims:", this.getClass());
-            ex.printStackTrace();
+            log.info("{}: " + "Error fetching Active Tims:", this.getClass().getSimpleName());
+            log.error("Exception", ex);
             errors.add("Error fetching Active Tims: " + ex.getMessage());
 
             return;
@@ -129,8 +123,8 @@ public class ValidateTmdd implements Runnable {
             try {
                 initializeTmddItisCodes();
             } catch (Exception ex) {
-                utility.logWithDate("Unable to initialize TMDD ITIS Code cache:", this.getClass());
-                ex.printStackTrace();
+                log.info("{}: " + "Unable to initialize TMDD ITIS Code cache:", this.getClass().getSimpleName());
+                log.error("Exception", ex);
                 errors.add("Unable to initialize TMDD ITIS Code cache: " + ex.getMessage());
 
                 return;
@@ -233,8 +227,8 @@ public class ValidateTmdd implements Runnable {
             try {
                 mailHelper.SendEmail(config.getAlertAddresses(), "TMDD Validation Results", email);
             } catch (Exception ex) {
-                utility.logWithDate("Error sending summary email:", this.getClass());
-                ex.printStackTrace();
+                log.info("{}: " + "Error sending summary email:", this.getClass().getSimpleName());
+                log.error("Exception", ex);
                 errors.add("Error sending summary email: " + ex.getMessage());
             }
         }

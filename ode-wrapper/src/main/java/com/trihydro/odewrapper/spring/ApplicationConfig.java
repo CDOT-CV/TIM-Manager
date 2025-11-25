@@ -2,6 +2,7 @@ package com.trihydro.odewrapper.spring;
 
 import com.trihydro.library.exceptionhandlers.IdenticalPointsExceptionHandler;
 import com.trihydro.library.helpers.CreateBaseTimUtil;
+import com.trihydro.library.helpers.DateTimeHelperImpl;
 import com.trihydro.library.helpers.EmailHelper;
 import com.trihydro.library.helpers.JavaMailSenderImplProvider;
 import com.trihydro.library.helpers.MilepostReduction;
@@ -25,7 +26,6 @@ import com.trihydro.library.service.TimRsuService;
 import com.trihydro.library.service.TimService;
 import com.trihydro.library.service.TimTypeService;
 import com.trihydro.library.service.WydotTimService;
-
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
@@ -57,7 +57,8 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
         Utility.class,
         WydotTimService.class,
         RegionNameTrimmer.class,
-        IdenticalPointsExceptionHandler.class
+        IdenticalPointsExceptionHandler.class,
+        DateTimeHelperImpl.class
     }
 )
 public class ApplicationConfig implements WebMvcConfigurer {
