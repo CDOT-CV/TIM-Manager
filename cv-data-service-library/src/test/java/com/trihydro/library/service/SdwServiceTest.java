@@ -1,23 +1,10 @@
 package com.trihydro.library.service;
 
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.ArgumentMatchers.isA;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.stream.Collectors;
-
-import com.trihydro.library.helpers.Utility;
 import com.trihydro.library.model.AdvisorySituationDataDeposit;
 import com.trihydro.library.model.SDXDecodeRequest;
 import com.trihydro.library.model.SDXDecodeResponse;
 import com.trihydro.library.model.SdwProps;
 import com.trihydro.library.model.SemiDialogID;
-
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
@@ -32,13 +19,21 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClientException;
 
-public class SdwServiceTest extends BaseServiceTest {
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.stream.Collectors;
+
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isA;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+class SdwServiceTest extends BaseServiceTest {
 
     @Mock
     SdwProps mockConfig;
-
-    @Mock
-    Utility mockUtility;
 
     @Mock
     ResponseEntity<AdvisorySituationDataDeposit[]> mockAsddResponse;
@@ -47,56 +42,51 @@ public class SdwServiceTest extends BaseServiceTest {
     ResponseEntity<SDXDecodeResponse> mockDecodeResponse;
 
     @Mock
-    private ResponseEntity<AdvisorySituationDataDeposit> mockRespAdvisorySituationDataDeposit;
+    ResponseEntity<AdvisorySituationDataDeposit> mockRespAdvisorySituationDataDeposit;
 
     @Mock
-    private ResponseEntity<HashMap<Integer, Boolean>> mockRespHashMap;
+    ResponseEntity<HashMap<Integer, Boolean>> mockRespHashMap;
 
     @InjectMocks
     SdwService sdwService;
 
-    private String baseUrl = "http://localhost:12230";
-    private String apiKey = "apiKey";
+    String baseUrl = "http://localhost:12230";
+    String apiKey = "apiKey";
 
-    private void setupConfig() {
+    void setupConfig() {
         when(mockConfig.getSdwRestUrl()).thenReturn(baseUrl);
         setupApiKey();
     }
 
-    private void setupApiKey() {
+    void setupApiKey() {
         when(mockConfig.getSdwApiKey()).thenReturn(apiKey);
     }
 
     @Test
-    public void deleteSdxDataBySatRecordId_nullRecordIds() {
+    void deleteSdxDataBySatRecordId_nullRecordIds() {
         setupApiKey();
         HashMap<Integer, Boolean> results = sdwService.deleteSdxDataBySatRecordId(null);
-        verify(mockUtility)
-                .logWithDate("Attempting to delete satellite records failed due to no satRecordIds passed in");
         Assertions.assertNull(results);
     }
 
     @Test
-    public void deleteSdxDataBySatRecordId_emptyRecordIds() {
+    void deleteSdxDataBySatRecordId_emptyRecordIds() {
         setupApiKey();
         HashMap<Integer, Boolean> results = sdwService.deleteSdxDataBySatRecordId(new ArrayList<String>());
-        verify(mockUtility)
-                .logWithDate("Attempting to delete satellite records failed due to no satRecordIds passed in");
         Assertions.assertNull(results);
     }
 
     @Test
-    public void deleteSdxDataBySatRecordId_nullApiKey() {
+    void deleteSdxDataBySatRecordId_nullApiKey() {
         List<String> satNames = new ArrayList<String>();
         satNames.add("A9184436");
         when(mockConfig.getSdwApiKey()).thenReturn(null);
         HashMap<Integer, Boolean> results = sdwService.deleteSdxDataBySatRecordId(satNames);
-        verify(mockUtility).logWithDate("Attempting to delete satellite records failed due to null apiKey");
         Assertions.assertNull(results);
     }
 
     @Test
-    public void deleteSdxDataBySatRecordId_success() throws IOException, Exception {
+    void deleteSdxDataBySatRecordId_success() throws IOException, Exception {
         // Arrange
         setupConfig();
         List<String> satNames = new ArrayList<String>();
@@ -125,7 +115,7 @@ public class SdwServiceTest extends BaseServiceTest {
     }
 
     @Test
-    public void deleteSdxDataBySatRecordId_handlesHttpClientErrorException() {
+    void deleteSdxDataBySatRecordId_handlesHttpClientErrorException() {
         // Arrange
         setupConfig();
         List<String> satRecordIds = new ArrayList<String>();
@@ -149,12 +139,10 @@ public class SdwServiceTest extends BaseServiceTest {
 
         // Assert
         Assertions.assertNull(results);
-        verify(mockUtility).logWithDate("An exception occurred while attempting to delete satellite records: 400 something went wrong...");
-        verify(mockUtility).logWithDate("Is the SDX API key valid?");
     }
 
     @Test
-    public void deleteSdxDataByRecordIdIntegers_handlesHttpClientErrorException() {
+    void deleteSdxDataByRecordIdIntegers_handlesHttpClientErrorException() {
         // Arrange
         setupConfig();
         List<Integer> recordIds = new ArrayList<Integer>();
@@ -177,12 +165,10 @@ public class SdwServiceTest extends BaseServiceTest {
 
         // Assert
         Assertions.assertNull(results);
-        verify(mockUtility).logWithDate("An exception occurred while attempting to delete satellite records: 400 something went wrong...");
-        verify(mockUtility).logWithDate("Is the SDX API key valid?");
     }
 
     @Test
-    public void getItisCodesFromAdvisoryMessage_success() {
+    void getItisCodesFromAdvisoryMessage_success() throws SdwService.SdwServiceException {
         // Arrange
         setupConfig();
 
@@ -210,7 +196,7 @@ public class SdwServiceTest extends BaseServiceTest {
     }
 
     @Test
-    public void getItisCodesFromAdvisoryMessage_realData() {
+    void getItisCodesFromAdvisoryMessage_realData() throws SdwService.SdwServiceException {
         // Arrange
         setupConfig();
 
@@ -234,31 +220,31 @@ public class SdwServiceTest extends BaseServiceTest {
     }
 
     @Test
-    public void getItisCodesFromAdvisoryMessage_nullAdvisoryMessage() {
+    void getItisCodesFromAdvisoryMessage_nullAdvisoryMessage() {
         // Arrange
 
         // Act
-        var exception = Assertions.assertThrows(IllegalArgumentException.class, () -> {
+        var exception = Assertions.assertThrows(SdwService.SdwServiceException.class, () -> {
             sdwService.getItisCodesFromAdvisoryMessage(null);
         });
 
-        Assertions.assertEquals("advisoryMessage cannot be null", exception.getMessage());
+        Assertions.assertEquals("Null advisory message provided", exception.getMessage());
     }
 
     @Test
-    public void getItisCodesFromAdvisoryMessage_NoMessageFrame() {
+    void getItisCodesFromAdvisoryMessage_NoMessageFrame() {
         // Arrange
 
         // Act
-        var exception = Assertions.assertThrows(IllegalArgumentException.class, () -> {
+        var exception = Assertions.assertThrows(SdwService.SdwServiceException.class, () -> {
             sdwService.getItisCodesFromAdvisoryMessage("00000000");
         });
 
-        Assertions.assertEquals("Cannot determine start of MessageFrame", exception.getMessage());
+        Assertions.assertEquals("Invalid message format - missing MessageFrame marker", exception.getMessage());
     }
 
     @Test
-    public void getItisCodesFromAdvisoryMessage_handlesNumberFormatException() {
+    void getItisCodesFromAdvisoryMessage_handlesNumberFormatException() throws SdwService.SdwServiceException {
         // Arrange
         setupConfig();
 
@@ -285,7 +271,7 @@ public class SdwServiceTest extends BaseServiceTest {
     }
 
     @Test
-    public void getItisCodesFromAdvisoryMessage_handlesRestClientException() {
+    void getItisCodesFromAdvisoryMessage_handlesRestClientException() {
         // Arrange
         setupConfig();
 
@@ -301,17 +287,14 @@ public class SdwServiceTest extends BaseServiceTest {
         when(mockRestTemplate.exchange(eq(url), eq(HttpMethod.POST), isA(HttpEntity.class),
                 eq(SDXDecodeResponse.class))).thenThrow(new RestClientException("something went wrong..."));
 
-        // Act
-        List<Integer> result = sdwService.getItisCodesFromAdvisoryMessage("00000000000000001F");
-
-        // Assert
-        Assertions.assertNull(result);
-        verify(mockUtility).logWithDate("An exception occurred while attempting to decode message: something went wrong...");
-        verify(mockUtility).logWithDate("Is the SDX API key valid?");
+        // Act & Assert
+        Assertions.assertThrows(SdwService.SdwServiceException.class, () -> {
+            sdwService.getItisCodesFromAdvisoryMessage("00000000000000001F");
+        });
     }
 
     @Test
-    public void getMsgsForOdeUser_success() {
+    void getMsgsForOdeUser_success() throws SdwService.SdwServiceException {
         // Arrange
         setupConfig();
         AdvisorySituationDataDeposit[] response = new AdvisorySituationDataDeposit[] {
@@ -332,7 +315,7 @@ public class SdwServiceTest extends BaseServiceTest {
     }
 
     @Test
-    public void getMsgsForOdeUser_handlesRestClientException() {
+    void getMsgsForOdeUser_handlesRestClientException() {
         // Arrange
         setupConfig();
         String url = "http://localhost:12230/api/deposited-by-me/156";
@@ -340,12 +323,9 @@ public class SdwServiceTest extends BaseServiceTest {
                 eq(AdvisorySituationDataDeposit[].class)))
                         .thenThrow(new RestClientException("something went wrong..."));
 
-        // Act
-        List<AdvisorySituationDataDeposit> results = sdwService.getMsgsForOdeUser(SemiDialogID.AdvSitDataDep);
-
-        // Assert
-        Assertions.assertNull(results);
-        verify(mockUtility).logWithDate("An exception occurred while attempting to get messages from SDX: something went wrong...");
-        verify(mockUtility).logWithDate("Is the SDX API key valid?");
+        // Act & Assert
+        Assertions.assertThrows(SdwService.SdwServiceException.class, () -> {
+            sdwService.getMsgsForOdeUser(SemiDialogID.AdvSitDataDep);
+        });
     }
 }

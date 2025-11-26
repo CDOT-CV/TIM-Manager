@@ -15,33 +15,32 @@ import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import com.trihydro.library.helpers.Utility;
 import com.trihydro.library.model.HttpLoggingModel;
 import com.trihydro.library.service.LoggingService;
 import com.trihydro.odewrapper.config.BasicConfiguration;
 import com.trihydro.odewrapper.model.BufferedRequestWrapper;
 import com.trihydro.odewrapper.model.BufferedResponseWrapper;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 // Adapted from https://stackoverflow.com/a/39137815
 @Component
+@Slf4j
 public class HttpLoggingFilter implements Filter {
 
     private LoggingService loggingService;
     private BasicConfiguration basicConfiguration;
-    private Utility utility;
     private BufferedResponseWrapperFactory buffRespWrapFac;
     private BufferedRequestWrapperFactory buffReqWrapFac;
 
     @Autowired
     public void InjectDependencies(LoggingService _loggingService, BasicConfiguration _basicConfiguration,
-            Utility _utility, BufferedResponseWrapperFactory _buffRespWrapFac,
+                                   BufferedResponseWrapperFactory _buffRespWrapFac,
             BufferedRequestWrapperFactory _buffReqWrapFac) {
         loggingService = _loggingService;
         basicConfiguration = _basicConfiguration;
-        utility = _utility;
         buffRespWrapFac = _buffRespWrapFac;
         buffReqWrapFac = _buffReqWrapFac;
     }
@@ -64,7 +63,7 @@ public class HttpLoggingFilter implements Filter {
 
             String servletPath = httpServletRequest.getServletPath();
             chain.doFilter(bufferedRequest, bufferedResponse);
-            if (servletPath.contains("swagger") || servletPath.contains("api-docs")) {
+            if (servletPath.contains("swagger") || servletPath.contains("api-docs") || servletPath.contains("/actuator/health")) {
                 return;
             }
 
@@ -98,14 +97,14 @@ public class HttpLoggingFilter implements Filter {
                     logMessage.append(" [RESPONSE:").append(serverResponse).append("]");
                 }
             }
-            utility.logWithDate(logMessage.toString());
+            log.info(logMessage.toString());
             HttpLoggingModel httpLoggingModel = new HttpLoggingModel();
             httpLoggingModel.setRequest(logMessage.toString());
             httpLoggingModel.setRequestTime(requestTime);
             httpLoggingModel.setResponseTime(new Timestamp(System.currentTimeMillis()));
             loggingService.LogHttpRequest(httpLoggingModel);
         } catch (Throwable a) {
-            utility.logWithDate(a.getMessage());
+            log.info(a.getMessage());
         }
     }
 

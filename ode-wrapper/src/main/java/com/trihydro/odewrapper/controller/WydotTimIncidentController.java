@@ -1,6 +1,7 @@
 package com.trihydro.odewrapper.controller;
 
 import com.trihydro.library.exceptionhandlers.IdenticalPointsExceptionHandler;
+import com.trihydro.library.helpers.DateTimeHelper;
 import com.trihydro.library.helpers.MilepostReduction;
 import com.trihydro.library.helpers.TimGenerationHelper;
 import com.trihydro.library.helpers.Utility;
@@ -18,13 +19,15 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RestController;
 
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Date;
 import java.util.List;
 
 @CrossOrigin
@@ -40,35 +43,34 @@ public class WydotTimIncidentController extends WydotTimBaseController implement
     public WydotTimIncidentController(BasicConfiguration _basicConfiguration, WydotTimService _wydotTimService,
             TimTypeService _timTypeService, SetItisCodes _setItisCodes, ActiveTimService _activeTimService,
             RestTemplateProvider _restTemplateProvider, MilepostReduction _milepostReduction, Utility _utility,
-            TimGenerationHelper _timGenerationHelper, MilepostService _milepostService, IdenticalPointsExceptionHandler identicalPointsExceptionHandler) {
-        super(_basicConfiguration, _wydotTimService, _timTypeService, _setItisCodes, _activeTimService,
-                _restTemplateProvider, _milepostReduction, _utility, _timGenerationHelper, _milepostService, identicalPointsExceptionHandler);
+            TimGenerationHelper _timGenerationHelper, MilepostService _milepostService, IdenticalPointsExceptionHandler identicalPointsExceptionHandler,
+            DateTimeHelper dateTimeHelper) {
+              super(_basicConfiguration, _wydotTimService, _timTypeService, _setItisCodes, _activeTimService,
+                  _restTemplateProvider, _milepostReduction, _utility, _timGenerationHelper, _milepostService, identicalPointsExceptionHandler, dateTimeHelper);
     }
 
-    @RequestMapping(value = "/incident-tim", method = RequestMethod.POST, headers = "Accept=application/json")
-    public ResponseEntity<String> createIncidentTim(@RequestBody TimIncidentList timIncidentList) {
+  @RequestMapping(value = "/incident-tim", method = RequestMethod.POST, headers = "Accept=application/json")
+  public ResponseEntity<String> createIncidentTim(@RequestBody TimIncidentList timIncidentList) {
+    log.info("Create Incident TIM");
+    String post = gson.toJson(timIncidentList);
+    log.info(post);
 
-        DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
-        Date date = new Date();
+    List<WydotTim> timsToSend = new ArrayList<>();
 
-        utility.logWithDate(dateFormat.format(date) + " - Create Incident TIM", this.getClass());
-        String post = gson.toJson(timIncidentList);
-        utility.logWithDate(post, this.getClass());
-
-        List<ControllerResult> resultList = new ArrayList<>();
-        ControllerResult resultTim;
+    List<ControllerResult> resultList = new ArrayList<>();
+    ControllerResult resultTim;
 
     // build TIM
     for (WydotTimIncident wydotTim : timIncidentList.getTimIncidentList()) {
 
       resultTim = validateInputIncident(wydotTim);
 
-            if (wydotTim.getDirection().equalsIgnoreCase("i")) {
-                timsToSend.addAll(makeIncreasingTims(wydotTim, bufferTimITISCodes, milepostService));
-            }
-            else {
-                timsToSend.addAll(makeDecreasingTims(wydotTim, bufferTimITISCodes, milepostService));
-            }
+      if (wydotTim.getDirection().equalsIgnoreCase("i")) {
+          timsToSend.addAll(makeIncreasingTims(wydotTim, bufferTimITISCodes, milepostService));
+      }
+      else {
+          timsToSend.addAll(makeDecreasingTims(wydotTim, bufferTimITISCodes, milepostService));
+      }
 
       resultTim.getResultMessages().add("success");
       resultList.add(resultTim);
@@ -80,18 +82,14 @@ public class WydotTimIncidentController extends WydotTimBaseController implement
     return ResponseEntity.status(HttpStatus.OK).body(responseMessage);
   }
 
-    @RequestMapping(value = "/incident-tim", method = RequestMethod.PUT, headers = "Accept=application/json")
-    public ResponseEntity<String> updateIncidentTim(@RequestBody TimIncidentList timIncidentList) {
+  @RequestMapping(value = "/incident-tim", method = RequestMethod.PUT, headers = "Accept=application/json")
+  public ResponseEntity<String> updateIncidentTim(@RequestBody TimIncidentList timIncidentList) {
+    log.info("Update Incident TIM");
+    String post = gson.toJson(timIncidentList);
+    log.info(post);
 
-        DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
-        Date date = new Date();
-
-        utility.logWithDate(dateFormat.format(date) + " - Update Incident TIM", this.getClass());
-        String post = gson.toJson(timIncidentList);
-        utility.logWithDate(post, this.getClass());
-
-        List<ControllerResult> resultList = new ArrayList<>();
-        ControllerResult resultTim;
+    List<ControllerResult> resultList = new ArrayList<>();
+    ControllerResult resultTim;
 
         // delete TIMs
         for (WydotTimIncident wydotTim : timIncidentList.getTimIncidentList()) {

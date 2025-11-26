@@ -14,11 +14,11 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import com.trihydro.library.helpers.DbInteractions;
-import com.trihydro.library.helpers.Utility;
 import com.trihydro.rsudatacontroller.config.BasicConfiguration;
 import com.trihydro.rsudatacontroller.model.RsuTim;
 import com.trihydro.rsudatacontroller.process.ProcessFactory;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -26,6 +26,7 @@ import us.dot.its.jpo.ode.plugin.RoadSideUnit.RSU;
 import us.dot.its.jpo.ode.plugin.SnmpProtocol;
 
 @Component
+@Slf4j
 public class RsuService {
     private static final String OID_FOUR_DOT_ONE_SRM_DELIVERY_START = "1.0.15628.4.1.4.1.7";
     private static final String OID_NTCIP_1218_DELIVERY_START = "1.3.6.1.4.1.1206.4.2.18.3.2.1.5";
@@ -33,14 +34,12 @@ public class RsuService {
 
     private ProcessFactory processFactory;
     private BasicConfiguration config;
-    private Utility utility;
-    protected DbInteractions dbInteractions;
+  protected DbInteractions dbInteractions;
 
     @Autowired
-    public void InjectDependencies(ProcessFactory processFactory, BasicConfiguration config, DbInteractions dbInteractions, Utility utility) {
+    public void InjectDependencies(ProcessFactory processFactory, BasicConfiguration config, DbInteractions dbInteractions) {
         this.processFactory = processFactory;
         this.config = config;
-        this.utility = utility;
         this.dbInteractions = dbInteractions;
     }
 
@@ -72,7 +71,7 @@ public class RsuService {
 
         // If timeout occurred, return null
         if (snmpWalkOutput.matches("snmpwalk: Timeout")) {
-            utility.logWithDate("SNMP Timeout occurred (RSU: " + rsuIpv4Address + ")");
+            log.info("SNMP Timeout occurred (RSU: {})", rsuIpv4Address);
             return null;
         }
 
@@ -140,7 +139,7 @@ public class RsuService {
             statement.setString(1, rsuIpv4Address); // Setting parameter to prevent injection.
             try (ResultSet rs = statement.executeQuery()) {
                 if (!rs.next()) {
-                    utility.logWithDate("Unable to find RSU in database (RSU: " + rsuIpv4Address + ")");
+                    log.info("Unable to find RSU in database (RSU: {})", rsuIpv4Address);
                     return null;
                 }
                 String rsuUsername = rs.getString("username");

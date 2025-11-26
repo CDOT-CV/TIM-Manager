@@ -9,8 +9,9 @@ import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
+import lombok.extern.slf4j.Slf4j;
+
 import com.trihydro.library.helpers.EmailHelper;
-import com.trihydro.library.helpers.Utility;
 import com.trihydro.mongologger.app.MongoLoggerConfiguration;
 
 import java.util.List;
@@ -19,17 +20,16 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 @Component
+@Slf4j
 public class MongoLogger {
-    private final Utility utility;
     private final EmailHelper emailHelper;
     private final String databaseName;
     private final String[] alertAddresses;
     private final MongoClient mongoClient;
 
     @Autowired
-    public MongoLogger(MongoLoggerConfiguration config, Utility utility, EmailHelper emailHelper) {
+    public MongoLogger(MongoLoggerConfiguration config, EmailHelper emailHelper) {
         this.emailHelper = emailHelper;
-        this.utility = utility;
         this.mongoClient = configureMongoClient(config);
         this.databaseName = config.getMongoDatabase(); // the name of the database to deposit records into
         this.alertAddresses = config.getAlertAddresses(); // the email addresses to send alerts to
@@ -69,7 +69,7 @@ public class MongoLogger {
                 MongoCollection<Document> collection = database.getCollection(collectionName);
                 collection.insertMany(docs);
             } catch (Exception ex) {
-                utility.logWithDate("Error logging to mongo collection: " + ex.getMessage());
+                log.info("Error logging to mongo collection: {}", ex.getMessage());
 
                 String body = "The MongoLogger failed attempting to insert a record to ";
                 body += collectionName;
@@ -79,8 +79,8 @@ public class MongoLogger {
                 try {
                     emailHelper.SendEmail(alertAddresses, "MongoLogger Failed to Connect to MongoDB", body);
                 } catch (Exception e) {
-                    utility.logWithDate("Error sending email: " + e.getMessage());
-                    e.printStackTrace();
+                    log.info("Error sending email: {}", e.getMessage());
+                    log.error("Exception", e);
                 }
             }
         }

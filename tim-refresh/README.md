@@ -34,14 +34,14 @@ The following instructions are intended to be executed from the root directory o
 
     Linux:
     ```bash
-    mv ./tim-refresh/target/tim-refresh-x.x.x-SNAPSHOT.jar ./tim-refresh/
+    mv ./tim-refresh/target/tim-refresh-x.y.z-SNAPSHOT.jar ./tim-refresh/
     ``` 
     Windows:
     ```windows
-    move .\tim-refresh\target\tim-refresh-x.x.x-SNAPSHOT.jar .\tim-refresh\
+    move .\tim-refresh\target\tim-refresh-x.y.z-SNAPSHOT.jar .\tim-refresh\
     ```
 
-    Replace `x.x.x` with the version number of the JAR file. If a JAR file already exists in the `tim-refresh` directory, you may need to delete it first.
+    Replace `x.y.z` with the version number of the JAR file. If a JAR file already exists in the `tim-refresh` directory, you may need to delete it first.
 
 1. Copy the sample.env to .env:
 

@@ -18,7 +18,6 @@ import java.sql.ResultSet;
 import java.util.List;
 
 import com.trihydro.library.helpers.DbInteractions;
-import com.trihydro.library.helpers.Utility;
 import com.trihydro.rsudatacontroller.config.BasicConfiguration;
 import com.trihydro.rsudatacontroller.model.RsuTim;
 import com.trihydro.rsudatacontroller.process.ProcessFactory;
@@ -46,9 +45,6 @@ public class RsuServiceTest {
 
     @Mock
     BasicConfiguration mockConfig;
-
-    @Mock
-    Utility mockUtility;
 
     @Mock
     InputStream mockInputStream;
@@ -152,7 +148,6 @@ public class RsuServiceTest {
 
         // Assert
         Assertions.assertNull(results);
-        verify(mockUtility).logWithDate(any());
     }
 
     @Test

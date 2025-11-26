@@ -1,5 +1,7 @@
 package com.trihydro.cvdatacontroller.controller;
 
+import com.trihydro.library.helpers.DateTimeHelper;
+import com.trihydro.library.helpers.DateTimeHelperImpl;
 import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -55,15 +57,17 @@ public class ActiveTimController extends BaseController {
     private TimDbTables timDbTables;
     private SQLNullHandler sqlNullHandler;
     protected Calendar UTCCalendar;
+    private DateTimeHelper dateTimeHelper;
 
     public ActiveTimController() {
         UTCCalendar = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
     }
 
     @Autowired
-    public void InjectDependencies(TimDbTables _timDbTables, SQLNullHandler _sqlNullHandler) {
+    public void InjectDependencies(TimDbTables _timDbTables, SQLNullHandler _sqlNullHandler, DateTimeHelper dateTimeHelper) {
         timDbTables = _timDbTables;
         sqlNullHandler = _sqlNullHandler;
+        this.dateTimeHelper = dateTimeHelper;
     }
 
 	/**
@@ -285,21 +289,27 @@ public class ActiveTimController extends BaseController {
     }
 
     @RequestMapping(value = {"/client-id-direction/{clientId}/{timTypeId}", "/client-id-direction/{clientId}/{timTypeId}/{direction}"}, method = RequestMethod.GET)
-    public ResponseEntity<List<ActiveTim>> GetActiveTimsByClientIdDirection(@PathVariable String clientId, @PathVariable Long timTypeId, @PathVariable(required = false) String direction) {
+    public ResponseEntity<List<ActiveTim>> getActiveTimsByClientIdDirection(@PathVariable String clientId, @PathVariable Long timTypeId, @PathVariable(required = false) String direction) {
         List<ActiveTim> activeTims = new ArrayList<>();
 
-        // There may be multiple TIMs grouped together by client_id. ex. CLIENTID_1,
-        // CLIENTID_2
-        String query = "select * from active_tim where CLIENT_ID like '" + clientId + "' and TIM_TYPE_ID = " + timTypeId;
-
+        StringBuilder queryBuilder = new StringBuilder(
+            "SELECT * FROM active_tim WHERE CLIENT_ID = ? AND TIM_TYPE_ID = ?");
         if (direction != null) {
-            query += " and DIRECTION = '" + direction + "'";
+            queryBuilder.append(" AND DIRECTION = ?");
         }
+        queryBuilder.append(" AND MARKED_FOR_DELETION = '0'"); // exclude active tims marked for deletion
+        String query = queryBuilder.toString();
+        try (Connection connection = dbInteractions.getConnectionPool(); PreparedStatement ps = connection.prepareStatement(query)) {
+            ps.setString(1, clientId);
+            ps.setLong(2, timTypeId);
+            if (direction != null) {
+                ps.setString(3, direction);
+            }
 
-        query += " and MARKED_FOR_DELETION = '0'"; // exclude active tims marked for deletion
-
-        try (Connection connection = dbInteractions.getConnectionPool(); Statement statement = connection.createStatement(); ResultSet rs = statement.executeQuery(query)) {
-            activeTims = getActiveTimFromRS(rs, false);
+            log.trace("Executing parameterized query to get active tims by client id and direction: \"{}\"", ps);
+            try (ResultSet rs = ps.executeQuery()) {
+                activeTims = getActiveTimFromRS(rs, false);
+            }
         } catch (SQLException e) {
             log.error("Error getting active tims by client id and direction", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(activeTims);
@@ -312,10 +322,17 @@ public class ActiveTimController extends BaseController {
     public ResponseEntity<List<ActiveTim>> GetBufferTimsByClientId(@PathVariable String clientId) {
         List<ActiveTim> activeTims = new ArrayList<>();
 
-        String query = "select * from active_tim where CLIENT_ID like '" + clientId
-                + "\\%BUFF-%' ESCAPE '\\'";
-
-        try (Connection connection = dbInteractions.getConnectionPool(); Statement statement = connection.createStatement(); ResultSet rs = statement.executeQuery(query)) {
+        // Use database concatenation (||) to append the LIKE pattern to the parameterized clientId.
+        // This follows best practices by keeping user input fully parameterized and separate from SQL literals.
+        // The PreparedStatement.setString() method automatically escapes special characters, so even if
+        // clientId contains malicious input like "'; DROP TABLE active_tim; --", it would be treated as
+        // a literal string pattern to match against CLIENT_ID values, not as executable SQL code.
+        String parameterizedQuery = "select * from active_tim where CLIENT_ID like ? || '%BUFF%'";
+        try (Connection connection = dbInteractions.getConnectionPool();
+             PreparedStatement statement = connection.prepareStatement(parameterizedQuery)
+        ) {
+            statement.setString(1, clientId);
+            var rs = statement.executeQuery();
             activeTims = getActiveTimFromRS(rs, false);
         } catch (SQLException e) {
             log.error("Error getting buffer tims by client id", e);
@@ -375,7 +392,13 @@ public class ActiveTimController extends BaseController {
     }
 
     @RequestMapping(value = "/delete-ids", method = RequestMethod.DELETE, headers = "Accept=application/json")
-    public ResponseEntity<Boolean> DeleteActiveTimsById(@RequestBody List<Long> activeTimIds) {
+    public ResponseEntity<Boolean> deleteActiveTimsById(@RequestBody List<Long> activeTimIds) {
+        // Handle empty list case
+        if (activeTimIds == null || activeTimIds.isEmpty()) {
+            log.debug("No active tim IDs provided for deletion");
+            return ResponseEntity.ok(true); // Return success as there's nothing to delete
+        }
+
         boolean deleteActiveTimResult = false;
 
         StringBuilder deleteSQL = new StringBuilder("DELETE FROM ACTIVE_TIM WHERE ACTIVE_TIM_ID in (");
@@ -385,7 +408,8 @@ public class ActiveTimController extends BaseController {
         deleteSQL = new StringBuilder(deleteSQL.substring(0, deleteSQL.length() - 1));
         deleteSQL.append(")");
 
-        try (Connection connection = dbInteractions.getConnectionPool(); PreparedStatement preparedStatement = connection.prepareStatement(deleteSQL.toString())) {
+        try (Connection connection = dbInteractions.getConnectionPool();
+             PreparedStatement preparedStatement = connection.prepareStatement(deleteSQL.toString())) {
             for (int i = 0; i < activeTimIds.size(); i++) {
                 preparedStatement.setLong(i + 1, activeTimIds.get(i));
             }
@@ -396,7 +420,7 @@ public class ActiveTimController extends BaseController {
             if (deleteActiveTimResult) {
                 log.info("Active Tims (active_tim_ids {}) are deleted!", activeTimIds.stream().map(String::valueOf).collect(Collectors.joining(",")));
             } else {
-                log.warn("Failed to delete Active Tims (active_tim_ids {}). They may not exist.", activeTimIds.stream().map(String::valueOf).collect(Collectors.joining(",")));
+                log.warn("Failed to delete Active Tims (active_tim_ids {}). They may not exist.", Arrays.toString(activeTimIds.toArray()));
             }
 
         } catch (SQLException e) {
@@ -740,12 +764,12 @@ public class ActiveTimController extends BaseController {
                 } else if (col.equals("DIRECTION")) {
                     sqlNullHandler.setStringOrNull(preparedStatement, fieldNum, activeTim.getDirection());
                 } else if (col.equals("TIM_START")) {
-                    java.util.Date tim_start_date = utility.convertDate(activeTim.getStartDateTime());
+                    java.util.Date tim_start_date = dateTimeHelper.convertDate(activeTim.getStartDateTime());
                     Timestamp tim_start_timestamp = new Timestamp(tim_start_date.getTime());
                     sqlNullHandler.setTimestampOrNull(preparedStatement, fieldNum, tim_start_timestamp);
                 } else if (col.equals("TIM_END")) {
                     if (activeTim.getEndDateTime() != null) {
-                        java.util.Date tim_end_date = utility.convertDate(activeTim.getEndDateTime());
+                        java.util.Date tim_end_date = dateTimeHelper.convertDate(activeTim.getEndDateTime());
                         Timestamp tim_end_timestamp = new Timestamp(tim_end_date.getTime());
                         sqlNullHandler.setTimestampOrNull(preparedStatement, fieldNum, tim_end_timestamp);
                     } else {
@@ -753,7 +777,7 @@ public class ActiveTimController extends BaseController {
                     }
                 } else if (col.equals("EXPIRATION_DATE")) {
                     if (activeTim.getExpirationDateTime() != null) {
-                        java.util.Date tim_exp_date = utility.convertDate(activeTim.getExpirationDateTime());
+                        java.util.Date tim_exp_date = dateTimeHelper.convertDate(activeTim.getExpirationDateTime());
                         Timestamp tim_exp_timestamp = new Timestamp(tim_exp_date.getTime());
                         sqlNullHandler.setTimestampOrNull(preparedStatement, fieldNum, tim_exp_timestamp);
                     } else {
@@ -935,7 +959,7 @@ public class ActiveTimController extends BaseController {
         updateStatement += ")";
 
         try (Connection connection = dbInteractions.getConnectionPool(); PreparedStatement preparedStatement = connection.prepareStatement(updateStatement)) {
-            Date date = utility.convertDate(expDate);
+            Date date = dateTimeHelper.convertDate(expDate);
             Timestamp expDateTimestamp = new Timestamp(date.getTime());
             preparedStatement.setTimestamp(1, expDateTimestamp);// expDate comes in as MST from previously called function
             // (GetMinExpiration)
@@ -973,7 +997,7 @@ public class ActiveTimController extends BaseController {
         try (Connection connection = dbInteractions.getConnectionPool(); Statement statement = connection.createStatement(); ResultSet rs = statement.executeQuery(query)) {
             while (rs.next()) {
                 var tmpTs = rs.getTimestamp("MINSTART", UTCCalendar);
-                minStart = utility.timestampFormat.format(tmpTs);
+                minStart = utility.getTimestampFormat().format(tmpTs);
             }
         } catch (SQLException e) {
             log.error("Error getting min expiration date for packetID: {}, expDate: {}", packetID, expDate, e);
@@ -1002,6 +1026,18 @@ public class ActiveTimController extends BaseController {
             log.warn("Failed to mark active tim for deletion with activeTimId: {}", activeTimId);
         }
         return ResponseEntity.ok(success);
+    }
+
+    @RequestMapping(value = "/get-active-planned-condition-tims", method = RequestMethod.GET)
+    public ResponseEntity<List<ActiveTim>> getActivePlannedConditionTims() throws SQLException {
+        String query = "select * from active_tim where client_id like '%planned%'";
+
+        try (Connection connection = dbInteractions.getConnectionPool(); PreparedStatement preparedStatement = connection.prepareStatement(query); ResultSet resultSet = preparedStatement.executeQuery()) {
+            return ResponseEntity.ok(getActiveTimFromRS(resultSet, false));
+        } catch(Exception e) {
+            log.error("Error getting active planned condition TIMs", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
     }
 
 	private TimUpdateModel buildTimUpdateModelFromResultSet(ResultSet rs) throws SQLException {

@@ -11,24 +11,16 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import static org.mockito.ArgumentMatchers.anyString;
 import org.mockito.InjectMocks;
-import org.mockito.Mock;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.verify;
 import org.mockito.junit.jupiter.MockitoExtension;
-
-import com.trihydro.library.helpers.Utility;
 
 
 @ExtendWith(MockitoExtension.class)
 public class KafkaFactoryTest {
 
-    @Mock
-    private Utility utility;
-
-    @InjectMocks
+  @InjectMocks
     private KafkaFactory kafkaFactory;
 
     @Test
@@ -40,12 +32,11 @@ public class KafkaFactoryTest {
         Consumer<String, String> consumer = kafkaFactory.createStringConsumer(host, consumerGroup, topic);
 
         assertNotNull(consumer);
-        verify(utility).logWithDate(anyString());
     }
 
     @Test
     public void testKafkaFactoryConstructorConfluentException() throws Exception {
-        KafkaFactory kafkaFactoryTest = new KafkaFactory(utility);
+        KafkaFactory kafkaFactoryTest = new KafkaFactory();
         assertThrows(IllegalArgumentException.class, () -> {
             kafkaFactoryTest.addConfluentProperties(new Properties());
         });
@@ -54,7 +45,7 @@ public class KafkaFactoryTest {
     @Test
     public void testKafkaFactoryConstructorConfluent() {
         // Create a spy of KafkaFactory
-        KafkaFactory spyKafkaFactory = spy(new KafkaFactory(utility));
+        KafkaFactory spyKafkaFactory = spy(new KafkaFactory());
 
         // Mock the getKafka() method
         doReturn("testKey").when(spyKafkaFactory).getConfluentKey();
@@ -80,7 +71,6 @@ public class KafkaFactoryTest {
         Consumer<String, String> consumer = kafkaFactory.createStringConsumer(host, consumerGroup, topics, maxPollInterval, maxPollRecords);
 
         assertNotNull(consumer);
-        verify(utility).logWithDate(anyString());
     }
 
     @Test

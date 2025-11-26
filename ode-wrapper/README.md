@@ -38,14 +38,14 @@ The following instructions are intended to be executed from the root directory o
 
     Linux:
     ```bash
-    mv ./ode-wrapper/target/ode-wrapper-x.x.x-SNAPSHOT.jar ./ode-wrapper/
+    mv ./ode-wrapper/target/ode-wrapper-x.y.z-SNAPSHOT.jar ./ode-wrapper/
     ```
     Windows:
     ```windows
-    move .\ode-wrapper\target\ode-wrapper-x.x.x-SNAPSHOT.jar .\ode-wrapper\
+    move .\ode-wrapper\target\ode-wrapper-x.y.z-SNAPSHOT.jar .\ode-wrapper\
     ```
 
-    Replace `x.x.x` with the version number of the JAR file. If a JAR file already exists in the `ode-wrapper` directory, you may need to delete it first.
+    Replace `x.y.z` with the version number of the JAR file. If a JAR file already exists in the `ode-wrapper` directory, you may need to delete it first.
 
 1. Copy the sample.env to .env:
 

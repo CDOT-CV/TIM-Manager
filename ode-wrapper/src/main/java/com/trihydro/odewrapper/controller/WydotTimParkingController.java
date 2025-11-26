@@ -1,6 +1,7 @@
 package com.trihydro.odewrapper.controller;
 
 import com.trihydro.library.exceptionhandlers.IdenticalPointsExceptionHandler;
+import com.trihydro.library.helpers.DateTimeHelper;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -13,6 +14,7 @@ import com.trihydro.library.helpers.TimGenerationHelper;
 import com.trihydro.library.helpers.Utility;
 import com.trihydro.library.model.ActiveTim;
 import com.trihydro.library.service.ActiveTimService;
+
 import com.trihydro.library.service.MilepostService;
 import com.trihydro.library.service.RestTemplateProvider;
 import com.trihydro.library.service.TimTypeService;
@@ -22,6 +24,7 @@ import com.trihydro.odewrapper.helpers.SetItisCodes;
 import com.trihydro.odewrapper.model.ControllerResult;
 import com.trihydro.odewrapper.model.TimParkingList;
 import com.trihydro.odewrapper.model.WydotTimParking;
+import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -37,6 +40,7 @@ import io.swagger.annotations.Api;
 
 @CrossOrigin
 @RestController
+@Slf4j
 @Api(description = "Parking")
 public class WydotTimParkingController extends WydotTimBaseController {
 
@@ -44,11 +48,12 @@ public class WydotTimParkingController extends WydotTimBaseController {
 
     @Autowired
     public WydotTimParkingController(BasicConfiguration _basicConfiguration, WydotTimService _wydotTimService,
-            TimTypeService _timTypeService, SetItisCodes _setItisCodes, ActiveTimService _activeTimService,
-            RestTemplateProvider _restTemplateProvider, MilepostReduction _milepostReduction, Utility _utility,
-            TimGenerationHelper _timGenerationHelper, MilepostService _milepostService, IdenticalPointsExceptionHandler identicalPointsExceptionHandler) {
+                                     TimTypeService _timTypeService, SetItisCodes _setItisCodes, ActiveTimService _activeTimService,
+                                     RestTemplateProvider _restTemplateProvider, MilepostReduction _milepostReduction, Utility _utility,
+                                     TimGenerationHelper _timGenerationHelper, MilepostService _milepostService, IdenticalPointsExceptionHandler identicalPointsExceptionHandler,
+                                     DateTimeHelper dateTimeHelper) {
         super(_basicConfiguration, _wydotTimService, _timTypeService, _setItisCodes, _activeTimService,
-                _restTemplateProvider, _milepostReduction, _utility, _timGenerationHelper, _milepostService, identicalPointsExceptionHandler);
+                _restTemplateProvider, _milepostReduction, _utility, _timGenerationHelper, _milepostService, identicalPointsExceptionHandler, dateTimeHelper);
     }
 
     @RequestMapping(value = "/parking-tim", method = RequestMethod.POST, headers = "Accept=application/json")
@@ -57,9 +62,10 @@ public class WydotTimParkingController extends WydotTimBaseController {
         DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
         Date date = new Date();
 
-        utility.logWithDate(dateFormat.format(date) + " - Create Parking TIM", this.getClass());
+        String msg = dateFormat.format(date) + " - Create Parking TIM";
+        log.info("{}: {}", this.getClass().getSimpleName(), msg);
         String post = gson.toJson(timParkingList);
-        utility.logWithDate(post, this.getClass());
+        log.info("{}: {}", this.getClass().getSimpleName(), post.toString());
 
         List<ControllerResult> resultList = new ArrayList<ControllerResult>();
         ControllerResult resultTim = null;
@@ -122,7 +128,8 @@ public class WydotTimParkingController extends WydotTimBaseController {
         DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
         Date date = new Date();
 
-        utility.logWithDate(dateFormat.format(date) + " - Delete Parking TIM", this.getClass());
+        String msg = dateFormat.format(date) + " - Delete Parking TIM";
+        log.info("{}: {}", this.getClass().getSimpleName(), msg);
         // expire and clear TIM
         wydotTimService.clearTimsById("P", id, null);
 

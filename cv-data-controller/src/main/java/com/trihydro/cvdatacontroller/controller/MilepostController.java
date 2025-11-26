@@ -15,6 +15,8 @@ import com.mapbox.services.commons.geojson.Feature;
 import com.mapbox.services.commons.geojson.FeatureCollection;
 import com.mapbox.services.commons.geojson.LineString;
 import com.mapbox.services.commons.models.Position;
+import lombok.extern.slf4j.Slf4j;
+
 import com.trihydro.cvdatacontroller.services.MilepostService;
 import com.trihydro.library.model.Milepost;
 import com.trihydro.library.model.MilepostBuffer;
@@ -35,10 +37,11 @@ import springfox.documentation.annotations.ApiIgnore;
 
 @CrossOrigin
 @RestController
+@Slf4j
 @ApiIgnore
 public class MilepostController extends BaseController {
 
-	private MilepostService milepostService;
+  private MilepostService milepostService;
 	private final HashMap<String, List<Milepost>> milepostCache = new HashMap<>();
 
 	@Autowired
@@ -66,7 +69,7 @@ public class MilepostController extends BaseController {
 			}
 			return ResponseEntity.ok(routes);
 		} catch (SQLException e) {
-			e.printStackTrace();
+            log.error("Exception", e);
 			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(routes);
 		} finally {
 			try {
@@ -80,7 +83,7 @@ public class MilepostController extends BaseController {
 				if (rs != null)
 					rs.close();
 			} catch (SQLException e) {
-				e.printStackTrace();
+                log.error("Exception", e);
 			}
 		}
 	}
@@ -125,7 +128,7 @@ public class MilepostController extends BaseController {
 				mileposts.add(milepost);
 			}
 		} catch (SQLException e) {
-			e.printStackTrace();
+      log.error("Exception", e);
 			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(mileposts);
 		} finally {
 			try {
@@ -139,7 +142,7 @@ public class MilepostController extends BaseController {
 				if (rs != null)
 					rs.close();
 			} catch (SQLException e) {
-				e.printStackTrace();
+        log.error("Exception", e);
 			}
 		}
 		return ResponseEntity.ok(mileposts);
@@ -181,10 +184,10 @@ public class MilepostController extends BaseController {
 			}
 
 			if (mileposts.size() == 0) {
-				System.out.println("Unable to find mileposts with query: " + statementStr);
+        log.info("Unable to find mileposts with query: {}", statementStr);
 			}
 		} catch (SQLException e) {
-			e.printStackTrace();
+      log.error("Exception", e);
 			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(mileposts);
 		} finally {
 			try {
@@ -198,7 +201,7 @@ public class MilepostController extends BaseController {
 				if (rs != null)
 					rs.close();
 			} catch (SQLException e) {
-				e.printStackTrace();
+        log.error("Exception", e);
 			}
 		}
 		return ResponseEntity.ok(mileposts);
@@ -237,7 +240,7 @@ public class MilepostController extends BaseController {
 				mileposts.add(milepost);
 			}
 		} catch (SQLException e) {
-			e.printStackTrace();
+      log.error("Exception", e);
 			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(mileposts);
 		} finally {
 			try {
@@ -251,7 +254,7 @@ public class MilepostController extends BaseController {
 				if (rs != null)
 					rs.close();
 			} catch (SQLException e) {
-				e.printStackTrace();
+        log.error("Exception", e);
 			}
 		}
 		return ResponseEntity.ok(mileposts);
@@ -313,14 +316,14 @@ public class MilepostController extends BaseController {
 
 	@RequestMapping(method = RequestMethod.POST, value="/set-milepost-cache")
 	public ResponseEntity<String> setMilepostCache(@RequestBody SetMilepostCacheRequest milepostCacheBody) {
-		
+
 		if (milepostCacheBody.getMileposts().isEmpty() || milepostCacheBody.getTimID() == null) {
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid Request: please provide a valid milepost list and timID");
 		}
 		if (milepostCache.containsKey(milepostCacheBody.getTimID())) {
-			utility.logWithDate("Updating milepost cache for timID: " + milepostCacheBody.getTimID());
+			log.info("Updating milepost cache for timID: {}", milepostCacheBody.getTimID());
 		} else {
-			utility.logWithDate("Setting milepost cache for timID: " + milepostCacheBody.getTimID());
+			log.info("Setting milepost cache for timID: {}", milepostCacheBody.getTimID());
 		}
 		milepostCache.put(milepostCacheBody.getTimID(), milepostCacheBody.getMileposts());
 		return ResponseEntity.ok("Milepost cache set successfully for timID: " + milepostCacheBody.getTimID());
@@ -332,7 +335,7 @@ public class MilepostController extends BaseController {
 
 		if (milepostCache.containsKey(timID)) {
 			mileposts = milepostCache.get(timID);
-			utility.logWithDate("Found " + mileposts.size() + " mileposts in cache for timID: " + timID);
+			log.info("Found {} mileposts in cache for timID: {}", mileposts.size(), timID);
 			return ResponseEntity.ok(milepostCache.get(timID));
 		}
 
@@ -341,7 +344,7 @@ public class MilepostController extends BaseController {
 
 	@RequestMapping(method = RequestMethod.DELETE, value="/delete-milepost-cache/{timID}")
 	public ResponseEntity<String> deleteMilepostCache(@PathVariable String timID) {
-		utility.logWithDate("Deleting milepost cache for timID: " + timID);
+		log.info("Deleting milepost cache for timID: {}", timID);
 
 		if (milepostCache.containsKey(timID)) {
 			milepostCache.remove(timID);
@@ -352,7 +355,7 @@ public class MilepostController extends BaseController {
 
 	@RequestMapping(method = RequestMethod.GET, value="/clear-milepost-cache")
 	public ResponseEntity<String> clearMilepostCache() {
-		utility.logWithDate("Clearing milepost cache");
+		log.info("Clearing milepost cache");
 		List<String> clientIDs = new ArrayList<>(milepostCache.keySet());
 		List<String> activeTimClientIds = getActiveTimClientIds();
 		// remove all active TIM IDs from the list of milepost cache TIM IDs
@@ -374,7 +377,7 @@ public class MilepostController extends BaseController {
 				activeTimIds.add(timId);
 			}
 		} catch (SQLException e) {
-			utility.logWithDate("Error retrieving active TIM IDs " + e.toString()); // Improved logging
+			log.error("Error retrieving active TIM IDs ", e); // Improved logging
 		}
 		return activeTimIds;
 	}
@@ -472,7 +475,7 @@ public class MilepostController extends BaseController {
 				mileposts.add(milepost);
 			}
 		} catch (SQLException e) {
-			e.printStackTrace();
+      log.error("Exception", e);
 		} finally {
 			try {
 				// close prepared statement
@@ -485,7 +488,7 @@ public class MilepostController extends BaseController {
 				if (rs != null)
 					rs.close();
 			} catch (SQLException e) {
-				e.printStackTrace();
+        log.error("Exception", e);
 			}
 		}
 		return mileposts;
@@ -534,7 +537,7 @@ public class MilepostController extends BaseController {
 				mileposts.add(milepost);
 			}
 		} catch (SQLException e) {
-			e.printStackTrace();
+      log.error("Exception", e);
 		} finally {
 			try {
 				// close prepared statement
@@ -547,7 +550,7 @@ public class MilepostController extends BaseController {
 				if (rs != null)
 					rs.close();
 			} catch (SQLException e) {
-				e.printStackTrace();
+        log.error("Exception", e);
 			}
 		}
 		return mileposts;

@@ -97,7 +97,7 @@ public class ActiveTimHoldingService extends BaseService {
             activeTimHolding.setActiveTimHoldingId(rs.getLong("ACTIVE_TIM_HOLDING_ID"));
             activeTimHolding.setClientId(rs.getString("CLIENT_ID"));
             activeTimHolding.setDirection(rs.getString("DIRECTION"));
-            activeTimHolding.setRsuTargetId(rs.getString("RSU_TARGET"));
+            activeTimHolding.setRsuTarget(rs.getString("RSU_TARGET"));
             activeTimHolding.setSatRecordId(rs.getString("SAT_RECORD_ID"));
             activeTimHolding.setStartPoint(
                 new Coordinate(rs.getBigDecimal("START_LATITUDE"), rs.getBigDecimal("START_LONGITUDE")));
@@ -110,6 +110,7 @@ public class ActiveTimHoldingService extends BaseService {
             }
             activeTimHolding.setExpirationDateTime(rs.getString("EXPIRATION_DATE"));
             activeTimHolding.setPacketId(rs.getString("PACKET_ID"));
+            activeTimHolding.setDesiredEndDateTime(rs.getString("TIM_END"));
         }
         return activeTimHolding;
     }

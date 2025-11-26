@@ -1,5 +1,7 @@
 package com.trihydro.loggerkafkaconsumer.app;
 
+import com.trihydro.library.helpers.DateTimeHelper;
+import com.trihydro.library.helpers.DateTimeHelperImpl;
 import java.util.Date;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
@@ -7,7 +9,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.Gson;
 import com.trihydro.library.factory.KafkaFactory;
 import com.trihydro.library.helpers.EmailHelper;
-import com.trihydro.library.helpers.Utility;
 import com.trihydro.library.model.ActiveTim;
 import com.trihydro.library.model.CertExpirationModel;
 import com.trihydro.library.model.TopicDataWrapper;
@@ -21,12 +22,14 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Import;
 import org.springframework.stereotype.Component;
 
 import us.dot.its.jpo.ode.model.OdeData;
 
 @Component
 @Slf4j
+@Import(DateTimeHelperImpl.class)
 public class LoggerKafkaConsumer {
 
     private final LoggerConfiguration loggerConfig;
@@ -35,22 +38,24 @@ public class LoggerKafkaConsumer {
     private final ActiveTimHoldingService activeTimHoldingService;
     private final TimService timService;
     private final TimDataConverter timDataConverter;
-    private final Utility utility;
     private final EmailHelper emailHelper;
+    private final DateTimeHelper dateTimeHelper;
+    
+    private final Gson gson = new Gson();
 
     @Autowired
     public LoggerKafkaConsumer(LoggerConfiguration _loggerConfig, KafkaFactory _kafkaFactory,
                                ActiveTimService _activeTimService, TimService _timService,
-                               TimDataConverter _timDataConverter, Utility _utility, EmailHelper _emailHelper,
-                               ActiveTimHoldingService _activeTimHoldingService) throws Exception {
+                               TimDataConverter _timDataConverter, EmailHelper _emailHelper,
+                               ActiveTimHoldingService _activeTimHoldingService, DateTimeHelper dateTimeHelper) throws Exception {
         loggerConfig = _loggerConfig;
         kafkaFactory = _kafkaFactory;
         activeTimService = _activeTimService;
         timService = _timService;
         timDataConverter = _timDataConverter;
-        utility = _utility;
         emailHelper = _emailHelper;
         activeTimHoldingService = _activeTimHoldingService;
+        this.dateTimeHelper = dateTimeHelper;
 
         log.info("Logger Kafka Consumer starting..............");
 
@@ -59,126 +64,194 @@ public class LoggerKafkaConsumer {
         startKafkaConsumer();
     }
 
+    /**
+     * Starts the Kafka consumer to process messages from configured topics.
+     * Handles TIM messages, driver alerts, and certificate expiration messages.
+     *
+     * @throws Exception If there is an issue starting or running the consumer
+     */
     public void startKafkaConsumer() throws Exception {
+        log.info("Starting Kafka consumer at {}:9092 for group {} and topic {}", loggerConfig.getKafkaHostServer(), loggerConfig.getDepositGroup(),
+            loggerConfig.getDepositTopic());
 
         String endpoint = loggerConfig.getKafkaHostServer() + ":9092";
-        var stringConsumer = kafkaFactory.createStringConsumer(endpoint, loggerConfig.getDepositGroup(),
-            loggerConfig.getDepositTopic(), loggerConfig.getMaxPollIntervalMs(),
+        var stringConsumer = kafkaFactory.createStringConsumer(endpoint, loggerConfig.getDepositGroup(), loggerConfig.getDepositTopic(),
+            loggerConfig.getMaxPollIntervalMs(), loggerConfig.getMaxPollRecords());
+
+        log.debug("Kafka consumer configuration: maxPollIntervalMs={}, maxPollRecords={}", loggerConfig.getMaxPollIntervalMs(),
             loggerConfig.getMaxPollRecords());
 
-        Gson gson = new Gson();
-
         try {
-            OdeData odeData;
             var recordCount = 0;
+            log.info("Kafka consumer loop started, waiting for messages...");
+
             while (true) {
                 ConsumerRecords<String, String> records = stringConsumer.poll(100);
                 recordCount = records.count();
+
                 if (recordCount > 0) {
-                    log.info("Found {} records to parse", recordCount);
+                    log.info("Polling found {} new record(s) to process", recordCount);
                 }
+
                 for (ConsumerRecord<String, String> record : records) {
-                    TopicDataWrapper tdw = null;
+                    log.debug("Processing record from partition={}, offset={}", record.partition(), record.offset());
+
+                    TopicDataWrapper tdw;
                     try {
                         tdw = gson.fromJson(record.value(), TopicDataWrapper.class);
+                        log.trace("Deserialized JSON to TopicDataWrapper");
                     } catch (Exception e) {
-                        // Could be ioException, JsonParseException, JsonMappingException
-                        log.error("Failed to parse record: {}", record.value(), e);
+                        log.error("Failed to parse record from partition={}, offset={}: {}", record.partition(), record.offset(), e.getMessage());
+                        log.debug("Problematic record content: {}", record.value());
+                        continue;
                     }
+
                     if (tdw != null && tdw.getData() != null) {
-                        log.info("Found data for topic: {}", tdw.getTopic());
-                        switch (tdw.getTopic()) {
-                            case "topic.OdeTimJson":
-                                log.trace("Before processing JSON: {}", tdw.getData());
-                                odeData = timDataConverter.processTimJson(tdw.getData());
-                                log.trace("After processing JSON: {}", gson.toJson(odeData));
-                                if (odeData != null) {
-                                    if (odeData.getMetadata()
-                                        .getRecordGeneratedBy() == us.dot.its.jpo.ode.model.OdeMsgMetadata.GeneratedBy.TMC) {
-                                        timService.addActiveTimToDatabase(odeData);
-                                    } else if (odeData.getMetadata().getRecordGeneratedBy() == null) {
-                                        // we shouldn't get here...log it
-                                        log.error("Failed to get recordGeneratedBy, continuing...");
-                                    } else {
-                                        timService.addTimToDatabase(odeData);
-                                    }
-                                } else {
-                                    log.error("Failed to parse topic.OdeTimJson, insert fails");
-                                }
-                                break;
+                        log.info("Processing message for topic: {}", tdw.getTopic());
 
-                            case "topic.OdeTIMCertExpirationTimeJson":
-                                try {
-                                    CertExpirationModel certExpirationModel = gson.fromJson(tdw.getData(),
-                                        CertExpirationModel.class);
-                                    var success = timService.updateActiveTimExpiration(certExpirationModel);
-                                    if (success) {
-                                        log.info("Successfully updated expiration date");
-                                    } else {
-                                        // Check for issues
-                                        var activeTim = activeTimService
-                                            .getActiveTimByPacketId(certExpirationModel.getPacketID());
+                        try {
+                            switch (tdw.getTopic()) {
+                                case "topic.OdeTimJson":
+                                    processOdeTimJson(tdw);
+                                    break;
 
-                                        // Check if activeTim exists
-                                        if (activeTim == null) {
-                                            // active_tim not created yet, check active_tim_holding
-                                            var ath = activeTimHoldingService
-                                                .getActiveTimHoldingByPacketId(certExpirationModel.getPacketID());
+                                case "topic.OdeTIMCertExpirationTimeJson":
+                                    processOdeTIMCertExpirationTimeJson(tdw);
+                                    break;
 
-                                            if (ath != null) {
-                                                // update ath expiration
-                                                success = activeTimHoldingService.updateTimExpiration(
-                                                    certExpirationModel.getPacketID(),
-                                                    certExpirationModel.getExpirationDate());
-                                            }
-                                        } else if (messageSuperseded(certExpirationModel.getStartDateTime(), activeTim)) {
-                                            // Message superseded
-                                            log.info("Unable to update expiration date for Active Tim {} (Packet ID: {}). Message superseded.",
-                                                activeTim.getActiveTimId(), certExpirationModel.getPacketID());
-                                        }
-
-                                        if (!success) {
-                                            // Message either not superseded, or not found in active_tim nor holding tables. error case
-                                            log.error("Failed to update expiration for data: {}", tdw.getData());
-
-                                            String body = "logger-kafka-consumer failed attempting to update the expiration for an ActiveTim record";
-                                            body += "<br/>";
-                                            body += "The associated expiration topic record is: <br/>";
-                                            body += tdw.getData();
-                                            emailHelper.SendEmail(loggerConfig.getAlertAddresses(),
-                                                "Failed To Update ActiveTim Expiration", body);
-                                        }
-                                    }
-                                } catch (Exception ex) {
-                                    log.error("Failed to parse topic.OdeTIMCertExpirationTimeJson, insert fails", ex);
-                                }
-                                break;
+                                default:
+                                    log.warn("Unhandled topic: {}", tdw.getTopic());
+                            }
+                        } catch (Exception e) {
+                            log.error("Error processing message for topic {}: {}", tdw.getTopic(), e.getMessage(), e);
                         }
                     } else {
-                        log.error("Logger Kafka Consumer failed to deserialize proper TopicDataWrapper");
+                        log.error("Deserialization failed - received invalid TopicDataWrapper");
                         if (tdw != null) {
-                            log.error("Data: {}", tdw.getData());
+                            log.debug("Partial deserialization - wrapper exists but data is null");
                         }
                     }
                 }
             }
         } catch (Exception ex) {
-            log.error("Error in Kafka Consumer: {}", ex.getMessage());
-            emailHelper.ContainerRestarted(loggerConfig.getAlertAddresses(), loggerConfig.getMailPort(),
-                loggerConfig.getMailHost(), loggerConfig.getFromEmail(), "Logger Kafka Consumer");
+            log.error("Critical error in Kafka consumer main loop: {}", ex.getMessage(), ex);
+
+            emailHelper.ContainerRestarted(loggerConfig.getAlertAddresses(), loggerConfig.getMailPort(), loggerConfig.getMailHost(),
+                loggerConfig.getFromEmail(), "Logger Kafka Consumer");
             throw ex;
         } finally {
+            log.info("Closing Kafka consumer connection");
             try {
                 stringConsumer.close();
+                log.info("Kafka consumer closed successfully");
             } catch (Exception consumerEx) {
-                log.error("Failed to close consumer", consumerEx);
+                log.error("Failed to close Kafka consumer cleanly: {}", consumerEx.getMessage(), consumerEx);
             }
+        }
+    }
+
+    /**
+     * Process messages from the OdeTimJson topic
+     */
+    private void processOdeTimJson(TopicDataWrapper tdw) {
+        log.trace("Starting OdeTimJson processing for message with length: {} bytes", tdw.getData().length());
+        log.trace("Message content: {}", tdw.getData());
+
+        OdeData odeData = timDataConverter.processTimJson(tdw.getData());
+
+        if (odeData == null) {
+            log.error("Failed to parse topic.OdeTimJson message, database insertion skipped");
+            return;
+        }
+
+        log.trace("Successfully parsed OdeTimJson into OdeData object: {}", gson.toJson(odeData));
+
+        try {
+            if (odeData.getMetadata().getRecordGeneratedBy() == us.dot.its.jpo.ode.model.OdeMsgMetadata.GeneratedBy.TMC) {
+                log.debug("Processing TIM generated by TMC");
+                timService.addActiveTimToDatabase(odeData);
+                log.debug("Successfully added active TIM to database");
+            } else if (odeData.getMetadata().getRecordGeneratedBy() == null) {
+                log.error("Failed to get recordGeneratedBy from metadata, defaulting to standard TIM processing");
+                timService.addTimToDatabase(odeData); // TODO: identify if this method call can be removed
+            } else {
+                log.debug("Processing standard TIM with recordGeneratedBy: {}", odeData.getMetadata().getRecordGeneratedBy());
+                timService.addTimToDatabase(odeData);
+                log.debug("Successfully added TIM to database");
+            }
+        } catch (Exception e) {
+            log.error("Exception while processing OdeTimJson: {}", e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Process messages from the OdeTIMCertExpirationTimeJson topic
+     */
+    private void processOdeTIMCertExpirationTimeJson(TopicDataWrapper tdw) {
+        log.debug("Starting OdeTIMCertExpirationTimeJson processing");
+
+        try {
+            CertExpirationModel certExpirationModel = gson.fromJson(tdw.getData(), CertExpirationModel.class);
+            log.debug("Processing certificate expiration for packet ID: {}", certExpirationModel.getPacketID());
+
+            var success = timService.updateActiveTimExpiration(certExpirationModel);
+
+            if (success) {
+                log.info("Successfully updated expiration date for packet ID: {}", certExpirationModel.getPacketID());
+                return;
+            }
+
+            // Handle failure cases when the update was not successful
+            log.debug("Initial update attempt failed, checking for special cases");
+
+            // Check if active TIM exists
+            var activeTim = activeTimService.getActiveTimByPacketId(certExpirationModel.getPacketID());
+
+            if (activeTim == null) {
+                // Active TIM not found, try the holding table
+                log.debug("Active TIM not found for packet ID: {}, checking holding table", certExpirationModel.getPacketID());
+
+                var ath = activeTimHoldingService.getActiveTimHoldingByPacketId(certExpirationModel.getPacketID());
+
+                if (ath != null) {
+                    log.debug("Found record in holding table, updating expiration");
+                    success = activeTimHoldingService.updateTimExpiration(certExpirationModel.getPacketID(), certExpirationModel.getExpirationDate());
+
+                    if (success) {
+                        log.info("Successfully updated expiration date in holding table for packet ID: {}", certExpirationModel.getPacketID());
+                    } else {
+                        log.warn("Failed to update expiration date in holding table for packet ID: {}", certExpirationModel.getPacketID());
+                    }
+                } else {
+                    log.warn("No record found in active TIM or holding tables for packet ID: {}", certExpirationModel.getPacketID());
+                }
+            } else if (messageSuperseded(certExpirationModel.getStartDateTime(), activeTim)) {
+                // Message is superseded by newer data
+                log.info("Unable to update expiration date for Active TIM {} (Packet ID: {}). Message superseded by newer data.",
+                    activeTim.getActiveTimId(), certExpirationModel.getPacketID());
+                success = true; // Consider this a success case since no action is needed
+            }
+
+            if (!success) {
+                // Final failure case after all recovery attempts
+                log.error("Failed to update expiration for packet ID: {}, expiration date: {}", certExpirationModel.getPacketID(),
+                    certExpirationModel.getExpirationDate());
+
+                String body = "logger-kafka-consumer failed attempting to update the expiration for an ActiveTim record";
+                body += "<br/>";
+                body += "The associated expiration topic record is: <br/>";
+                body += tdw.getData();
+
+                emailHelper.SendEmail(loggerConfig.getAlertAddresses(), "Failed To Update ActiveTim Expiration", body);
+            }
+        } catch (Exception ex) {
+            log.error("Failed to parse topic.OdeTIMCertExpirationTimeJson: {}", ex.getMessage(), ex);
         }
     }
 
     private boolean messageSuperseded(String startTime, ActiveTim dbRecord) {
         try {
-            Date expectedStart = utility.convertDate(startTime);
+            Date expectedStart = dateTimeHelper.convertDate(startTime);
 
             if (expectedStart == null || dbRecord.getStartTimestamp() == null) {
                 return false;

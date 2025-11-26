@@ -1,12 +1,7 @@
 package com.trihydro.odewrapper.controller;
 
 import com.trihydro.library.exceptionhandlers.IdenticalPointsExceptionHandler;
-
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Comparator;
-import java.util.List;
-
+import com.trihydro.library.helpers.DateTimeHelper;
 import com.trihydro.library.helpers.MilepostReduction;
 import com.trihydro.library.helpers.TimGenerationHelper;
 import com.trihydro.library.helpers.Utility;
@@ -19,7 +14,8 @@ import com.trihydro.odewrapper.config.BasicConfiguration;
 import com.trihydro.odewrapper.factory.BufferTimFactory;
 import com.trihydro.odewrapper.helpers.SetItisCodes;
 import com.trihydro.odewrapper.model.ControllerResult;
-
+import io.swagger.annotations.Api;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -34,9 +30,17 @@ import org.springframework.web.bind.annotation.RestController;
 import com.trihydro.library.service.MilepostService;
 
 import io.swagger.annotations.Api;
+import us.dot.its.jpo.ode.plugin.j2735.timstorage.FrameType.TravelerInfoType;
+
+import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Comparator;
+import java.util.List;
 
 @CrossOrigin
 @RestController
+@Slf4j
 @Api(description = "Road Construction")
 public class WydotTimRwController extends WydotTimBaseController implements BufferTimFactory {
 
@@ -45,18 +49,19 @@ public class WydotTimRwController extends WydotTimBaseController implements Buff
 
     @Autowired
     public WydotTimRwController(BasicConfiguration _basicConfiguration, WydotTimService _wydotTimService,
-            TimTypeService _timTypeService, SetItisCodes _setItisCodes, ActiveTimService _activeTimService,
-            RestTemplateProvider _restTemplateProvider, MilepostReduction _milepostReduction, Utility _utility,
-            TimGenerationHelper _timGenerationHelper, MilepostService _milepostService, IdenticalPointsExceptionHandler identicalPointsExceptionHandler) {
+                                TimTypeService _timTypeService, SetItisCodes _setItisCodes, ActiveTimService _activeTimService,
+                                RestTemplateProvider _restTemplateProvider, MilepostReduction _milepostReduction, Utility _utility,
+                                TimGenerationHelper _timGenerationHelper, MilepostService _milepostService, IdenticalPointsExceptionHandler identicalPointsExceptionHandler,
+                                DateTimeHelper dateTimeHelper) {
         super(_basicConfiguration, _wydotTimService, _timTypeService, _setItisCodes, _activeTimService,
-                _restTemplateProvider, _milepostReduction, _utility, _timGenerationHelper, _milepostService, identicalPointsExceptionHandler);
+                _restTemplateProvider, _milepostReduction, _utility, _timGenerationHelper, _milepostService, identicalPointsExceptionHandler, dateTimeHelper);
     }
 
     @RequestMapping(value = "/rw-tim", method = RequestMethod.POST, headers = "Accept=application/json")
     public ResponseEntity<String> createRoadContructionTim(@RequestBody TimRwList timRwList) {
-        utility.logWithDate("Create/Update RW TIM", this.getClass());
+        log.info("{}: " + "Create/Update RW TIM", this.getClass().getSimpleName());
         String post = gson.toJson(timRwList);
-        utility.logWithDate(post, this.getClass());
+        log.info("{}: {}", this.getClass().getSimpleName(), post.toString());
 
         List<ControllerResult> resultList = new ArrayList<>();
         ControllerResult resultTim;
@@ -123,7 +128,7 @@ public class WydotTimRwController extends WydotTimBaseController implements Buff
 
     @RequestMapping(value = "/rw-tim/{id}", method = RequestMethod.DELETE, headers = "Accept=application/json")
     public ResponseEntity<String> deleteRoadContructionTim(@PathVariable String id) {
-        utility.logWithDate("Delete RW TIM", this.getClass());
+        log.info("{}: " + "Delete RW TIM", this.getClass().getSimpleName());
         // expire and clear TIM
         wydotTimService.clearTimsById(type, id, null, true);
 
