@@ -7,12 +7,14 @@ import java.sql.SQLException;
 import com.trihydro.library.helpers.SQLNullHandler;
 import com.trihydro.library.tables.TimDbTables;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import us.dot.its.jpo.ode.plugin.j2735.OdeTravelerInformationMessage;
 
 @Component
+@Slf4j
 public class NodeXYService extends BaseService {
 
     private TimDbTables timDbTables;
@@ -65,7 +67,7 @@ public class NodeXYService extends BaseService {
             Long nodeXYId = dbInteractions.executeAndLog(preparedStatement, "nodexy");
             return nodeXYId;
         } catch (SQLException e) {
-            e.printStackTrace();
+            log.error("Exception", e);
         } finally {
             try {
                 // close prepared statement
@@ -75,7 +77,7 @@ public class NodeXYService extends BaseService {
                 if (connection != null)
                     connection.close();
             } catch (SQLException e) {
-                e.printStackTrace();
+                log.error("Exception", e);
             }
         }
         return Long.valueOf(0);

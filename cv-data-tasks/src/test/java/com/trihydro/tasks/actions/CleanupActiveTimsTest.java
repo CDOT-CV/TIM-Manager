@@ -1,6 +1,7 @@
 package com.trihydro.tasks.actions;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.contains;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -21,7 +22,12 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
 @ExtendWith(MockitoExtension.class)
@@ -29,37 +35,72 @@ public class CleanupActiveTimsTest {
 
     @Mock
     private DataTasksConfiguration mockConfig;
+
     @Mock
     private RestTemplate mockRestTemplate;
-    @Mock
-    Utility mockUtility;
+
     @Mock
     ActiveTimService mockActiveTimService;
+
     @Mock
     RestTemplateProvider mockRestTemplateProvider;
 
     @InjectMocks
     public CleanupActiveTims uut;
 
-    @BeforeEach
-    public void setup() {
+    @Test
+    public void run_ShouldCallRestTemplateExchangeTwice_WhenTwoActiveTimsFound() {
+        // Arrange
         when(mockRestTemplateProvider.GetRestTemplate()).thenReturn(mockRestTemplate);
 
-        List<ActiveTim> itisTims = new ArrayList<ActiveTim>();
+        List<ActiveTim> itisTims = new ArrayList<>();
         itisTims.add(new ActiveTim());
         when(mockActiveTimService.getActiveTimsMissingItisCodes()).thenReturn(itisTims);
 
-        List<ActiveTim> notSentTims = new ArrayList<ActiveTim>();
+        List<ActiveTim> notSentTims = new ArrayList<>();
         notSentTims.add(new ActiveTim());
         when(mockActiveTimService.getActiveTimsNotSent()).thenReturn(notSentTims);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        ResponseEntity<String> response = new ResponseEntity<>("success", headers, HttpStatus.OK);
+        when(mockRestTemplate.exchange(contains("/delete-tim/"), any(HttpMethod.class),
+            Mockito.<HttpEntity<String>>any(), Mockito.<Class<String>>any())).thenReturn(response);
+
+        // Act
+        uut.run();
+
+        // Assert
+        verify(mockRestTemplate, Mockito.times(2)).exchange(any(String.class), any(HttpMethod.class),
+                Mockito.<HttpEntity<String>>any(), Mockito.<Class<String>>any());
     }
 
     @Test
-    public void cleanupActiveTims_runTest() {
+    public void run_ShouldCallRestTemplateExchangeTwice_WhenTwoActiveTimsFound_AndFirstRequestReturnsBadRequest() {
+        // Arrange
+        when(mockRestTemplateProvider.GetRestTemplate()).thenReturn(mockRestTemplate);
+
+        List<ActiveTim> itisTims = new ArrayList<>();
+        itisTims.add(new ActiveTim());
+        when(mockActiveTimService.getActiveTimsMissingItisCodes()).thenReturn(itisTims);
+
+        List<ActiveTim> notSentTims = new ArrayList<>();
+        notSentTims.add(new ActiveTim());
+        when(mockActiveTimService.getActiveTimsNotSent()).thenReturn(notSentTims);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        ResponseEntity<String> secondResponse = new ResponseEntity<>("success", headers, HttpStatus.OK);
+
+        when(mockRestTemplate.exchange(contains("/delete-tim/"), any(HttpMethod.class),
+                Mockito.<HttpEntity<String>>any(), Mockito.<Class<String>>any())).thenThrow(new HttpClientErrorException(HttpStatus.BAD_REQUEST))
+                .thenReturn(secondResponse);
+
+        // Act
         uut.run();
 
-        // assert exchange called twice
-        verify(mockRestTemplate, Mockito.times(2)).exchange(any(String.class), any(HttpMethod.class),
+        // Assert
+        verify(mockRestTemplate, Mockito.times(2)).exchange(contains("/delete-tim/"), any(HttpMethod.class),
                 Mockito.<HttpEntity<String>>any(), Mockito.<Class<String>>any());
     }
 }

@@ -2,6 +2,7 @@ package com.trihydro.tasks.actions;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -106,6 +107,28 @@ class CleanupStaleActiveTimHoldingRecordsTest {
         verify(activeTimService).getAllRecords();
         verify(activeTimHoldingService).deleteActiveTimHoldingRecords(List.of(1L, 2L));
         verify(activeTimService).deleteActiveTimsById(List.of(37L));
+    }
+
+    @Test
+    void run_SubsequentRun_ShouldNotInitiateDeletionsForEmptyList() {
+        // prepare
+        ActiveTimHolding ath1 = new ActiveTimHolding();
+        ath1.setActiveTimHoldingId(1L);
+        ActiveTimHolding ath2 = new ActiveTimHolding();
+        ath2.setActiveTimHoldingId(2L);
+        when(activeTimHoldingService.getAllRecords()).thenReturn(Arrays.asList(ath1, ath2));
+        when(activeTimService.getAllRecords()).thenReturn(List.of());
+        CleanupStaleActiveTimHoldingRecords cleanupStaleActiveTimHoldingRecords = new CleanupStaleActiveTimHoldingRecords(activeTimHoldingService, activeTimService);
+        cleanupStaleActiveTimHoldingRecords.setStaleRecordsIdentifiedLastRun(Set.of(1L, 2L)); // set stale records from previous run
+
+        // execute
+        cleanupStaleActiveTimHoldingRecords.run();
+
+        // verify
+        assertEquals(0, cleanupStaleActiveTimHoldingRecords.getStaleRecordsIdentifiedLastRun().size());
+        verify(activeTimService).getAllRecords();
+        verify(activeTimHoldingService).deleteActiveTimHoldingRecords(List.of(1L, 2L));
+        verify(activeTimService, never()).deleteActiveTimsById(List.of());
     }
 
     /**

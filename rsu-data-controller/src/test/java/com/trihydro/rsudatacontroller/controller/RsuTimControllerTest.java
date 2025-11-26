@@ -1,16 +1,7 @@
 package com.trihydro.rsudatacontroller.controller;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
-import java.util.Arrays;
-import java.util.List;
-
-import com.trihydro.library.helpers.Utility;
 import com.trihydro.rsudatacontroller.model.RsuTim;
 import com.trihydro.rsudatacontroller.service.RsuService;
-
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -20,13 +11,15 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
+import java.util.Arrays;
+import java.util.List;
+
+import static org.mockito.Mockito.when;
+
 @ExtendWith(MockitoExtension.class)
 public class RsuTimControllerTest {
     @Mock
     RsuService mockRsuService;
-
-    @Mock
-    Utility mockUtility;
 
     @InjectMocks
     RsuTimController uut;
@@ -50,7 +43,7 @@ public class RsuTimControllerTest {
 
         // Assert
         Assertions.assertEquals(HttpStatus.BAD_REQUEST, result.getStatusCode());
-        Assertions.assertEquals(null, result.getBody());
+        Assertions.assertNull(result.getBody());
     }
 
     @Test
@@ -63,8 +56,7 @@ public class RsuTimControllerTest {
 
         // Assert
         Assertions.assertEquals(HttpStatus.UNPROCESSABLE_ENTITY, result.getStatusCode());
-        Assertions.assertEquals(null, result.getBody());
-        verify(mockUtility).logWithDate(any());
+        Assertions.assertNull(result.getBody());
     }
 
     @Test
@@ -77,7 +69,6 @@ public class RsuTimControllerTest {
 
         // Assert
         Assertions.assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, result.getStatusCode());
-        Assertions.assertEquals(null, result.getBody());
-        verify(mockUtility).logWithDate(any());
+        Assertions.assertNull(result.getBody());
     }
 }

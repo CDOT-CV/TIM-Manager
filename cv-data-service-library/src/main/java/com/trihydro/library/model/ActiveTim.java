@@ -1,10 +1,15 @@
 package com.trihydro.library.model;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
+import lombok.Data;
+import lombok.extern.slf4j.Slf4j;
+
 import java.sql.Timestamp;
+import java.text.SimpleDateFormat;
 import java.util.List;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
-
+@Data
+@Slf4j
 public class ActiveTim {
 
     private Long activeTimId;
@@ -16,6 +21,7 @@ public class ActiveTim {
     private Timestamp startTimestamp;
     private String startDateTime;
     private String endDateTime;
+    // the expirationDateTime is used by the tim refresh module to resign a TIM and resubmit
     private String expirationDateTime;
     private String route;
     private String clientId;
@@ -28,182 +34,50 @@ public class ActiveTim {
     private Coordinate endPoint;
     private Integer projectKey;
 
-    public Coordinate getEndPoint() {
-        return endPoint;
-    }
-
-    public String getExpirationDateTime() {
-        return expirationDateTime;
-    }
-
-    public void setExpirationDateTime(String expirationDateTime) {
-        this.expirationDateTime = expirationDateTime;
-    }
-
-    public void setEndPoint(Coordinate endPoint) {
-        this.endPoint = endPoint;
-    }
-
-    public Coordinate getStartPoint() {
-        return startPoint;
-    }
-
-    public void setStartPoint(Coordinate startPoint) {
-        this.startPoint = startPoint;
-    }
-
-    public Long getActiveTimId() {
-        return this.activeTimId;
-    }
-
-    public void setActiveTimId(Long activeTimId) {
-        this.activeTimId = activeTimId;
-    }
-
-    public Long getTimId() {
-        return this.timId;
-    }
-
-    public void setTimId(Long timId) {
-        this.timId = timId;
-    }
-
-    public String getTimType() {
-        return this.timType;
-    }
-
-    public void setTimType(String timType) {
-        this.timType = timType;
-    }
-
-    public String getDirection() {
-        return this.direction;
-    }
-
-    public void setDirection(String direction) {
-        this.direction = direction;
-    }
-
-    public String getStartDateTime() {
-        return this.startDateTime;
-    }
-
-    public void setStartDateTime(String startDateTime) {
-        this.startDateTime = startDateTime;
-    }
-
-    public Timestamp getStartTimestamp() {
-        return startTimestamp;
-    }
-
-    public void setStartTimestamp(Timestamp startTimestamp) {
-        this.startTimestamp = startTimestamp;
-    }
-
-    public String getEndDateTime() {
-        return this.endDateTime;
-    }
-
-    public void setEndDateTime(String endDateTime) {
-        this.endDateTime = endDateTime;
-    }
-
-    public Long getTimTypeId() {
-        return this.timTypeId;
-    }
-
-    public void setTimTypeId(Long timTypeId) {
-        this.timTypeId = timTypeId;
-    }
-
-    public String getRoute() {
-        return this.route;
-    }
-
-    public void setRoute(String route) {
-        this.route = route;
-    }
-
-    public String getClientId() {
-        return this.clientId;
-    }
-
-    public void setClientId(String clientId) {
-        this.clientId = clientId;
-    }
-
-    public String getSatRecordId() {
-        return this.satRecordId;
-    }
-
-    public void setSatRecordId(String satRecordId) {
-        this.satRecordId = satRecordId;
-    }
-
-    public Integer getPk() {
-        return this.pk;
-    }
-
-    public void setPk(Integer pk) {
-        this.pk = pk;
-    }
-
-    public String getRsuTarget() {
-        return this.rsuTarget;
-    }
-
-    public void setRsuTarget(String rsuTarget) {
-        this.rsuTarget = rsuTarget;
-    }
-
-    public Integer getRsuIndex() {
-        return this.rsuIndex;
-    }
-
-    public void setRsuIndex(Integer rsuIndex) {
-        this.rsuIndex = rsuIndex;
-    }
-
-    public List<Integer> getItisCodes() {
-        return itisCodes;
-    }
-
-    public void setItisCodes(List<Integer> itisCodes) {
-        this.itisCodes = itisCodes;
-    }
-
-    public Integer getProjectKey() {
-        return projectKey;
-    }
-
-    public void setProjectKey(Integer projectKey) {
-        this.projectKey = projectKey;
-    }
-
-    public boolean isIdenticalConditions(List<Integer> itisCodes, String endDateTime) {
+    public boolean isIdenticalConditions(List<Integer> itisCodesToCompare, String endDateTimeToCompare, int minutesUntilEndDateTimeToCompare) {
         // check if existing condition is identical to requested condition
         boolean identicalITISCodes = false;
         boolean identicalEndDate = false;
         List<Integer> existingITISCodes = getItisCodes();
         if (existingITISCodes != null) {
-            if (existingITISCodes.equals(itisCodes)) {
+            if (existingITISCodes.equals(itisCodesToCompare)) {
                 identicalITISCodes = true;
             }
         }
 
+        // format (turn 2025-04-16T06:00:00.000Z into 2025-04-16 06:00:00)
+        SimpleDateFormat sourceFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+        SimpleDateFormat targetFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        try {
+            // Check if endDateTimeToCompare matches source format
+            if (endDateTimeToCompare != null) {
+                sourceFormat.parse(endDateTimeToCompare); // Validate format
+                endDateTimeToCompare = targetFormat.format(sourceFormat.parse(endDateTimeToCompare));
+            }
+        } catch (Exception e) {
+            log.error("Unable to parse or format endDateTimeToCompare: {}", endDateTimeToCompare, e);
+            return false;
+        }
+
         // check if end_date is identical
-        if (getEndDateTime() != null) {
+        String existingEndDateTime = getEndDateTime();
+        if (existingEndDateTime != null) {
+            log.trace("End date of existing condition: {}", existingEndDateTime);
+            log.trace("End date of requested condition: {}", endDateTimeToCompare);
             // existing condition has an end date, check if it is identical
-            if (getEndDateTime().equals(endDateTime)) {
+            if (existingEndDateTime.equals(endDateTimeToCompare)) {
                 identicalEndDate = true;
             }
         } else {
             // existing condition has no end date, check if requested condition has no end
-            // date
-            if (endDateTime == null) {
+            // date or if the end date is more than 32000 minutes in the future (if end date is
+            // more than 32000 minutes in the future, it is considered identical to no end date)
+            if (endDateTimeToCompare == null || minutesUntilEndDateTimeToCompare >= 32000) {
                 identicalEndDate = true;
             }
         }
+        log.trace("identicalITISCodes: {}", identicalITISCodes);
+        log.trace("identicalEndDate: {}", identicalEndDate);
         return identicalITISCodes && identicalEndDate;
     }
 }

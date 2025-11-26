@@ -1,32 +1,30 @@
 package com.trihydro.odewrapper.helpers;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
-
-import java.io.IOException;
-import java.util.Collections;
-import java.util.Enumeration;
+import com.trihydro.library.service.LoggingService;
+import com.trihydro.odewrapper.config.BasicConfiguration;
+import com.trihydro.odewrapper.model.BufferedRequestWrapper;
+import com.trihydro.odewrapper.model.BufferedResponseWrapper;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import javax.servlet.FilterChain;
 import javax.servlet.FilterConfig;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.util.Collections;
+import java.util.Enumeration;
 
-import com.trihydro.library.helpers.Utility;
-import com.trihydro.library.service.LoggingService;
-import com.trihydro.odewrapper.config.BasicConfiguration;
-import com.trihydro.odewrapper.model.BufferedRequestWrapper;
-import com.trihydro.odewrapper.model.BufferedResponseWrapper;
-
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 
 @ExtendWith(MockitoExtension.class)
 public class HttpLoggingFilterTest {
@@ -43,8 +41,6 @@ public class HttpLoggingFilterTest {
     LoggingService mockLoggingService;
     @Mock
     BasicConfiguration mockBasicConfiguration;
-    @Mock
-    Utility mockUtility;
 
     @Mock
     BufferedResponseWrapperFactory mockBufferedResponseWrapperFactory;
@@ -94,6 +90,18 @@ public class HttpLoggingFilterTest {
     }
 
     @Test
+    public void doFilter_skip_actuatorHealth() throws IOException, ServletException {
+        // Arrange
+        doReturn("/actuator/health").when(mockHttpServletRequest).getServletPath();
+
+        // Act
+        uut.doFilter(mockHttpServletRequest, mockHttpServletResponse, mockFilterChain);
+
+        // Assert
+        verifyNoInteractions(mockLoggingService);
+    }
+
+    @Test
     public void doFilter_SUCCESS() throws IOException, ServletException {
         // Arrange
         doReturn("/").when(mockHttpServletRequest).getServletPath();
@@ -107,24 +115,6 @@ public class HttpLoggingFilterTest {
 
         // Assert
         verify(mockLoggingService).LogHttpRequest(any());
-    }
-
-    @Test
-    public void doFilter_SUCCESS_truncate() throws IOException, ServletException {
-        // Arrange
-        doReturn("/").when(mockHttpServletRequest).getServletPath();
-        doReturn(150).when(mockBasicConfiguration).getHttpLoggingMaxSize();
-        doReturn("this is a long request body to be truncated").when(mockBufferedRequestWrapper).getRequestBody();
-        doReturn(200).when(mockBufferedResponseWrapper).getStatus();
-        doReturn("this is a longer content").when(mockBufferedResponseWrapper).getContent();
-
-        // Act
-        uut.doFilter(mockHttpServletRequest, mockHttpServletResponse, mockFilterChain);
-
-        // Assert
-        verify(mockLoggingService).LogHttpRequest(any());
-        verify(mockUtility).logWithDate(
-                "REST Request - [HTTP METHOD:null] [PATH INFO:/] [REQUEST PARAMETERS:{}] [REQUEST BODY:this is a long request...] [RESPONSE CODE:200] [RESPONSE:thi...]");
     }
 
 }

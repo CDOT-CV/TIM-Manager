@@ -1,9 +1,7 @@
 package com.trihydro.odewrapper.controller;
 
 import com.trihydro.library.exceptionhandlers.IdenticalPointsExceptionHandler;
-import java.util.ArrayList;
-import java.util.List;
-
+import com.trihydro.library.helpers.DateTimeHelper;
 import com.trihydro.library.helpers.MilepostReduction;
 import com.trihydro.library.helpers.TimGenerationHelper;
 import com.trihydro.library.helpers.Utility;
@@ -19,7 +17,8 @@ import com.trihydro.odewrapper.helpers.SetItisCodes;
 import com.trihydro.odewrapper.model.ControllerResult;
 import com.trihydro.odewrapper.model.TimBowrList;
 import com.trihydro.odewrapper.model.WydotTimBowr;
-
+import io.swagger.annotations.Api;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -29,12 +28,14 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
-
-import io.swagger.annotations.Api;
 import us.dot.its.jpo.ode.plugin.j2735.timstorage.FrameType.TravelerInfoType;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @CrossOrigin
 @RestController
+@Slf4j
 @Api(description = "Blow Over Weight Restrictions")
 public class WydotTimBowrController extends WydotTimBaseController {
 
@@ -42,16 +43,17 @@ public class WydotTimBowrController extends WydotTimBaseController {
 
     @Autowired
     public WydotTimBowrController(BasicConfiguration _basicConfiguration, WydotTimService _wydotTimService,
-            TimTypeService _timTypeService, SetItisCodes _setItisCodes, ActiveTimService _activeTimService,
-            RestTemplateProvider _restTemplateProvider, MilepostReduction _milepostReduction, Utility _utility,
-            TimGenerationHelper _timGenerationHelper, IdenticalPointsExceptionHandler identicalPointsExceptionHandler) {
+                                  TimTypeService _timTypeService, SetItisCodes _setItisCodes, ActiveTimService _activeTimService,
+                                  RestTemplateProvider _restTemplateProvider, MilepostReduction _milepostReduction, Utility _utility,
+                                  TimGenerationHelper _timGenerationHelper, IdenticalPointsExceptionHandler identicalPointsExceptionHandler,
+                                  DateTimeHelper dateTimeHelper) {
         super(_basicConfiguration, _wydotTimService, _timTypeService, _setItisCodes, _activeTimService,
-                _restTemplateProvider, _milepostReduction, _utility, _timGenerationHelper, identicalPointsExceptionHandler);
+                _restTemplateProvider, _milepostReduction, _utility, _timGenerationHelper, identicalPointsExceptionHandler, dateTimeHelper);
     }
 
     @RequestMapping(value = "/create-or-update-bowr-tim", method = RequestMethod.POST, headers = "Accept=application/json")
     public ResponseEntity<String> createOrUpdateBowrTim(@RequestBody TimBowrList timBowrList) {
-        utility.logWithDate("Create Or Update Blow Over Weight Restriction TIM", this.getClass());
+        log.info("{}: " + "Create Or Update Blow Over Weight Restriction TIM", this.getClass().getSimpleName());
 
         List<ControllerResult> results = new ArrayList<ControllerResult>();
         List<ControllerResult> errors = new ArrayList<ControllerResult>();
@@ -77,7 +79,8 @@ public class WydotTimBowrController extends WydotTimBaseController {
         processRequestAsync(timsToSend);
         String responseMessage = gson.toJson(results);
         if (errors.size() > 0) {
-            utility.logWithDate("Failed to send TIMs: " + gson.toJson(errors), this.getClass());
+            String msg = "Failed to send TIMs: " + gson.toJson(errors);
+            log.info("{}: {}", this.getClass().getSimpleName(), msg);
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(responseMessage);
         }
         return ResponseEntity.status(HttpStatus.OK).body(responseMessage);
@@ -85,7 +88,7 @@ public class WydotTimBowrController extends WydotTimBaseController {
 
     @RequestMapping(value = "/submit-bowr-clear/{clientId}", method = RequestMethod.DELETE, headers = "Accept=application/json")
     public ResponseEntity<String> submitBowrClear(@PathVariable String clientId) {
-        utility.logWithDate("Submit Blow Over Weight Restriction Clear", this.getClass());
+        log.info("{}: " + "Submit Blow Over Weight Restriction Clear", this.getClass().getSimpleName());
 
         List<Long> existingTimIds = new ArrayList<Long>();
 
@@ -100,7 +103,7 @@ public class WydotTimBowrController extends WydotTimBaseController {
         Long timTypeId = timType != null ? timType.getTimTypeId() : null;
         List<ActiveTim> existingActiveTims = activeTimService.getActiveTimsByClientIdDirection(clientId, timTypeId, null);
         if (existingActiveTims.size() == 0) {
-            utility.logWithDate("No active TIMs found for client id: " + clientId, this.getClass());
+            log.info("{}: " + "No active TIMs found for client id: {}", this.getClass().getSimpleName(), clientId);
             String responseMessage = "No active TIMs found for client id: " + clientId;
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(responseMessage);
         }

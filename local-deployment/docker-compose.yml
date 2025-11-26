@@ -2,7 +2,7 @@ version: "2"
 services:
   # external dependencies ----------------------------------------------
   kafka:
-    image: bitnami/kafka:latest
+    image: bitnamilegacy/kafka:3.8.0
     hostname: kafka
     ports:
       - "9092:9092"
@@ -23,11 +23,12 @@ services:
       KAFKA_CFG_LOG_RETENTION_HOURS: 2
     logging:
       options:
-        max-size: "10m"
-        max-file: "5"
+        max-size: ${LOGGING_OPTIONS_MAX_SIZE}
+        max-file: ${LOGGING_OPTIONS_MAX_FILES}
+    restart: always
 
   kafka_init:
-    image: bitnami/kafka:latest
+    image: bitnamilegacy/kafka:3.8.0
     depends_on:
       kafka:
         condition: service_started
@@ -81,8 +82,9 @@ services:
       - ${DOCKER_SHARED_VOLUME}/uploads:/home/uploads
     logging:
       options:
-        max-size: "10m"
-        max-file: "5"
+        max-size: ${LOGGING_OPTIONS_MAX_SIZE}
+        max-file: ${LOGGING_OPTIONS_MAX_FILES}
+    restart: always
 
   adm:
     image: usdotjpoode/asn1_codec:2025-q1
@@ -98,9 +100,9 @@ services:
       - ${DOCKER_SHARED_VOLUME}:/asn1_codec_share
     logging:
       options:
-        max-size: "10m"
-        max-file: "5"
-    restart: on-failure
+        max-size: ${LOGGING_OPTIONS_MAX_SIZE}
+        max-file: ${LOGGING_OPTIONS_MAX_FILES}
+    restart: always
   
   aem:
     image: usdotjpoode/asn1_codec:2025-q1
@@ -116,9 +118,9 @@ services:
       - ${DOCKER_SHARED_VOLUME}:/asn1_codec_share
     logging:
       options:
-        max-size: "10m"
-        max-file: "5"
-    restart: on-failure
+        max-size: ${LOGGING_OPTIONS_MAX_SIZE}
+        max-file: ${LOGGING_OPTIONS_MAX_FILES}
+    restart: always
 
   # Note: the SDX does not accept unsigned data, so this is commented out for now
   # sdw_depositor:
@@ -139,7 +141,8 @@ services:
   #     options:
   #       max-size: "10m" 
   #       max-file: "5"
-  
+  #   restart: always
+
   postgres:
     image: postgis/postgis:15-master
     restart: always
@@ -152,7 +155,8 @@ services:
       - pgdb:/var/lib/postgresql/data
     logging:
       options:
-        max-size: '10m'
+        max-size: ${LOGGING_OPTIONS_MAX_SIZE}
+        max-file: ${LOGGING_OPTIONS_MAX_FILES}
   
   mongo:
     image: mongo
@@ -166,7 +170,8 @@ services:
       - mongodb_data_container:/data/db
     logging:
       options:
-        max-size: '10m'
+        max-size: ${LOGGING_OPTIONS_MAX_SIZE}
+        max-file: ${LOGGING_OPTIONS_MAX_FILES}
   # end of external dependencies ----------------------------------------------
 
   # timm apps --------------------------------------------------------------
@@ -193,8 +198,8 @@ services:
       LOGGING_LEVEL_COM_TRIHYDRO: ${LOGGING_LEVEL_COM_TRIHYDRO}
     logging:
       options:
-        max-size: "20m"
-        max-file: "3"
+        max-size: ${LOGGING_OPTIONS_MAX_SIZE}
+        max-file: ${LOGGING_OPTIONS_MAX_FILES}
 
   ode-wrapper:
     build: ../ode-wrapper
@@ -226,8 +231,8 @@ services:
       - "7777:7777"
     logging:
       options:
-        max-size: "20m"
-        max-file: "3"
+        max-size: ${LOGGING_OPTIONS_MAX_SIZE}
+        max-file: ${LOGGING_OPTIONS_MAX_FILES}
 
   rsu-data-controller:
     build: ../rsu-data-controller
@@ -245,8 +250,8 @@ services:
       LOGGING_LEVEL_COM_TRIHYDRO: ${LOGGING_LEVEL_COM_TRIHYDRO}
     logging:
       options:
-        max-size: "20m"
-        max-file: "3"
+        max-size: ${LOGGING_OPTIONS_MAX_SIZE}
+        max-file: ${LOGGING_OPTIONS_MAX_FILES}
 
   cv-data-tasks:
     build: ../cv-data-tasks
@@ -257,7 +262,7 @@ services:
       CONFIG_CV_REST_SERVICE_DEV: http://cv-data-controller:8888
       CONFIG_CV_REST_SERVICE_PROD: http://cv-data-controller:8888
       CONFIG_RSU_DATA_SERVICE_URL: http://rsu-data-controller:8898
-      CONFIG_WRAPPER_URL: "http://ode-wrapper:7777"
+      CONFIG_WRAPPER_URL: ${ODE_WRAPPER_REST_SERVICE}
       CONFIG_MAIL_HOST: 172.0.0.1
       CONFIG_MAIL_PORT: 123
       CONFIG_ENVIRONMENT_NAME: local
@@ -293,12 +298,15 @@ services:
       LOGGING_LEVEL_COM_TRIHYDRO: ${LOGGING_LEVEL_COM_TRIHYDRO}
     logging:
       options:
-        max-size: "20m"
-        max-file: "3"
+        max-size: ${LOGGING_OPTIONS_MAX_SIZE}
+        max-file: ${LOGGING_OPTIONS_MAX_FILES}
     depends_on:
-      - ode-wrapper
-      - cv-data-controller
-      - rsu-data-controller
+      ode-wrapper:
+        condition: service_healthy
+      cv-data-controller:
+        condition: service_started
+      rsu-data-controller:
+        condition: service_started
   
   tim_logger:
     build: ../ode-data-logger
@@ -318,8 +326,8 @@ services:
       LOGGING_LEVEL_COM_TRIHYDRO: ${LOGGING_LEVEL_COM_TRIHYDRO}
     logging:
       options:
-        max-size: "20m"
-        max-file: "3"
+        max-size: ${LOGGING_OPTIONS_MAX_SIZE}
+        max-file: ${LOGGING_OPTIONS_MAX_FILES}
 
   logger-kafka-consumer:
     build: ../logger-kafka-consumer
@@ -344,8 +352,8 @@ services:
       LOGGING_LEVEL_COM_TRIHYDRO: ${LOGGING_LEVEL_COM_TRIHYDRO}
     logging:
       options:
-        max-size: "20m"
-        max-file: "3"
+        max-size: ${LOGGING_OPTIONS_MAX_SIZE}
+        max-file: ${LOGGING_OPTIONS_MAX_FILES}
 
   tim-refresh:
     build: ../tim-refresh
@@ -369,8 +377,8 @@ services:
       LOGGING_LEVEL_COM_TRIHYDRO: ${LOGGING_LEVEL_COM_TRIHYDRO}
     logging:
       options:
-        max-size: "20m"
-        max-file: "3"
+        max-size: ${LOGGING_OPTIONS_MAX_SIZE}
+        max-file: ${LOGGING_OPTIONS_MAX_FILES}
 
   cert-expiration:
     build: ../cert-expiration
@@ -389,8 +397,8 @@ services:
       LOGGING_LEVEL_COM_TRIHYDRO: ${LOGGING_LEVEL_COM_TRIHYDRO}
     logging:
       options:
-        max-size: "20m"
-        max-file: "3"
+        max-size: ${LOGGING_OPTIONS_MAX_SIZE}
+        max-file: ${LOGGING_OPTIONS_MAX_FILES}
 
   tim_logger_mongo:
     build: ../ode-mongo-logger
@@ -412,8 +420,8 @@ services:
       LOGGING_LEVEL_COM_TRIHYDRO: ${LOGGING_LEVEL_COM_TRIHYDRO}
     logging:
       options:
-        max-size: "20m"
-        max-file: "3"
+        max-size: ${LOGGING_OPTIONS_MAX_SIZE}
+        max-file: ${LOGGING_OPTIONS_MAX_FILES}
 
   bsm_logger_mongo:
     build: ../ode-mongo-logger
@@ -435,8 +443,8 @@ services:
       LOGGING_LEVEL_COM_TRIHYDRO: ${LOGGING_LEVEL_COM_TRIHYDRO}
     logging:
       options:
-        max-size: "20m"
-        max-file: "3"
+        max-size: ${LOGGING_OPTIONS_MAX_SIZE}
+        max-file: ${LOGGING_OPTIONS_MAX_FILES}
 
   driveralert_logger_mongo:
     build: ../ode-mongo-logger
@@ -458,8 +466,8 @@ services:
       LOGGING_LEVEL_COM_TRIHYDRO: ${LOGGING_LEVEL_COM_TRIHYDRO}
     logging:
       options:
-        max-size: "20m"
-        max-file: "3"
+        max-size: ${LOGGING_OPTIONS_MAX_SIZE}
+        max-file: ${LOGGING_OPTIONS_MAX_FILES}
   # end of timm apps ---------------------------------------------------------
 
 # volumes ---------------------------------------------------------------------

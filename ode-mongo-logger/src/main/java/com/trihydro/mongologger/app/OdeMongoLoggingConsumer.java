@@ -12,6 +12,7 @@ import com.trihydro.library.helpers.EmailHelper;
 import com.trihydro.library.helpers.Utility;
 import com.trihydro.mongologger.app.loggers.MongoLogger;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
@@ -19,9 +20,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 @Component
+@Slf4j
 public class OdeMongoLoggingConsumer {
 
-	PreparedStatement preparedStatement = null;
+    PreparedStatement preparedStatement = null;
 	Statement statement = null;
 	private MongoLoggerConfiguration mongoLoggerConfig;
 	private MongoLogger mongoLogger;
@@ -36,8 +38,8 @@ public class OdeMongoLoggingConsumer {
 		utility = _utility;
 		emailHelper = _emailHelper;
 
-		utility.logWithDate("starting..............");
-		startKafkaConsumer();
+        log.info("starting..............");
+        startKafkaConsumer();
 	}
 
 	public void startKafkaConsumer() throws Exception {
@@ -56,7 +58,7 @@ public class OdeMongoLoggingConsumer {
 		String topic = mongoLoggerConfig.getDepositTopic();
 
 		stringConsumer.subscribe(Arrays.asList(topic));
-		System.out.println("Subscribed to topic " + topic);
+        log.info("Subscribed to topic {}", topic);
 		try {
 			while (true) {
 				ConsumerRecords<String, String> records = stringConsumer.poll(100);
@@ -66,8 +68,8 @@ public class OdeMongoLoggingConsumer {
 				}
 
 				if (recStrings.size() > 0) {
-					utility.logWithDate(String.format("Found %d %s records to parse", recStrings.size(), topic));
-					String[] recStringArr = recStrings.toArray(new String[recStrings.size()]);
+                    log.info("Found {} {} records to parse", recStrings.size(), topic);
+                    String[] recStringArr = recStrings.toArray(new String[recStrings.size()]);
 
 					if (topic.equals("topic.OdeTimJson")) {
 						mongoLogger.logTim(recStringArr);
@@ -79,15 +81,15 @@ public class OdeMongoLoggingConsumer {
 				}
 			}
 		} catch (Exception ex) {
-			utility.logWithDate("Exception in mongo logger application " + ex.getMessage());
-			emailHelper.ContainerRestarted(mongoLoggerConfig.getAlertAddresses(), mongoLoggerConfig.getMailPort(),
+            log.info("Exception in mongo logger application {}", ex.getMessage());
+            emailHelper.ContainerRestarted(mongoLoggerConfig.getAlertAddresses(), mongoLoggerConfig.getMailPort(),
 					mongoLoggerConfig.getMailHost(), mongoLoggerConfig.getFromEmail(), topic + " Mongo Consumer");
 			throw (ex);
 		} finally {
 			try {
 				stringConsumer.close();
 			} catch (Exception consumerEx) {
-				consumerEx.printStackTrace();
+                log.error("Exception", consumerEx);
 			}
 		}
 	}
