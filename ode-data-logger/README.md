@@ -37,14 +37,14 @@ The following instructions are intended to be executed from the root directory o
 
     Linux:
     ```bash
-    mv ./ode-data-logger/target/ode-data-logger-x.x.x-SNAPSHOT.jar ./ode-data-logger/
+    mv ./ode-data-logger/target/ode-data-logger-x.y.z-SNAPSHOT.jar ./ode-data-logger/
     ```
     Windows:
     ```windows
-    move .\ode-data-logger\target\ode-data-logger-x.x.x-SNAPSHOT.jar .\ode-data-logger\
+    move .\ode-data-logger\target\ode-data-logger-x.y.z-SNAPSHOT.jar .\ode-data-logger\
     ```
 
-    Replace `x.x.x` with the version number of the JAR file. If a JAR file already exists in the `ode-data-logger` directory, you may need to delete it first.
+    Replace `x.y.z` with the version number of the JAR file. If a JAR file already exists in the `ode-data-logger` directory, you may need to delete it first.
 
 1. Copy the sample.env to .env:
 

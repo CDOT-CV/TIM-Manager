@@ -5,6 +5,7 @@ import javax.mail.internet.MimeMessage;
 
 import com.trihydro.library.model.EmailProps;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mail.MailException;
@@ -13,6 +14,7 @@ import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Component;
 
 @Component
+@Slf4j
 public class EmailHelper {
 
     private JavaMailSenderImplProvider mailProvider;
@@ -49,6 +51,7 @@ public class EmailHelper {
      */
     public void SendEmail(String[] to, String[] bcc, String subject, String body)
             throws MailException, MessagingException {
+        log.debug("Sending email to: {}", String.join(", ", to));
         JavaMailSenderImpl mailSender = mailProvider.getJSenderImpl(mailProps.getMailHost(), mailProps.getMailPort());
         MimeMessage mimeMessage = mailSender.createMimeMessage();
         MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, "utf-8");
@@ -65,6 +68,7 @@ public class EmailHelper {
         helper.setText(body, true);
 
         mailSender.send(mimeMessage);
+        log.debug("Email sent successfully to: {}", String.join(", ", to));
     }
 
     /**

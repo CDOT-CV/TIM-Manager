@@ -36,14 +36,14 @@ The following instructions are intended to be executed from the root directory o
 
     Linux:
     ```bash
-    mv ./ode-mongo-logger/target/ode-mongo-logger-x.x.x-SNAPSHOT.jar ./ode-mongo-logger/
+    mv ./ode-mongo-logger/target/ode-mongo-logger-x.y.z-SNAPSHOT.jar ./ode-mongo-logger/
     ```
     Windows:
     ```windows
-    move .\ode-mongo-logger\target\ode-mongo-logger-x.x.x-SNAPSHOT.jar .\ode-mongo-logger\
+    move .\ode-mongo-logger\target\ode-mongo-logger-x.y.z-SNAPSHOT.jar .\ode-mongo-logger\
     ```
 
-    Replace `x.x.x` with the version number of the JAR file. If a JAR file already exists in the `ode-mongo-logger` directory, you may need to delete it first.
+    Replace `x.y.z` with the version number of the JAR file. If a JAR file already exists in the `ode-mongo-logger` directory, you may need to delete it first.
 
 1. Copy the sample.env to .env:
 

@@ -5,6 +5,7 @@ import java.util.List;
 
 import com.trihydro.library.model.TimRsu;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -13,9 +14,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 
 @Component
+@Slf4j
 public class TimRsuService extends CvDataServiceLibrary {
 
 	public List<TimRsu> getTimRsusByTimId(Long timId) {
+		log.trace("Getting TimRsus for timId: {}", timId);
 		// tim-id
 		String url = String.format("%s/tim-rsu/tim-id/%d", config.getCvRestService(), timId);
 		HttpHeaders headers = new HttpHeaders();

@@ -32,8 +32,8 @@ services:
       - /home/timmadmin/timm/ode-wrapper:/keystore
     logging:
       options:
-        max-size: "20m"
-        max-file: "3"
+        max-size: ${LOGGING_OPTIONS_MAX_SIZE}
+        max-file: ${LOGGING_OPTIONS_MAX_FILES}
 
   cv-data-tasks:
     build: cv-data-tasks
@@ -80,12 +80,15 @@ services:
       LOGGING_LEVEL_COM_TRIHYDRO: ${LOGGING_LEVEL_COM_TRIHYDRO}
     logging:
       options:
-        max-size: "20m"
-        max-file: "3"
+        max-size: ${LOGGING_OPTIONS_MAX_SIZE}
+        max-file: ${LOGGING_OPTIONS_MAX_FILES}
     depends_on:
-      - ode_wrapper
-      - cv-data-controller
-      - rsu-data-controller
+      ode_wrapper:
+        condition: service_healthy
+      cv-data-controller:
+        condition: service_started
+      rsu-data-controller:
+        condition: service_started
 
   tim-refresh:
     build: tim-refresh
@@ -109,8 +112,8 @@ services:
       LOGGING_LEVEL_COM_TRIHYDRO: ${LOGGING_LEVEL_COM_TRIHYDRO}
     logging:
       options:
-        max-size: "20m"
-        max-file: "3"
+        max-size: ${LOGGING_OPTIONS_MAX_SIZE}
+        max-file: ${LOGGING_OPTIONS_MAX_FILES}
 
   cv-data-controller:
     build: cv-data-controller
@@ -141,8 +144,8 @@ services:
       - /home/timmadmin/timm/cv-data-controller:/keystore
     logging:
       options:
-        max-size: "20m"
-        max-file: "3"
+        max-size: ${LOGGING_OPTIONS_MAX_SIZE}
+        max-file: ${LOGGING_OPTIONS_MAX_FILES}
 
   rsu-data-controller:
     build: rsu-data-controller
@@ -165,8 +168,8 @@ services:
       LOGGING_LEVEL_COM_TRIHYDRO: ${LOGGING_LEVEL_COM_TRIHYDRO}
     logging:
       options:
-        max-size: "20m"
-        max-file: "3"
+        max-size: ${LOGGING_OPTIONS_MAX_SIZE}
+        max-file: ${LOGGING_OPTIONS_MAX_FILES}
 
   tim_logger_mongo:
     build: ode-mongo-logger
@@ -188,8 +191,8 @@ services:
       LOGGING_LEVEL_COM_TRIHYDRO: ${LOGGING_LEVEL_COM_TRIHYDRO}
     logging:
       options:
-        max-size: "20m"
-        max-file: "3"
+        max-size: ${LOGGING_OPTIONS_MAX_SIZE}
+        max-file: ${LOGGING_OPTIONS_MAX_FILES}
 
   bsm_logger_mongo:
     build: ode-mongo-logger
@@ -211,8 +214,8 @@ services:
       LOGGING_LEVEL_COM_TRIHYDRO: ${LOGGING_LEVEL_COM_TRIHYDRO}
     logging:
       options:
-        max-size: "20m"
-        max-file: "3"
+        max-size: ${LOGGING_OPTIONS_MAX_SIZE}
+        max-file: ${LOGGING_OPTIONS_MAX_FILES}
 
   driveralert_logger_mongo:
     build: ode-mongo-logger
@@ -234,8 +237,8 @@ services:
       LOGGING_LEVEL_COM_TRIHYDRO: ${LOGGING_LEVEL_COM_TRIHYDRO}
     logging:
       options:
-        max-size: "20m"
-        max-file: "3"
+        max-size: ${LOGGING_OPTIONS_MAX_SIZE}
+        max-file: ${LOGGING_OPTIONS_MAX_FILES}
 
   tim_logger:
     build: ode-data-logger
@@ -255,8 +258,8 @@ services:
       LOGGING_LEVEL_COM_TRIHYDRO: ${LOGGING_LEVEL_COM_TRIHYDRO}
     logging:
       options:
-        max-size: "20m"
-        max-file: "3"
+        max-size: ${LOGGING_OPTIONS_MAX_SIZE}
+        max-file: ${LOGGING_OPTIONS_MAX_FILES}
 
   logger-kafka-consumer:
     build: logger-kafka-consumer
@@ -281,8 +284,8 @@ services:
       LOGGING_LEVEL_COM_TRIHYDRO: ${LOGGING_LEVEL_COM_TRIHYDRO}
     logging:
       options:
-        max-size: "20m"
-        max-file: "3"
+        max-size: ${LOGGING_OPTIONS_MAX_SIZE}
+        max-file: ${LOGGING_OPTIONS_MAX_FILES}
 
   cert-expiration:
     build: cert-expiration
@@ -302,5 +305,5 @@ services:
       LOGGING_LEVEL_COM_TRIHYDRO: ${LOGGING_LEVEL_COM_TRIHYDRO}
     logging:
       options:
-        max-size: "20m"
-        max-file: "3"
+        max-size: ${LOGGING_OPTIONS_MAX_SIZE}
+        max-file: ${LOGGING_OPTIONS_MAX_FILES}

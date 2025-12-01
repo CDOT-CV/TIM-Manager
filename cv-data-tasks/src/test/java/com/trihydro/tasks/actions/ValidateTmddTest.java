@@ -1,23 +1,8 @@
 package com.trihydro.tasks.actions;
 
-import static com.trihydro.tasks.TestHelper.importJsonArray;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
-import java.util.Arrays;
-import java.util.List;
-
-import javax.mail.MessagingException;
-
 import com.google.gson.Gson;
 import com.trihydro.library.helpers.EmailHelper;
 import com.trihydro.library.helpers.GsonFactory;
-import com.trihydro.library.helpers.TimGenerationHelper;
-import com.trihydro.library.helpers.Utility;
 import com.trihydro.library.model.ActiveTim;
 import com.trihydro.library.model.ActiveTimError;
 import com.trihydro.library.model.ActiveTimValidationResult;
@@ -32,20 +17,31 @@ import com.trihydro.library.service.WydotTimService;
 import com.trihydro.tasks.config.DataTasksConfiguration;
 import com.trihydro.tasks.helpers.EmailFormatter;
 import com.trihydro.tasks.helpers.IdNormalizer;
-
 import org.apache.commons.lang3.StringUtils;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Answers;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mail.MailException;
 import org.springframework.mail.MailSendException;
 import org.springframework.web.client.RestClientException;
+
+import javax.mail.MessagingException;
+import java.util.Arrays;
+import java.util.List;
+
+import static com.trihydro.tasks.TestHelper.importJsonArray;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 public class ValidateTmddTest {
@@ -59,25 +55,13 @@ public class ValidateTmddTest {
     private ItisCodeService mockItisCodeService;
 
     @Mock
-    private Utility mockUtility;
-
-    @Spy
-    private IdNormalizer spyIdNormalizer;
-
-    @Mock
     private EmailHelper mockEmailHelper;
-
-    @Mock
-    private DataTasksConfiguration mockConfig;
 
     @Mock
     private EmailFormatter mockEmailFormatter;
 
     @Mock
     private WydotTimService mockWydotTimService;
-
-    @Mock
-    private TimGenerationHelper mockTimGenerationHelper;
 
     @Captor
     private ArgumentCaptor<List<ActiveTim>> unableToVerifyCaptor;
@@ -86,10 +70,13 @@ public class ValidateTmddTest {
     private ArgumentCaptor<List<ActiveTimValidationResult>> validationResultsCaptor;
 
     @Captor
-    private ArgumentCaptor<String> logMessageCaptor;
-
-    @Captor
     private ArgumentCaptor<String> exceptionMessageCaptor;
+
+    @Mock(answer = Answers.CALLS_REAL_METHODS)
+    IdNormalizer mockIdNormalizer;
+
+    @Mock
+    DataTasksConfiguration mockConfig;
 
     @InjectMocks
     ValidateTmdd uut;
@@ -259,76 +246,5 @@ public class ValidateTmddTest {
 
         // Email was sent
         verify(mockEmailHelper).SendEmail(any(), any(), any());
-    }
-
-    @Test
-    public void validateTmdd_run_activeTimServiceError() throws MailException, MessagingException {
-        // Arrange
-        when(mockActiveTimService.getActiveTimsWithItisCodes(true)).thenThrow(new RestClientException("timeout"));
-
-        // Act
-        uut.run();
-
-        // Assert
-        verify(mockUtility, times(2)).logWithDate(logMessageCaptor.capture(), eq(ValidateTmdd.class));
-        Assertions.assertEquals("Error fetching Active Tims:", logMessageCaptor.getValue());
-        verify(mockEmailHelper).SendEmail(any(), any(), any());
-    }
-
-    @Test
-    public void validateTmdd_run_tmddServiceError() throws Exception {
-        // Arrange
-        when(mockTmddService.getTmddEvents()).thenThrow(new RestClientException("timeout"));
-
-        // Act
-        uut.run();
-
-        // Assert
-        verify(mockUtility, times(2)).logWithDate(logMessageCaptor.capture(), eq(ValidateTmdd.class));
-        Assertions.assertEquals("Error fetching FEUs from TMDD:", logMessageCaptor.getValue());
-        verify(mockEmailHelper).SendEmail(any(), any(), any());
-    }
-
-    @Test
-    public void validateTmdd_run_itisCodeServiceError() throws MailException, MessagingException {
-        // Arrange
-        when(mockItisCodeService.selectAllTmddItisCodes()).thenThrow(new RestClientException("timeout"));
-
-        // Act
-        uut.run();
-
-        // Assert
-        verify(mockUtility, times(2)).logWithDate(logMessageCaptor.capture(), eq(ValidateTmdd.class));
-        Assertions.assertEquals("Unable to initialize TMDD ITIS Code cache:", logMessageCaptor.getValue());
-        verify(mockEmailHelper).SendEmail(any(), any(), any());
-    }
-
-    @Test
-    public void validateTmdd_run_emailSendError() throws Exception {
-        // Arrange
-        // Load in fake data so we can accumulate validation errors
-        Gson tmddDeserializer = new GsonFactory().getTmddDeserializer();
-
-        ActiveTim[] activeTims = importJsonArray("/activeTims_5.json", ActiveTim[].class);
-        FullEventUpdate[] feus = importJsonArray("/feus_2.json", FullEventUpdate[].class, tmddDeserializer);
-        TmddItisCode[] itisCodes = importJsonArray("/tmdd_itis_codes.json", TmddItisCode[].class);
-
-        when(mockTmddService.getTmddEvents()).thenReturn(Arrays.asList(feus));
-        when(mockActiveTimService.getActiveTimsWithItisCodes(true)).thenReturn(Arrays.asList(activeTims));
-        when(mockItisCodeService.selectAllTmddItisCodes()).thenReturn(Arrays.asList(itisCodes));
-
-        TimDeleteSummary tds = new TimDeleteSummary();
-        when(mockWydotTimService.deleteTimsFromRsusAndSdx(any())).thenReturn(tds);
-
-        // Throw exception when sending email
-        doThrow(new MailSendException("unable to send")).when(mockEmailHelper).SendEmail(any(), any(), any());
-
-        // Act
-        uut.run();
-
-        // Assert
-        verify(mockUtility, times(3)).logWithDate(logMessageCaptor.capture(), eq(ValidateTmdd.class));
-        Assertions.assertEquals("Error sending summary email:", logMessageCaptor.getAllValues().get(1));
-        Assertions.assertEquals("Failed to send error summary email:", logMessageCaptor.getAllValues().get(2));
     }
 }

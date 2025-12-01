@@ -27,14 +27,14 @@ The following instructions are intended to be executed from the root directory o
 
     Linux:
     ```bash
-    mv ./cert-expiration/target/cert-expiration-x.x.x-SNAPSHOT.jar ./cert-expiration/
+    mv ./cert-expiration/target/cert-expiration-x.y.z-SNAPSHOT.jar ./cert-expiration/
     ``` 
     Windows:
     ```windows
-    move .\cert-expiration\target\cert-expiration-x.x.x-SNAPSHOT.jar .\cert-expiration\
+    move .\cert-expiration\target\cert-expiration-x.y.z-SNAPSHOT.jar .\cert-expiration\
     ```
 
-    Replace `x.x.x` with the version number of the JAR file. If a JAR file already exists in the `cert-expiration` directory, you may need to delete it first.
+    Replace `x.y.z` with the version number of the JAR file. If a JAR file already exists in the `cert-expiration` directory, you may need to delete it first.
 
 1. Copy the sample.env to .env:
 

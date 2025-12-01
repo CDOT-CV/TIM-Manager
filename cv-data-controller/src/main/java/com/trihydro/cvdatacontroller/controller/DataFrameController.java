@@ -14,6 +14,8 @@ import java.util.Date;
 import java.util.List;
 import java.util.TimeZone;
 
+import lombok.extern.slf4j.Slf4j;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -32,11 +34,12 @@ import us.dot.its.jpo.ode.plugin.j2735.OdeTravelerInformationMessage.DataFrame;
 
 @CrossOrigin
 @RestController
+@Slf4j
 @RequestMapping("data-frame")
 @ApiIgnore
 public class DataFrameController extends BaseController {
 
-	private TimDbTables timDbTables;
+    private TimDbTables timDbTables;
 	private SQLNullHandler sqlNullHandler;
 
 	@Autowired
@@ -75,7 +78,7 @@ public class DataFrameController extends BaseController {
 			}
 			return ResponseEntity.ok(itisCodes.toArray(new String[itisCodes.size()]));
 		} catch (Exception e) {
-			e.printStackTrace();
+            log.error("Exception", e);
 			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
 					.body(itisCodes.toArray(new String[itisCodes.size()]));
 		} finally {
@@ -90,7 +93,7 @@ public class DataFrameController extends BaseController {
 				if (rs != null)
 					rs.close();
 			} catch (SQLException e) {
-				e.printStackTrace();
+                log.error("Exception", e);
 			}
 		}
 	}
@@ -135,7 +138,7 @@ public class DataFrameController extends BaseController {
 						Date dt = df.parse(dFrame.getStartDateTime());
 						time = new Timestamp(dt.getTime());
 					} catch (ParseException ex) {
-						System.out.println("Unable to parse startdate: " + dFrame.getStartDateTime());
+                        log.info("Unable to parse startdate: {}", dFrame.getStartDateTime());
 					}
 					sqlNullHandler.setTimestampOrNull(preparedStatement, fieldNum, time);
 				}
@@ -146,7 +149,7 @@ public class DataFrameController extends BaseController {
 			Long dataFrameId = dbInteractions.executeAndLog(preparedStatement, "dataframe");
 			return ResponseEntity.ok(dataFrameId);
 		} catch (SQLException e) {
-			e.printStackTrace();
+            log.error("Exception", e);
 			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Long.valueOf(0));
 		} finally {
 			try {
@@ -157,7 +160,7 @@ public class DataFrameController extends BaseController {
 				if (connection != null)
 					connection.close();
 			} catch (SQLException e) {
-				e.printStackTrace();
+                log.error("Exception", e);
 			}
 		}
 	}

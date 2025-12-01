@@ -1,10 +1,12 @@
 package com.trihydro.loggerkafkaconsumer.app.services;
 
+import com.trihydro.library.helpers.DateTimeHelper;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
+import java.sql.Types;
 import java.text.ParseException;
 import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
@@ -23,6 +25,7 @@ import com.trihydro.library.model.TimType;
 import com.trihydro.library.model.WydotRsu;
 import com.trihydro.library.tables.TimDbTables;
 
+import java.util.Date;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -65,6 +68,7 @@ public class TimService extends BaseService {
     private ActiveTimHoldingService activeTimHoldingService;
     private PathNodeLLService pathNodeLLService;
     private NodeLLService nodeLLService;
+    private DateTimeHelper dateTimeHelper;
 
     @Autowired
     public void InjectDependencies(ActiveTimService _ats, TimDbTables _timDbTables,
@@ -74,7 +78,7 @@ public class TimService extends BaseService {
                                    DataFrameItisCodeService _dataFrameItisCodeService, PathNodeXYService _pathNodeXYService,
                                    NodeXYService _nodeXYService, Utility _utility, ActiveTimHoldingService _athService,
                                    PathNodeLLService _pathNodeLLService,
-                                   NodeLLService _nodeLLService) { // TODO: use constructor instead of InjectDependencies
+                                   NodeLLService _nodeLLService, DateTimeHelper dateTimeHelper) { // TODO: use constructor instead of InjectDependencies
         activeTimService = _ats;
         timDbTables = _timDbTables;
         sqlNullHandler = _sqlNullHandler;
@@ -92,9 +96,10 @@ public class TimService extends BaseService {
         activeTimHoldingService = _athService;
         pathNodeLLService = _pathNodeLLService;
         nodeLLService = _nodeLLService;
+        this.dateTimeHelper = dateTimeHelper;
     }
 
-    public void addTimToDatabase(OdeData odeData) {
+    public void addTimToDatabase(OdeData odeData) { // TODO: identify if this method can be removed
 
         try {
             log.info("Called addTimToDatabase");
@@ -124,10 +129,10 @@ public class TimService extends BaseService {
                 log.info("addTimToDatabase - No dataframes found in TIM (tim_id: {})", timId);
                 return;
             }
-            OdeTravelerInformationMessage.DataFrame firstDataFrame = dFrames[0];
+            DataFrame firstDataFrame = dFrames[0];
             Long dataFrameId = dataFrameService.AddDataFrame(firstDataFrame, timId);
 
-            us.dot.its.jpo.ode.plugin.j2735.OdeTravelerInformationMessage.DataFrame.Region[] regions = firstDataFrame.getRegions();
+            Region[] regions = firstDataFrame.getRegions();
             addRegions(firstDataFrame, dataFrameId);
 
             String firstRegionName = regions[0].getName(); // all regions have the same name
@@ -152,189 +157,279 @@ public class TimService extends BaseService {
      * Adds an active TIM to the database. This only handles a single TIM at a time.
      */
     public void addActiveTimToDatabase(OdeData odeData) {
-        log.info("Called addActiveTimToDatabase");
+        log.info("Processing active TIM to add to database");
 
-        ActiveTim activeTim;
-
+        // Initial validation
         OdeTimPayload payload = (OdeTimPayload) odeData.getPayload();
         if (payload == null) {
+            log.warn("Cannot process active TIM: payload is null");
             return;
         }
+
         OdeTravelerInformationMessage tim = getTim(payload);
         if (tim == null) {
+            log.warn("Cannot process active TIM: TravelerInformationMessage is null");
             return;
         }
+
+        log.trace("Processing TIM with packet ID: {}", tim.getPacketID());
+
         DataFrame[] dframes = tim.getDataframes();
         if (dframes == null || dframes.length == 0) {
+            log.warn("Cannot process active TIM: no dataframes found in TIM with packet ID: {}", tim.getPacketID());
             return;
         }
-        OdeTravelerInformationMessage.DataFrame.Region[] regions = dframes[0].getRegions();
+
+        Region[] regions = dframes[0].getRegions();
         if (regions == null || regions.length == 0) {
+            log.warn("Cannot process active TIM: no regions found in first dataframe of TIM with packet ID: {}", tim.getPacketID());
             return;
         }
+
         String firstRegionName = regions[0].getName();
         if (StringUtils.isEmpty(firstRegionName) || StringUtils.isBlank(firstRegionName)) {
+            log.warn("Cannot process active TIM: empty region name in TIM with packet ID: {}", tim.getPacketID());
             return;
         }
+
         OdeRequestMsgMetadata metaData = (OdeRequestMsgMetadata) odeData.getMetadata();
         if (metaData == null) {
+            log.warn("Cannot process active TIM: metadata is null for TIM with packet ID: {}", tim.getPacketID());
             return;
         }
 
-        // get information from the region name, first check splitname length
-        activeTim = setActiveTimByRegionName(firstRegionName);
+        // Extract information from region name
+        log.debug("Extracting TIM information from region name: '{}'", firstRegionName);
+        ActiveTim activeTim = setActiveTimByRegionName(firstRegionName);
         if (activeTim == null) {
+            log.warn("Cannot process active TIM: failed to extract information from region name: '{}' for TIM with packet ID: {}", firstRegionName,
+                tim.getPacketID());
             return;
         }
+
+        log.debug("Extracted information - Route: {}, Direction: {}, ClientId: {}, TimType: {}", activeTim.getRoute(), activeTim.getDirection(),
+            activeTim.getClientId(), activeTim.getTimType());
 
         String satRecordId = activeTim.getSatRecordId();
-
-        // see if TIM exists already
-        java.sql.Timestamp ts = null;
-        if (StringUtils.isNotEmpty(tim.getTimeStamp()) && StringUtils.isNotBlank(tim.getTimeStamp())) {
-            ts = java.sql.Timestamp.valueOf(LocalDateTime.parse(tim.getTimeStamp(), DateTimeFormatter.ISO_DATE_TIME));
+        if (satRecordId != null) {
+            log.debug("TIM has satellite record ID: {}", satRecordId);
         }
+
+        // Check if TIM already exists in database
+        Timestamp ts = null;
+        if (StringUtils.isNotEmpty(tim.getTimeStamp()) && StringUtils.isNotBlank(tim.getTimeStamp())) {
+            try {
+                ts = Timestamp.valueOf(LocalDateTime.parse(tim.getTimeStamp(), DateTimeFormatter.ISO_DATE_TIME));
+                log.trace("Parsed timestamp: {} from TIM timestamp: {}", ts, tim.getTimeStamp());
+            } catch (Exception e) {
+                log.warn("Failed to parse timestamp from TIM: {}", e.getMessage());
+            }
+        }
+
+        log.debug("Checking if TIM already exists with packet ID: {} and timestamp: {}", tim.getPacketID(), ts);
         Long timId = getTimId(tim.getPacketID(), ts);
 
         if (timId == null) {
             // TIM doesn't currently exist. Add it.
+            log.info("TIM not found in database, adding new TIM with packet ID: {}", tim.getPacketID());
             timId = AddTim(metaData, null, tim, null, null, null, satRecordId, firstRegionName);
 
             if (timId != null) {
-                // we inserted a new TIM, add additional data
+                log.debug("Successfully added TIM with ID: {}", timId);
+                // Add additional data
+                log.trace("Adding dataframe for TIM ID: {}", timId);
                 Long dataFrameId = dataFrameService.AddDataFrame(dframes[0], timId);
+
+                log.trace("Adding regions for dataframe ID: {}", dataFrameId);
                 addRegions(dframes[0], dataFrameId);
+
+                log.trace("Adding ITIS codes for dataframe ID: {}", dataFrameId);
                 addDataFrameItis(dframes[0], dataFrameId);
             } else {
-                // failed to insert new tim and failed to fetch existing, log and return
-                log.info("Failed to insert tim, and failed to fetch existing tim. No data inserted for OdeData: {}", gson.toJson(odeData));
+                log.error("Failed to insert TIM and failed to fetch existing TIM. No data inserted for TIM with packet ID: {}", tim.getPacketID());
+                log.debug("OdeData for TIM with packet ID: {}: {}", tim.getPacketID(), gson.toJson(odeData));
                 return;
             }
         } else {
-            log.info("TIM already exists, tim_id {}", timId);
+            log.info("TIM already exists in database with ID: {} and packet ID: {}", timId, tim.getPacketID());
         }
 
-        // ensure we handle a new satRecordId
+        // Update satellite record ID if available
         if (satRecordId != null && !satRecordId.isEmpty()) {
-            updateTimSatRecordId(timId, satRecordId);
-            log.info("Added sat_record_id of {} to TIM with tim_id {}", satRecordId, timId);
+            log.debug("Updating TIM ID: {} with satellite record ID: {}", timId, satRecordId);
+            boolean updated = updateTimSatRecordId(timId, satRecordId);
+            if (updated) {
+                log.debug("Successfully updated satellite record ID for TIM ID: {}", timId);
+            } else {
+                log.warn("Failed to update satellite record ID for TIM ID: {}", timId);
+            }
         }
 
-        // TODO : Change to loop through RSU array - doing one rsu for now
-        RSU firstRsu = null;
-        if (metaData.getRequest() != null && metaData.getRequest().getRsus() != null
-            && metaData.getRequest().getRsus().length > 0) {
+        // Handle RSU information
+        RSU firstRsu = null; // TODO: update to handle multiple RSUs if needed
+        if (metaData.getRequest() != null && metaData.getRequest().getRsus() != null && metaData.getRequest().getRsus().length > 0) {
             firstRsu = metaData.getRequest().getRsus()[0];
             activeTim.setRsuTarget(firstRsu.getRsuTarget());
+            log.debug("Set RSU target: {} for TIM ID: {}", firstRsu.getRsuTarget(), timId);
         }
 
+        // Set satellite record ID from metadata if available
         if (metaData.getRequest() != null && metaData.getRequest().getSdw() != null) {
-            activeTim.setSatRecordId(metaData.getRequest().getSdw().getRecordId());
+            String metadataSatRecordId = metaData.getRequest().getSdw().getRecordId();
+            activeTim.setSatRecordId(metadataSatRecordId);
+            log.debug("Set satellite record ID from metadata: {} for TIM ID: {}", metadataSatRecordId, timId);
         }
 
-        // the ODE now parses all dataframes to find the most recent and sets it
-        // to this new OdeTimStartDateTime. We'll take advantage.
-        // Occasionally the OdeTimStartDateTime is null...set to dfames[0] startDateTime
-        // in that case
+        // Set start date and TIM ID
         var stDate = metaData.getOdeTimStartDateTime();
         if (StringUtils.isEmpty(stDate)) {
             stDate = dframes[0].getStartDateTime();
-            log.info("addActiveTimToDatabase did not find odeTimStartDateTime, setting to dataframe value {}", stDate);
+            log.debug("Using dataframe start time: {} (metadata start time was empty) for TIM ID: {}", stDate, timId);
+        } else {
+            log.debug("Using metadata start time: {} for TIM ID: {}", stDate, timId);
         }
         activeTim.setStartDateTime(stDate);
         activeTim.setTimId(timId);
 
-        ActiveTimHolding ath = null;
-
-        // if this is an RSU TIM
+        // Get active TIM holding record
+        ActiveTimHolding ath;
         if (activeTim.getRsuTarget() != null && firstRsu != null) {
-            // save TIM RSU in DB
-            WydotRsu rsu = rsuService.getRsus().stream().filter(x -> x.getRsuTarget().equals(activeTim.getRsuTarget()))
-                .findFirst().orElse(null);
-            if (rsu != null) {
-                timRsuService.AddTimRsu(timId, rsu.getRsuId(), rsu.getRsuIndex());
-            }
-            ath = activeTimHoldingService.getRsuActiveTimHolding(activeTim.getClientId(), activeTim.getDirection(),
-                activeTim.getRsuTarget());
+            // RSU TIM handling
+            log.debug("Processing RSU TIM with target: {} for TIM ID: {}", activeTim.getRsuTarget(), timId);
 
-            if (ath == null) {
-                log.info("Could not find active_tim_holding for client_id '{}', direction '{}', rsu_target '{}'",
-                    activeTim.getClientId(), activeTim.getDirection(), activeTim.getRsuTarget());
+            // Save TIM-RSU association
+            WydotRsu rsu = rsuService.getRsus().stream().filter(x -> x.getRsuTarget().equals(activeTim.getRsuTarget())).findFirst().orElse(null);
+            if (rsu != null) {
+                log.trace("Associating TIM ID: {} with RSU ID: {} (index: {})", timId, rsu.getRsuId(), rsu.getRsuIndex());
+                timRsuService.AddTimRsu(timId, rsu.getRsuId(), rsu.getRsuIndex());
+            } else {
+                log.warn("RSU with target: {} not found in database for TIM ID: {}", activeTim.getRsuTarget(), timId);
+            }
+
+            // Get active TIM holding for RSU
+            log.trace("Retrieving active TIM holding for client ID: {}, direction: {}, RSU target: {}", activeTim.getClientId(),
+                activeTim.getDirection(), activeTim.getRsuTarget());
+            ath = activeTimHoldingService.getRsuActiveTimHolding(activeTim.getClientId(), activeTim.getDirection(), activeTim.getRsuTarget());
+        } else {
+            // SDX TIM handling
+            log.debug("Processing SDX TIM with satellite record ID: {} for TIM ID: {}", activeTim.getSatRecordId(), timId);
+
+            // Get active TIM holding for SDX
+            log.trace("Retrieving active TIM holding for client ID: {}, direction: {}, satellite record ID: {}", activeTim.getClientId(),
+                activeTim.getDirection(), activeTim.getSatRecordId());
+            ath = activeTimHoldingService.getSdxActiveTimHolding(activeTim.getClientId(), activeTim.getDirection(), activeTim.getSatRecordId());
+        }
+
+        if (ath == null) {
+            if (activeTim.getRsuTarget() != null) {
+                log.warn("No active TIM holding found for RSU TIM with client ID: '{}', direction: '{}', RSU target: '{}'", activeTim.getClientId(),
+                    activeTim.getDirection(), activeTim.getRsuTarget());
+            } else {
+                log.warn("No active TIM holding found for SAT TIM with client ID: '{}', direction: '{}', satellite record ID: '{}'", activeTim.getClientId(),
+                    activeTim.getDirection(), activeTim.getSatRecordId());
             }
         } else {
-            // SDX tim, fetch holding
-            ath = activeTimHoldingService.getSdxActiveTimHolding(activeTim.getClientId(), activeTim.getDirection(),
-                activeTim.getSatRecordId());
+            log.debug("Found active TIM holding with ID: {}", ath.getActiveTimHoldingId());
+        }
 
-            if (ath == null) {
-                log.info("Could not find active_tim_holding for client_id '{}', direction '{}', sat_record_id '{}'",
-                    activeTim.getClientId(), activeTim.getDirection(), activeTim.getSatRecordId());
+        // Handle duration and end time
+        int durationTime = dframes[0].getDurationTime();
+        final int INDEFINITE_DURATION = 32000;
+        final int SHORT_DURATION_MINUTES = 5;
+
+        if (durationTime != INDEFINITE_DURATION) {
+            // Finite duration handling
+            log.debug("TIM ID: {} has finite duration: {} minutes", timId, durationTime);
+
+            if (durationTime == SHORT_DURATION_MINUTES) {
+                log.info("Short duration TIM detected (5 minutes) for TIM ID: {} - likely an expiry TIM", timId);
+            }
+
+            try {
+                ZonedDateTime zdt = ZonedDateTime.parse(dframes[0].getStartDateTime()).plusMinutes(durationTime);
+                String endDateTime = dateTimeHelper.convertZonedDateTimeToISO8601Format(zdt);
+                log.debug("Calculated end time: {} for TIM ID: {}", endDateTime, timId);
+                activeTim.setEndDateTime(endDateTime);
+            } catch (Exception e) {
+                log.error("Failed to calculate end time for TIM ID: {} - {}", timId, e.getMessage());
+            }
+        } else {
+            // Indefinite duration handling
+            log.debug("TIM ID: {} has indefinite duration (32000 minutes)", timId);
+
+            if (ath != null && ath.getDesiredEndDateTime() != null) {
+                log.debug("Using end time from active TIM holding: {} for TIM ID: {}", ath.getDesiredEndDateTime(), timId);
+                activeTim.setEndDateTime(ath.getDesiredEndDateTime());
+            } else {
+                log.debug("No desired end time found in active TIM holding for TIM ID: {}, setting to null", timId);
+                activeTim.setEndDateTime(null);
             }
         }
 
-        // set end time if duration is not indefinite
-        if (dframes[0].getDurationTime() != 32000) {
-            ZonedDateTime zdt = ZonedDateTime.parse(dframes[0].getStartDateTime());
-            zdt = zdt.plusMinutes(dframes[0].getDurationTime());
-            activeTim.setEndDateTime(zdt.toString());
-        }
-
+        // Set additional fields from active TIM holding
         if (ath != null) {
-            // set activeTim start/end points from holding table
+            log.trace("Copying data from active TIM holding to active TIM for TIM ID: {}", timId);
+
             activeTim.setStartPoint(ath.getStartPoint());
             activeTim.setEndPoint(ath.getEndPoint());
-
-            // set projectKey
             activeTim.setProjectKey(ath.getProjectKey());
 
-            // set expiration time if found
             if (StringUtils.isNotBlank(ath.getExpirationDateTime())) {
+                log.debug("Setting expiration time: {} for TIM ID: {}", ath.getExpirationDateTime(), timId);
                 activeTim.setExpirationDateTime(ath.getExpirationDateTime());
             }
         }
 
-        // if true, TIM came from WYDOT
+        // Insert or update active TIM record
         if (activeTim.getTimType() != null) {
+            // TIM came from WYDOT
+            log.debug("Processing WYDOT TIM ID: {} of type: {}", timId, activeTim.getTimType());
 
-            ActiveTim activeTimDb = null;
-
-            // if RSU TIM
-            if (activeTim.getRsuTarget() != null) // look for active RSU tim that matches incoming TIM
-            {
-                activeTimDb = activeTimService.getActiveRsuTim(activeTim.getClientId(), activeTim.getDirection(),
-                    activeTim.getRsuTarget());
-            } else // else look for active SAT tim that matches incoming TIM
-            {
+            ActiveTim activeTimDb;
+            if (activeTim.getRsuTarget() != null) {
+                // Look for active RSU TIM
+                log.trace("Looking for existing active RSU TIM with client ID: {}, direction: {}, RSU target: {}", activeTim.getClientId(),
+                    activeTim.getDirection(), activeTim.getRsuTarget());
+                activeTimDb = activeTimService.getActiveRsuTim(activeTim.getClientId(), activeTim.getDirection(), activeTim.getRsuTarget());
+            } else {
+                // Look for active satellite TIM
+                log.trace("Looking for existing active satellite TIM with satellite record ID: {}, direction: {}", activeTim.getSatRecordId(),
+                    activeTim.getDirection());
                 activeTimDb = activeTimService.getActiveSatTim(activeTim.getSatRecordId(), activeTim.getDirection());
             }
 
-            // if there is no active TIM, insert new one
             if (activeTimDb == null) {
+                // Insert new active TIM
+                log.info("Inserting new active TIM for TIM ID: {}", timId);
                 activeTimService.insertActiveTim(activeTim);
-            } else { // else update active TIM
-                // If we couldn't find an Active TIM Holding record, we should persist the
-                // existing values
-                // for startPoint, endPoint, and projectKey
+            } else {
+                // Update existing active TIM
+                log.info("Updating existing active TIM with ID: {} for TIM ID: {}", activeTimDb.getActiveTimId(), timId);
+
+                // Preserve existing values if no active TIM holding
                 if (ath == null) {
+                    log.debug("Preserving existing start/end points and project key from active TIM ID: {}", activeTimDb.getActiveTimId());
                     activeTim.setStartPoint(activeTimDb.getStartPoint());
                     activeTim.setEndPoint(activeTimDb.getEndPoint());
                     activeTim.setProjectKey(activeTimDb.getProjectKey());
                 }
+
                 activeTim.setActiveTimId(activeTimDb.getActiveTimId());
                 activeTimService.updateActiveTim(activeTim);
             }
-
         } else {
-            // not from WYDOT application
-            // just log for now
-            log.info("Inserting new active_tim, no TimType found - not from WYDOT application");
+            // Not from WYDOT application
+            log.info("Inserting new active TIM for TIM ID: {} (not from WYDOT application - no TimType found)", timId);
             activeTimService.insertActiveTim(activeTim);
         }
 
-        // remove active_tim_holding now that we've saved its values
+        // Clean up active TIM holding
         if (ath != null) {
+            log.debug("Deleting active TIM holding with ID: {} after processing", ath.getActiveTimHoldingId());
             activeTimHoldingService.deleteActiveTimHolding(ath.getActiveTimHoldingId());
         }
+
+        log.info("Successfully processed active TIM with ID: {} (packet ID: {})", timId, tim.getPacketID());
     }
 
     public Long getTimId(String packetId, Timestamp timeStamp) {
@@ -389,9 +484,9 @@ public class TimService extends BaseService {
                             j2735TravelerInformationMessage.getUrlB());
                     } else if (col.equals("TIME_STAMP")) {
                         String timeStamp = j2735TravelerInformationMessage.getTimeStamp();
-                        java.sql.Timestamp ts = null;
+                        Timestamp ts = null;
                         if (StringUtils.isNotEmpty(timeStamp) && StringUtils.isNotBlank(timeStamp)) {
-                            ts = java.sql.Timestamp
+                            ts = Timestamp
                                 .valueOf(LocalDateTime.parse(timeStamp, DateTimeFormatter.ISO_DATE_TIME));
                         }
                         sqlNullHandler.setTimestampOrNull(preparedStatement, fieldNum, ts);
@@ -407,7 +502,7 @@ public class TimService extends BaseService {
                         }
                     } else if (col.equals("RECORD_GENERATED_AT")) {
                         if (odeTimMetadata.getRecordGeneratedAt() != null) {
-                            java.util.Date recordGeneratedAtDate = utility.convertDate(odeTimMetadata.getRecordGeneratedAt());
+                            Date recordGeneratedAtDate = dateTimeHelper.convertDate(odeTimMetadata.getRecordGeneratedAt());
                             Timestamp ts = new Timestamp(recordGeneratedAtDate.getTime());
                             sqlNullHandler.setTimestampOrNull(preparedStatement, fieldNum, ts);
                         } else {
@@ -425,7 +520,7 @@ public class TimService extends BaseService {
                         sqlNullHandler.setStringOrNull(preparedStatement, fieldNum, odeTimMetadata.getPayloadType());
                     } else if (col.equals("ODE_RECEIVED_AT")) {
                         if (odeTimMetadata.getOdeReceivedAt() != null) {
-                            java.util.Date receivedAtDate = utility.convertDate(odeTimMetadata.getOdeReceivedAt());
+                            Date receivedAtDate = dateTimeHelper.convertDate(odeTimMetadata.getOdeReceivedAt());
                             Timestamp ts = new Timestamp(receivedAtDate.getTime());
                             sqlNullHandler.setTimestampOrNull(preparedStatement, fieldNum, ts);
                         } else {
@@ -474,7 +569,7 @@ public class TimService extends BaseService {
                         // location data is null, set all to null (with correct type)
                         if (col.equals("RMD_LD_ELEVATION") || col.equals("RMD_LD_HEADING") || col.equals("RMD_LD_LATITUDE")
                             || col.equals("RMD_LD_LONGITUDE") || col.equals("RMD_LD_SPEED")) {
-                            preparedStatement.setNull(fieldNum, java.sql.Types.NUMERIC);
+                            preparedStatement.setNull(fieldNum, Types.NUMERIC);
                         }
                     }
                     if (col.equals("RMD_RX_SOURCE") && receivedMessageDetails.getRxSource() != null) {
@@ -487,18 +582,18 @@ public class TimService extends BaseService {
                         if (securityResultCodeType != null) {
                             preparedStatement.setInt(fieldNum, securityResultCodeType.getSecurityResultCodeTypeId());
                         } else {
-                            preparedStatement.setNull(fieldNum, java.sql.Types.INTEGER);
+                            preparedStatement.setNull(fieldNum, Types.INTEGER);
                         }
                     }
                 } else {
                     // message details are null, set all to null (with correct type)
                     if (col.equals("RMD_LD_ELEVATION") || col.equals("RMD_LD_HEADING") || col.equals("RMD_LD_LATITUDE")
                         || col.equals("RMD_LD_LONGITUDE") || col.equals("RMD_LD_SPEED")) {
-                        preparedStatement.setNull(fieldNum, java.sql.Types.NUMERIC);
+                        preparedStatement.setNull(fieldNum, Types.NUMERIC);
                     } else if (col.equals("RMD_RX_SOURCE")) {
                         preparedStatement.setString(fieldNum, null);
                     } else if (col.equals("SECURITY_RESULT_CODE")) {
-                        preparedStatement.setNull(fieldNum, java.sql.Types.INTEGER);
+                        preparedStatement.setNull(fieldNum, Types.INTEGER);
                     }
                 }
 
@@ -572,7 +667,7 @@ public class TimService extends BaseService {
                 if (itisCodeId != null) {
                     dataFrameItisCodeService.insertDataFrameItisCode(dataFrameId, itisCodeId, i);
                 } else {
-                    log.warn("Could not find corresponding itis code it for {}", timItisCode);
+                    log.warn("Could not find corresponding itis code id for {}", timItisCode);
                 }
             } else {
                 dataFrameItisCodeService.insertDataFrameItisCode(dataFrameId, timItisCode, i);

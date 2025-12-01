@@ -4,6 +4,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.isA;
 import static org.mockito.Mockito.*;
 
+import com.trihydro.library.helpers.DateTimeHelper;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -50,12 +51,14 @@ public class WydotTimRwControllerTest {
 	Utility utility;
 	@Mock
 	private MilepostService milepostService;
+	@Mock
+	DateTimeHelper dateTimeHelper;
 
 	@InjectMocks
 	@Spy
 	WydotTimRwController uut;
 
-	private Gson gson = new Gson();
+	private final Gson gson = new Gson();
 
 	@BeforeEach
 	public void setup() throws Exception {
@@ -100,7 +103,7 @@ public class WydotTimRwControllerTest {
 	}
 
 	@Test
-	public void testCreateRwTim_bothDirections_NoMileposts() throws Exception {
+	public void testCreateRwTim_bothDirections_NoMileposts() {
 
 		// Arrange
 		String rwJson = "{ \"timRwList\": [ {\"startPoint\": {\"latitude\": 41.161446, \"longitude\": -104.653162},\"endPoint\": {\"latitude\": 41.170465, \"longitude\": -104.085578},\"highway\": \"I-80\",\"pk\": \"15917\",\"id\": \"15917\",\"projectKey\": 19185,\"direction\":\"d\",\"surface\": \"P\",\"schedStart\": \"2018-04-16\"}]}";
@@ -119,7 +122,7 @@ public class WydotTimRwControllerTest {
 	}
 
 	@Test
-	public void testCreateRwTim_bothDirections_NoItisCodes() throws Exception {
+	public void testCreateRwTim_bothDirections_NoItisCodes() {
 		// Arrange
 		String rwJson = "{ \"timRwList\": [ {\"startPoint\": {\"latitude\": 41.161446, \"longitude\": -104.653162},\"endPoint\": {\"latitude\": 41.170465, \"longitude\": -104.085578},\"highway\": \"I-80\",\"pk\": \"15917\",\"id\": \"15917\",\"projectKey\": 19185,\"direction\":\"d\",\"surface\": \"P\",\"schedStart\": \"2018-04-16\"}]}";
 		TimRwList timRwList = gson.fromJson(rwJson, TimRwList.class);
@@ -139,7 +142,7 @@ public class WydotTimRwControllerTest {
 	}
 
 	@Test
-	public void testDeleteRwTimsByClientId() throws Exception {
+	public void testDeleteRwTimsByClientId() {
 
 		// Arrange
 		String id = "15917";

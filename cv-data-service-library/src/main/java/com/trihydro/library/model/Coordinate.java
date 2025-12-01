@@ -42,4 +42,13 @@ public class Coordinate {
     public Boolean isValid() {
         return latitude != null && longitude != null;
     }
+
+    @Override
+    public String toString() {
+        if (isValid()) {
+            return String.format("%.6f,%.6f", latitude.doubleValue(), longitude.doubleValue());
+        } else {
+            return "Invalid Coordinate";
+        }
+    }
 }

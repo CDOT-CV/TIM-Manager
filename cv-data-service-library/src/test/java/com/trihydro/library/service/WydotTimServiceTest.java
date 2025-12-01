@@ -15,6 +15,8 @@ import static org.mockito.Mockito.when;
 
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -23,13 +25,16 @@ import java.util.stream.Collectors;
 
 import javax.mail.MessagingException;
 
+import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.slf4j.Logger;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
@@ -64,6 +69,7 @@ import us.dot.its.jpo.ode.plugin.j2735.OdeTravelerInformationMessage.DataFrame;
 import us.dot.its.jpo.ode.plugin.j2735.timstorage.FrameType.TravelerInfoType;
 
 @ExtendWith(MockitoExtension.class)
+@Slf4j
 public class WydotTimServiceTest {
 
     @Mock
@@ -393,30 +399,6 @@ public class WydotTimServiceTest {
     }
 
     @Test
-    public void sendTimToSDW_MultipleActiveSatTimsFound() throws IOException {
-        // Arrange
-        List<ActiveTim> activeSatTims = getActiveTims(true);
-        when(mockActiveTimService.getActiveTimsByClientIdDirection(any(), any(), any())).thenReturn(activeSatTims);
-        WydotTim wydotTim = getMockWydotTim();
-        WydotTravelerInputData timToSend = getMockWydotTravelerInputDataWithServiceRequest();
-        String regionNamePrev = "regionNamePrev";
-        TimType timType = new TimType();
-
-        Coordinate endPoint = new Coordinate(BigDecimal.valueOf(1), BigDecimal.valueOf(2));
-        List<Milepost> reducedMileposts = getMockMileposts();
-        WydotOdeTravelerInformationMessage mockExistingSatTim = getMockWydotOdeTravelerInformationMessage();
-        when(mockTimService.getTim(any())).thenReturn(mockExistingSatTim);
-        RestTemplate mockRestTemplate = new RestTemplate();
-        when(mockRestTemplateProvider.GetRestTemplate()).thenReturn(mockRestTemplate);
-
-        // Act
-        uut.sendTimToSDW(wydotTim, timToSend, regionNamePrev, timType, 0, endPoint, reducedMileposts);
-
-        // Assert
-        verify(mockUtility).logWithDate("Multiple active SAT TIMs found for client testclientid and direction D. Expected zero or one. Using the first one found.");
-    }
-
-    @Test
     public void sendTimToSDW_NoActiveSatTimsFound() throws IOException {
         // Arrange
         when(mockActiveTimService.getActiveTimsByClientIdDirection(any(), any(), any())).thenReturn(new ArrayList<>());
@@ -429,12 +411,11 @@ public class WydotTimServiceTest {
         when(mockSdwService.getNewRecordId()).thenReturn("newRecordId");
 
         // Act
-        uut.sendTimToSDW(wydotTim, timToSend, regionNamePrev, timType, 0, endPoint, reducedMileposts);
+        uut.sendTimToSDW(wydotTim, timToSend, regionNamePrev, timType, 0, endPoint, reducedMileposts, null);
 
         // Assert
         verify(mockSdwService).getNewRecordId();
         verify(mockActiveTimHoldingService).insertActiveTimHolding(any());
-        verify(mockUtility, never()).logWithDate("Multiple active SAT TIMs found for client testclientid and direction D. Expected zero or one. Using the first one found.");
     }
 
     @Test
@@ -452,33 +433,12 @@ public class WydotTimServiceTest {
         when(mockTimService.getTim(any())).thenReturn(mockExistingSatTim);
 
         // Act
-        uut.sendTimToSDW(wydotTim, timToSend, regionNamePrev, timType, 0, endPoint, reducedMileposts);
+        uut.sendTimToSDW(wydotTim, timToSend, regionNamePrev, timType, 0, endPoint, reducedMileposts, null);
 
         // Assert
         verify(mockActiveTimHoldingService).insertActiveTimHolding(any());
         verify(mockActiveTimService).resetActiveTimsExpirationDate(any());
         verify(mockTimService).getTim(any());
-        verify(mockUtility, never()).logWithDate("Multiple active SAT TIMs found for client testclientid and direction D. Expected zero or one. Using the first one found.");
-    }
-
-    @Test
-    public void sendTimToRsus_NoRsusFound() throws IOException {
-        // Arrange
-        when(mockRsuService.getRsusByLatLong(any(), any(), any(), any())).thenReturn(new ArrayList<>());
-
-        WydotTim wydotTim = getMockWydotTim();
-        WydotTravelerInputData timToSend = getMockWydotTravelerInputDataWithServiceRequest();
-        String regionNamePrev = "regionNamePrev";
-        TimType timType = new TimType();
-        String endDateTime = "2024-08-29 14:45:30";
-        Coordinate endPoint = new Coordinate(BigDecimal.valueOf(1), BigDecimal.valueOf(2));
-
-
-        // Act
-        uut.sendTimToRsus(wydotTim, timToSend, regionNamePrev, timType, 0, endDateTime, endPoint);
-
-        // Assert
-        verify(mockUtility).logWithDate("No RSUs found to place TIM on, returning");
     }
 
     @Test
@@ -506,7 +466,7 @@ public class WydotTimServiceTest {
         Coordinate endPoint = new Coordinate(BigDecimal.valueOf(1), BigDecimal.valueOf(2));
 
         // Act
-        uut.sendTimToRsus(wydotTim, timToSend, regionNamePrev, timType, 0, endDateTime, endPoint);
+        uut.sendTimToRsus(wydotTim, timToSend, regionNamePrev, timType, 0, endDateTime, endPoint, null);
 
         // Assert
         verify(mockOdeService).sendNewTimToRsu(any());
@@ -551,10 +511,9 @@ public class WydotTimServiceTest {
         )).thenReturn(mockResponse);
 
         // Act
-        uut.sendTimToRsus(wydotTim, timToSend, regionNamePrev, timType, 0, endDateTime, endPoint);
+        uut.sendTimToRsus(wydotTim, timToSend, regionNamePrev, timType, 0, endDateTime, endPoint, null);
 
         // Assert
-        verify(mockUtility).logWithDate("Deleting TIM on index " + rsu.getRsuIndex() + " from rsu " + rsu.getRsuTarget());
         verify(mockOdeService).sendNewTimToRsu(any());
     }
 

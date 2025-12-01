@@ -3,36 +3,32 @@ package com.trihydro.tasks.actions;
 import java.util.List;
 
 import com.google.gson.Gson;
-import com.trihydro.library.helpers.Utility;
 import com.trihydro.library.model.ActiveTim;
 import com.trihydro.library.service.ActiveTimService;
 import com.trihydro.library.service.RestTemplateProvider;
 import com.trihydro.tasks.config.DataTasksConfiguration;
 
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.ResourceAccessException;
 
 @Slf4j
 @Component
 public class RemoveExpiredActiveTims implements Runnable {
-    private DataTasksConfiguration configuration;
-    private Utility utility;
-    private ActiveTimService activeTimService;
-    private RestTemplateProvider restTemplateProvider;
+    private final DataTasksConfiguration configuration;
+    private final ActiveTimService activeTimService;
+    private final RestTemplateProvider restTemplateProvider;
 
-    @Autowired
-    public void InjectDependencies(DataTasksConfiguration configuration, Utility _utility,
-            ActiveTimService _activeTimService, RestTemplateProvider _restTemplateProvider) {
+    public RemoveExpiredActiveTims(DataTasksConfiguration configuration, ActiveTimService activeTimService,
+                                   RestTemplateProvider restTemplateProvider) {
         this.configuration = configuration;
-        utility = _utility;
-        activeTimService = _activeTimService;
-        restTemplateProvider = _restTemplateProvider;
+        this.activeTimService = activeTimService;
+        this.restTemplateProvider = restTemplateProvider;
     }
 
     /**
@@ -55,6 +51,7 @@ public class RemoveExpiredActiveTims implements Runnable {
                 List<ActiveTim> activeTims = activeTimService.getExpiredActiveTims(batchSize);
                 log.info("Retrieved a batch of {} expired Active TIMs", activeTims.size());
                 if (activeTims.isEmpty()) {
+                    log.debug("No more expired Active TIMs to process. Exiting batch processing.");
                     break;
                 }
 
@@ -66,16 +63,27 @@ public class RemoveExpiredActiveTims implements Runnable {
                 Gson gson = new Gson();
 
                 // send to tim type endpoint to delete from RSUs and SDX
+                log.debug("Sending request to delete expired Active TIMs from RSUs and SDX");
                 for (ActiveTim activeTim : activeTims) {
+                    try {
+                        activeTimJson = gson.toJson(activeTim);
+                        entity = new HttpEntity<>(activeTimJson, headers);
 
-                    activeTimJson = gson.toJson(activeTim);
-                    entity = new HttpEntity<String>(activeTimJson, headers);
-
-                    log.info("Attempting to delete ActiveTim: { activeTimId: {} }", activeTim.getActiveTimId());
-                    restTemplateProvider.GetRestTemplate()
-                        .exchange(configuration.getWrapperUrl() + "/delete-tim/",
-                            HttpMethod.DELETE, entity, String.class);
+                        ResponseEntity<String> response = restTemplateProvider.GetRestTemplate()
+                                .exchange(configuration.getWrapperUrl() + "/delete-tim/",
+                                        HttpMethod.DELETE, entity, String.class);
+                        if (!response.getStatusCode().is2xxSuccessful()) {
+                            log.warn("Failed to delete Active TIM with id {}. Response: {}",
+                                    activeTim.getActiveTimId(), response.getBody());
+                        }
+                    } catch (Exception e) {
+                        log.error("Exception deleting Active TIM with id {}: {}", activeTim.getActiveTimId(), e.getMessage());
+                    }
                 }
+                log.info("Attempted to delete expired active TIMs with ids: {}",
+                    activeTims.stream().map(ActiveTim::getActiveTimId).collect(java.util.stream.Collectors.toList()));
+                log.debug("Client ids of expired Active TIMs: {}",
+                    activeTims.stream().map(ActiveTim::getClientId).collect(java.util.stream.Collectors.toList()));
             } catch (ResourceAccessException e) {
                 log.error("Error accessing resource. This indicates that the ODE Wrapper or CV Data Controller is not reachable. No more batches will be processed until the next run.", e);
                 // the error should not be rethrown, or else the task will not run until the service is restarted

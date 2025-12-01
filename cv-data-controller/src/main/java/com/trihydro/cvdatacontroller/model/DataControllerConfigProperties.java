@@ -11,13 +11,14 @@ import com.trihydro.library.model.EmailProps;
 import com.trihydro.library.service.RestTemplateProvider;
 import com.trihydro.library.tables.LoggingTables;
 import com.trihydro.library.tables.TimDbTables;
-
+import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Import;
 import org.springframework.stereotype.Component;
 
 @Component
 @ConfigurationProperties("config")
+@Data
 @Import({ TimDbTables.class, SQLNullHandler.class, Utility.class, EmailHelper.class,
     JavaMailSenderImplProvider.class, LoggingTables.class, DbInteractions.class,
     CdotGisConnector.class, RestTemplateProvider.class })

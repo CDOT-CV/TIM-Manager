@@ -1,6 +1,7 @@
 package com.trihydro.odewrapper.controller;
 
 import com.trihydro.library.exceptionhandlers.IdenticalPointsExceptionHandler;
+import com.trihydro.library.helpers.DateTimeHelper;
 import com.trihydro.library.helpers.MilepostReduction;
 import com.trihydro.library.helpers.TimGenerationHelper;
 import com.trihydro.library.helpers.Utility;
@@ -14,10 +15,18 @@ import com.trihydro.odewrapper.model.ControllerResult;
 import com.trihydro.odewrapper.model.TimVslList;
 import com.trihydro.odewrapper.model.WydotTimVsl;
 import io.swagger.annotations.Api;
+import io.swagger.annotations.Api;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RestController;
+import us.dot.its.jpo.ode.plugin.j2735.timstorage.FrameType.TravelerInfoType;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -28,6 +37,7 @@ import java.util.List;
 
 @CrossOrigin
 @RestController
+@Slf4j
 @Api(description = "Variable Speed Limits")
 public class WydotTimVslController extends WydotTimBaseController implements BufferTimFactory {
 
@@ -36,11 +46,12 @@ public class WydotTimVslController extends WydotTimBaseController implements Buf
 
     @Autowired
     public WydotTimVslController(BasicConfiguration _basicConfiguration, WydotTimService _wydotTimService,
-            TimTypeService _timTypeService, SetItisCodes _setItisCodes, ActiveTimService _activeTimService,
-            RestTemplateProvider _restTemplateProvider, MilepostReduction _milepostReduction, Utility _utility,
-            TimGenerationHelper _timGenerationHelper, MilepostService _milepostService, IdenticalPointsExceptionHandler identicalPointsExceptionHandler) {
+                                 TimTypeService _timTypeService, SetItisCodes _setItisCodes, ActiveTimService _activeTimService,
+                                 RestTemplateProvider _restTemplateProvider, MilepostReduction _milepostReduction, Utility _utility,
+                                 TimGenerationHelper _timGenerationHelper, MilepostService _milepostService, IdenticalPointsExceptionHandler identicalPointsExceptionHandler,
+                                 DateTimeHelper dateTimeHelper) {
         super(_basicConfiguration, _wydotTimService, _timTypeService, _setItisCodes, _activeTimService,
-                _restTemplateProvider, _milepostReduction, _utility, _timGenerationHelper, _milepostService, identicalPointsExceptionHandler);
+                _restTemplateProvider, _milepostReduction, _utility, _timGenerationHelper, _milepostService, identicalPointsExceptionHandler, dateTimeHelper);
     }
 
     @RequestMapping(value = "/vsl-tim", method = RequestMethod.POST, headers = "Accept=application/json")
@@ -49,9 +60,10 @@ public class WydotTimVslController extends WydotTimBaseController implements Buf
         DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
         Date date = new Date();
 
-        utility.logWithDate(dateFormat.format(date) + " - Create/Update VSL TIM", this.getClass());
+        String msg = dateFormat.format(date) + " - Create/Update VSL TIM";
+        log.info("{}: {}", this.getClass().getSimpleName(), msg);
         String post = gson.toJson(timVslList);
-        utility.logWithDate(post, this.getClass());
+        log.info("{}: {}", this.getClass().getSimpleName(), post.toString());
 
         List<ControllerResult> resultList = new ArrayList<>();
         ControllerResult resultTim;
@@ -94,10 +106,7 @@ public class WydotTimVslController extends WydotTimBaseController implements Buf
     @RequestMapping(value = "/vsl-tim/{vslTimId}", method = RequestMethod.DELETE, headers = "Accept=application/json")
     public ResponseEntity<String> deleteVslTim(@PathVariable String vslTimId) {
 
-        DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
-        Date date = new Date();
-
-        utility.logWithDate(dateFormat.format(date) + " - Delete VSL TIM", this.getClass());
+        log.info("Delete VSL TIM");
 
         // expire and clear TIM
         wydotTimService.clearTimsById("VSL", vslTimId, null, true);

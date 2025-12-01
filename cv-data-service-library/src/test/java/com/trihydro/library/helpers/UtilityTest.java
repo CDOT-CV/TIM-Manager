@@ -1,8 +1,10 @@
 package com.trihydro.library.helpers;
 
 import java.math.BigDecimal;
+import java.sql.Timestamp;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.util.TimeZone;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -13,66 +15,15 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import com.trihydro.library.model.Coordinate;
 import com.trihydro.library.model.Milepost;
 
+import static org.junit.jupiter.api.Assertions.*;
+
 @ExtendWith(MockitoExtension.class)
 public class UtilityTest {
 
     @InjectMocks
     private Utility uut;
 
-    @Test
-    public void convertDate_min_SUCCESS() {
-        // Arrange
-        var date = "2020-10-28T14:53Z";
 
-        // Act
-        var convertedDate = uut.convertDate(date);
-
-        // Assert
-        Assertions.assertNotNull(convertedDate);
-        Assertions.assertEquals(1603896780000L, convertedDate.getTime());
-    }
-
-    @Test
-    public void convertDate_sec_SUCCESS() {
-        // Arrange
-        // SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
-        var date = "2020-10-28T14:53:00Z";
-
-        // Act
-        var convertedDate = uut.convertDate(date);
-
-        // Assert
-        Assertions.assertNotNull(convertedDate);
-        Assertions.assertEquals(1603896780000L, convertedDate.getTime());
-    }
-
-    @Test
-    public void convertDate_milli_SUCCESS() {
-        // Arrange
-        // SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
-        var date = "2020-10-28T14:53:00.123Z";
-
-        // Act
-        var convertedDate = uut.convertDate(date);
-
-        // Assert
-        Assertions.assertNotNull(convertedDate);
-        Assertions.assertEquals(1603896780123L, convertedDate.getTime());
-    }
-
-    @Test
-    public void convertDate_utcText_SUCCESS() {
-        // Arrange
-        // SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
-        var date = "2020-02-10T17:00:00.000Z[UTC]";
-
-        // Act
-        var convertedDate = uut.convertDate(date);
-
-        // Assert
-        Assertions.assertNotNull(convertedDate);
-        Assertions.assertEquals(1581354000000L, convertedDate.getTime());
-    }
 
     @Test
     public void getMinutesDurationBetweenTwoDates_SUCCESS_simpleDate() {

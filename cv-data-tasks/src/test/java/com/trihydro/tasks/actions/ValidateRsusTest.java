@@ -1,43 +1,19 @@
 package com.trihydro.tasks.actions;
 
-import static com.trihydro.tasks.TestHelper.importJsonArray;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.lenient;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.concurrent.CancellationException;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
-
-import javax.mail.MessagingException;
-
 import com.trihydro.library.helpers.EmailHelper;
-import com.trihydro.library.helpers.TimGenerationHelper;
-import com.trihydro.library.helpers.Utility;
 import com.trihydro.library.model.ActiveTim;
 import com.trihydro.library.model.WydotRsu;
 import com.trihydro.library.service.ActiveTimService;
 import com.trihydro.library.service.OdeService;
-import com.trihydro.library.service.RsuDataService;
 import com.trihydro.library.service.RsuService;
 import com.trihydro.tasks.config.DataTasksConfiguration;
 import com.trihydro.tasks.helpers.EmailFormatter;
 import com.trihydro.tasks.helpers.ExecutorFactory;
 import com.trihydro.tasks.models.RsuValidationRecord;
 import com.trihydro.tasks.models.RsuValidationResult;
-
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -48,6 +24,26 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mail.MailException;
 import org.springframework.web.client.RestClientException;
 
+import javax.mail.MessagingException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.concurrent.CancellationException;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+
+import static com.trihydro.tasks.TestHelper.importJsonArray;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
 @ExtendWith(MockitoExtension.class)
 public class ValidateRsusTest {
     @Mock
@@ -57,19 +53,13 @@ public class ValidateRsusTest {
     @Mock
     private RsuService mockRsuService;
     @Mock
-    private RsuDataService mockRsuDataService;
-    @Mock
     private OdeService mockOdeService;
-    @Mock
-    private TimGenerationHelper mockTimGenerationHelper;
     @Mock
     private ExecutorFactory mockExecutorFactory;
     @Mock
     private EmailFormatter mockEmailFormatter;
     @Mock
     private EmailHelper mockMailHelper;
-    @Mock
-    private Utility mockUtility;
 
     @Mock
     private ExecutorService mockExecutorService;
@@ -133,19 +123,6 @@ public class ValidateRsusTest {
         // If we're unable to find any RSUs to validate, we'll send an email to let us know
         // that there was a validation error.
         verify(mockMailHelper).SendEmail(any(), any(), any());
-    }
-
-    @Test
-    public void validateRsus_unresponsiveActiveTimService() {
-        // Arrange
-        when(mockActiveTimService.getActiveRsuTims(any())).thenThrow(new RestClientException("timeout"));
-
-        // Act (error should be handled in runnable)
-        uut.run();
-
-        // Assert
-        verify(mockUtility).logWithDate(
-                "Unable to validate RSUs - error occurred while fetching Database records from PROD:", ValidateRsus.class);
     }
 
     @Test

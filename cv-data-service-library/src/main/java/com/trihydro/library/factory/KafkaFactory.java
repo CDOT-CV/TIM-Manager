@@ -4,6 +4,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
 
+import com.google.common.base.Strings;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
@@ -12,20 +14,17 @@ import org.apache.kafka.clients.producer.Producer;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
-import com.google.common.base.Strings;
-import com.trihydro.library.helpers.Utility;
-
 @Component
+@Slf4j
 @ConfigurationProperties("data-service-library.kafka")
 public class KafkaFactory {
-    private final Utility utility;
     private String kafkaType;
     private String confluentKey;
     private String confluentSecret;
     private final Properties kafkaProperties;
 
-    public KafkaFactory(Utility _utility) throws IllegalArgumentException {
-        utility = _utility;
+    public KafkaFactory() throws IllegalArgumentException {
+
         kafkaType = getKafkaType();
 
         if ("CONFLUENT".equalsIgnoreCase(kafkaType)) {
@@ -126,8 +125,8 @@ public class KafkaFactory {
         var consumer = new KafkaConsumer<String, String>(props);
         consumer.subscribe(topics);
 
-        utility.logWithDate(String.format("Created consumer for consumer group %s, subscribed to topic(s) %s",
-                consumerGroup, String.join(", ", topics)));
+        log.info(String.format("Created consumer for consumer group %s, subscribed to topic(s) %s",
+            consumerGroup, String.join(", ", topics)));
 
         return consumer;
     }

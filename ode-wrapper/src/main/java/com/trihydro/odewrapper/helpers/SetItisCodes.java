@@ -240,7 +240,7 @@ public class SetItisCodes {
      * This method translates the weight in pounds to its corresponding ITIS code.
      * These are large number ITIS codes and do not abide by the standard translations used for other numbers such as mph.
      * Supported weights are 20000 to 30000 in increments of 1000 and 30000 to 70000 in increments of 5000
-     * @throws WeightNotSupportedException 
+     * @throws WeightNotSupportedException
      */
     private String translateWeightToItisCode(int weightInPounds) throws WeightNotSupportedException {
         switch(weightInPounds) {
@@ -286,7 +286,7 @@ public class SetItisCodes {
                 throw new WeightNotSupportedException("Weight " + weightInPounds + " is not supported");
         }
     }
-    
+
     public class WeightNotSupportedException extends Exception {
         public WeightNotSupportedException(String message) {
             super(message);

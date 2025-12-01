@@ -1,23 +1,8 @@
 package com.trihydro.odewrapper.controller;
 
-import com.trihydro.library.exceptionhandlers.IdenticalPointsExceptionHandler;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
-import java.time.ZoneId;
-import java.time.ZoneOffset;
-import java.time.ZonedDateTime;
-import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeParseException;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Objects;
-import java.util.TimeZone;
-
 import com.google.gson.Gson;
+import com.trihydro.library.exceptionhandlers.IdenticalPointsExceptionHandler;
+import com.trihydro.library.helpers.DateTimeHelper;
 import com.trihydro.library.helpers.MilepostReduction;
 import com.trihydro.library.helpers.TimGenerationHelper;
 import com.trihydro.library.helpers.Utility;
@@ -25,11 +10,13 @@ import com.trihydro.library.model.ActiveTim;
 import com.trihydro.library.model.Buffer;
 import com.trihydro.library.model.Coordinate;
 import com.trihydro.library.model.Milepost;
+import com.trihydro.library.model.ResubmitTimException;
 import com.trihydro.library.model.TimType;
 import com.trihydro.library.model.WydotTim;
 import com.trihydro.library.model.WydotTimRw;
 import com.trihydro.library.model.WydotTravelerInputData;
 import com.trihydro.library.service.ActiveTimService;
+import com.trihydro.library.service.MilepostService;
 import com.trihydro.library.service.MilepostService;
 import com.trihydro.library.service.RestTemplateProvider;
 import com.trihydro.library.service.TimTypeService;
@@ -43,15 +30,31 @@ import com.trihydro.odewrapper.model.WydotTimIncident;
 import com.trihydro.odewrapper.model.WydotTimParking;
 import com.trihydro.odewrapper.model.WydotTimRc;
 import com.trihydro.odewrapper.model.WydotTimVsl;
-
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
+import us.dot.its.jpo.ode.plugin.j2735.timstorage.FrameType.TravelerInfoType;
+
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.List;
+import java.util.Objects;
 
 @Component
 @Slf4j
 public abstract class WydotTimBaseController {
-
+    private final DateTimeHelper dateTimeHelper;
     protected static BasicConfiguration configuration;
     protected WydotTimService wydotTimService;
     protected TimTypeService timTypeService;
@@ -65,14 +68,18 @@ public abstract class WydotTimBaseController {
     protected MilepostService milepostService;
     private final IdenticalPointsExceptionHandler identicalPointsExceptionHandler;
 
+    private List<String> routes = new ArrayList<>();
     protected static Gson gson = new Gson();
     private List<TimType> timTypes;
     protected final List<Integer> bufferTimITISCodes;
 
-    public WydotTimBaseController(BasicConfiguration _basicConfiguration, WydotTimService _wydotTimService,
-            TimTypeService _timTypeService, SetItisCodes _setItisCodes, ActiveTimService _activeTimService,
-            RestTemplateProvider _restTemplateProvider, MilepostReduction _milepostReduction, Utility _utility,
-            TimGenerationHelper _timGenerationHelper, MilepostService _milepostService, IdenticalPointsExceptionHandler identicalPointsExceptionHandler) {
+    public WydotTimBaseController(BasicConfiguration _basicConfiguration,
+                                  WydotTimService _wydotTimService, TimTypeService _timTypeService,
+                                  SetItisCodes _setItisCodes, ActiveTimService _activeTimService,
+                                  RestTemplateProvider _restTemplateProvider,
+                                  MilepostReduction _milepostReduction, Utility _utility,
+                                  TimGenerationHelper _timGenerationHelper, MilepostService _milepostService, IdenticalPointsExceptionHandler identicalPointsExceptionHandler,
+                                  DateTimeHelper dateTimeHelper) {
         configuration = _basicConfiguration;
         wydotTimService = _wydotTimService;
         timTypeService = _timTypeService;
@@ -86,27 +93,19 @@ public abstract class WydotTimBaseController {
         // closed-ahead, blocked-ahead, and ahead ITIS codes
         bufferTimITISCodes = List.of(771, 776, 13569);
         this.identicalPointsExceptionHandler = identicalPointsExceptionHandler;
+        this.dateTimeHelper = dateTimeHelper;
     }
 
     protected String getStartTime() {
-        Date date = new Date();
-        return getIsoDateTimeString(date);
+        return dateTimeHelper.getStartTime();
     }
 
     protected String getIsoDateTimeString(Date date) {
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
-        sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
-        return sdf.format(date);
+        return dateTimeHelper.getIsoDateTimeString(date);
     }
 
     protected String getIsoDateTimeString(ZonedDateTime date) {
-        if (date == null) {
-            return null;
-        }
-
-        var formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
-        var utcDate = date.withZoneSameInstant(ZoneOffset.UTC);
-        return utcDate.format(formatter);
+        return dateTimeHelper.getIsoDateTimeString(date);
     }
 
     protected ControllerResult validateInputParking(WydotTimParking tim) {
@@ -250,11 +249,11 @@ public abstract class WydotTimBaseController {
                 var convertedDate =
                     LocalDate.parse(tim.getSchedStart(), DateTimeFormatter.ISO_LOCAL_DATE);
                 var startOfDay = convertedDate.atStartOfDay(ZoneId.systemDefault());
-                tim.setSchedStart(getIsoDateTimeString(startOfDay));
+                tim.setSchedStart(dateTimeHelper.getIsoDateTimeString(startOfDay));
             } catch (DateTimeParseException e) {
                 resultMessages.add(
                     "Bad value supplied for schedStart. Should follow the format: yyyy-MM-dd");
-                e.printStackTrace();
+                log.error("Exception", e);
             }
         }
         if (tim.getSchedEnd() != null) {
@@ -265,11 +264,11 @@ public abstract class WydotTimBaseController {
                 // construction is only scheduled for a day (ex. 5-12 to 5-12)
                 var endOfDay = ZonedDateTime.of(LocalDateTime.of(convertedDate, LocalTime.MAX),
                     ZoneId.systemDefault());
-                tim.setSchedEnd(getIsoDateTimeString(endOfDay));
+                tim.setSchedEnd(dateTimeHelper.getIsoDateTimeString(endOfDay));
             } catch (DateTimeParseException e) {
                 resultMessages.add(
                     "Bad value supplied for schedEnd. Should follow the format: yyyy-MM-dd");
-                e.printStackTrace();
+                log.error("Exception", e);
             }
         }
         if (tim.getBuffers() != null) {
@@ -308,16 +307,20 @@ public abstract class WydotTimBaseController {
 
     public boolean routeSupported(String route) {
         // call out to REST service to get all routes once, then use that
-        // if (routes.size() == 0) {
-        //     String url = String.format("%s/routes", configuration.getCvRestService());
-        //     ResponseEntity<String[]> response = restTemplateProvider.GetRestTemplate().getForEntity(url,
-        //             String[].class);
-        //     routes = Arrays.asList(response.getBody());
-        // }
-        // return routes.contains(route);
-
-        // Since routes are not loaded, assume all route are supported.
-        return !route.isEmpty();
+        if (routes.size() == 0) {
+            String url = String.format("%s/routes", configuration.getCvRestService());
+            log.trace("Getting routes from {}", url);
+            try {
+                ResponseEntity<String[]> response = restTemplateProvider.GetRestTemplate().getForEntity(url, String[].class);
+                if (response != null && response.getBody() != null) {
+                    routes = Arrays.asList(response.getBody());
+                }
+            } catch (Exception e) {
+                log.error("Unexpected error getting routes from {} ", url, e);
+            }
+        }
+        log.trace("Number of routes retrieved: {}", routes.size());
+        return routes.contains(route);
     }
 
     protected ControllerResult validateInputRc(WydotTimRc tim) {
@@ -697,12 +700,15 @@ public abstract class WydotTimBaseController {
         for (ActiveTim existingTim : existingTims) {
             existingTimIds.add(existingTim.getActiveTimId());
         }
-        timGenerationHelper.expireTimAndResubmitToOde(existingTimIds);
+        List<ResubmitTimException> resubmitTimExceptions = timGenerationHelper.expireTimAndResubmitToOde(existingTimIds);
+        if (resubmitTimExceptions.size() > 0) {
+            log.warn("One or more TIMs failed to resubmit to ODE. See logs for details.");
+        }
 
         // Per J2735, NodeSetLL's must contain at least 2 nodes. ODE will fail to
         // PER-encode TIM if we supply less than 2.
         if (milepostsAll.size() < 2) {
-            utility.logWithDate("Found less than 2 mileposts, unable to generate TIM.");
+            log.info("Found less than 2 mileposts, unable to generate TIM.");
             return;
         }
         Milepost firstPoint = milepostsAll.get(0);
@@ -754,14 +760,11 @@ public abstract class WydotTimBaseController {
         }
 
         // send TIM to RSUs
-        wydotTimService.sendTimToRsus(wydotTim, timToSend, regionNamePrev, timType, pk, endDateTime, endPoint);
-
+        wydotTimService.sendTimToRsus(wydotTim, timToSend, regionNamePrev, timType, pk, endDateTime, endPoint, endDateTime);
         // send TIM to SDW
         // remove rsus from TIM
         timToSend.getRequest().setRsus(null);
         wydotTimService.sendTimToSDW(wydotTim, timToSend, regionNamePrev, timType, pk, endPoint,
-            reducedMileposts);
+            reducedMileposts, endDateTime);
     }
-
-
 }
