@@ -34,7 +34,6 @@ import com.trihydro.library.model.TimUpdateModel;
 import com.trihydro.library.model.TimeToLive;
 import com.trihydro.library.model.WydotRsu;
 import com.trihydro.library.model.WydotRsuTim;
-import com.trihydro.library.model.WydotTravelerInputData;
 import com.trihydro.library.service.ActiveTimHoldingService;
 import com.trihydro.library.service.ActiveTimService;
 import com.trihydro.library.service.DataFrameService;
@@ -56,6 +55,7 @@ import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import us.dot.its.jpo.ode.model.OdeTravelerInputData;
 
 @ExtendWith(MockitoExtension.class)
 class TimGenerationHelperTest {
@@ -97,7 +97,7 @@ class TimGenerationHelperTest {
     private TimGenerationHelper uut;
 
     @Captor
-    private ArgumentCaptor<WydotTravelerInputData> timCaptor;
+    private ArgumentCaptor<OdeTravelerInputData> timCaptor;
 
     @BeforeEach
     public void setup() {

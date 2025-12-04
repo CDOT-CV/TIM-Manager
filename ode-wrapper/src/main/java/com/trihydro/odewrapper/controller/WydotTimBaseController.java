@@ -14,9 +14,7 @@ import com.trihydro.library.model.ResubmitTimException;
 import com.trihydro.library.model.TimType;
 import com.trihydro.library.model.WydotTim;
 import com.trihydro.library.model.WydotTimRw;
-import com.trihydro.library.model.WydotTravelerInputData;
 import com.trihydro.library.service.ActiveTimService;
-import com.trihydro.library.service.MilepostService;
 import com.trihydro.library.service.MilepostService;
 import com.trihydro.library.service.RestTemplateProvider;
 import com.trihydro.library.service.TimTypeService;
@@ -34,7 +32,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
-import us.dot.its.jpo.ode.plugin.j2735.timstorage.FrameType.TravelerInfoType;
+import us.dot.its.jpo.ode.model.OdeTravelerInputData;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -741,7 +739,7 @@ public abstract class WydotTimBaseController {
                                   Milepost anchor) {
 
         // create TIM
-        WydotTravelerInputData timToSend =
+        OdeTravelerInputData timToSend =
             wydotTimService.createTim(wydotTim, timType.getType(), startDateTime, endDateTime,
                     allMileposts, reducedMileposts, anchor, configuration.getDotGnisId());
 

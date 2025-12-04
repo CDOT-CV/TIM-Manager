@@ -15,8 +15,6 @@ import static org.mockito.Mockito.when;
 
 import java.io.IOException;
 import java.math.BigDecimal;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -27,14 +25,12 @@ import javax.mail.MessagingException;
 
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.slf4j.Logger;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
@@ -61,12 +57,11 @@ import com.trihydro.library.model.TimType;
 import com.trihydro.library.model.WydotOdeTravelerInformationMessage;
 import com.trihydro.library.model.WydotRsu;
 import com.trihydro.library.model.WydotTim;
-import com.trihydro.library.model.WydotTravelerInputData;
 
+import us.dot.its.jpo.ode.model.OdeTravelerInputData;
 import us.dot.its.jpo.ode.plugin.ServiceRequest;
 import us.dot.its.jpo.ode.plugin.j2735.OdeTravelerInformationMessage;
 import us.dot.its.jpo.ode.plugin.j2735.OdeTravelerInformationMessage.DataFrame;
-import us.dot.its.jpo.ode.plugin.j2735.timstorage.FrameType.TravelerInfoType;
 
 @ExtendWith(MockitoExtension.class)
 @Slf4j
@@ -194,16 +189,16 @@ public class WydotTimServiceTest {
         return wydotTim;
     }
 
-    private WydotTravelerInputData getMockWydotTravelerInputDataWithServiceRequest() throws IOException {
-        WydotTravelerInputData wydotTravelerInputData = new WydotTravelerInputData();
+    private OdeTravelerInputData getMockWydotTravelerInputDataWithServiceRequest() throws IOException {
+        OdeTravelerInputData wydotTravelerInputData = new OdeTravelerInputData();
         wydotTravelerInputData.setTim(getMockOdeTravelerInformationMessage());
         ServiceRequest serviceRequest = new ServiceRequest();
         wydotTravelerInputData.setRequest(serviceRequest);
         return wydotTravelerInputData;
     }
 
-    private WydotTravelerInputData getMockWydotTravelerInputDataWithDataFrame() {
-        WydotTravelerInputData wydotTravelerInputData = new WydotTravelerInputData();
+    private OdeTravelerInputData getMockWydotTravelerInputDataWithDataFrame() {
+        OdeTravelerInputData wydotTravelerInputData = new OdeTravelerInputData();
         OdeTravelerInformationMessage tim = new OdeTravelerInformationMessage();
         DataFrame df = new DataFrame();
         df.setStartDateTime("2022-01-01T00:00:00.000Z");
@@ -237,7 +232,7 @@ public class WydotTimServiceTest {
         when(mockCreateBaseTimUtil.buildTim(any(), any(), any(), any(), any())).thenReturn(null);
 
         // Act
-        WydotTravelerInputData result = uut.createTim(new WydotTim(), timTypeStr, startDateTime, endDateTime, allMileposts, reducedMileposts, anchor, dotGnisId);
+        OdeTravelerInputData result = uut.createTim(new WydotTim(), timTypeStr, startDateTime, endDateTime, allMileposts, reducedMileposts, anchor, dotGnisId);
 
         // Assert
         assertNull(result);
@@ -254,12 +249,12 @@ public class WydotTimServiceTest {
         Milepost anchor = new Milepost();
         String dotGnisId = "1B2843";
 
-        WydotTravelerInputData timToSend = getMockWydotTravelerInputDataWithDataFrame();
+        OdeTravelerInputData timToSend = getMockWydotTravelerInputDataWithDataFrame();
 
         when(mockCreateBaseTimUtil.buildTim(any(), any(), any(), any(), any())).thenReturn(timToSend);
 
         // Act
-        WydotTravelerInputData result = uut.createTim(new WydotTim(), timTypeStr, startDateTime, endDateTime, allMileposts, reducedMileposts, anchor, dotGnisId);
+        OdeTravelerInputData result = uut.createTim(new WydotTim(), timTypeStr, startDateTime, endDateTime, allMileposts, reducedMileposts, anchor, dotGnisId);
 
         // Assert
         assertEquals(startDateTime, result.getTim().getDataframes()[0].getStartDateTime());
@@ -276,13 +271,13 @@ public class WydotTimServiceTest {
         Milepost anchor = new Milepost();
         String dotGnisId = "1B2843";
 
-        WydotTravelerInputData timToSend = getMockWydotTravelerInputDataWithDataFrame();
+        OdeTravelerInputData timToSend = getMockWydotTravelerInputDataWithDataFrame();
 
         when(mockCreateBaseTimUtil.buildTim(any(), any(), any(), any(), any())).thenReturn(timToSend);
         when(mockUtility.getMinutesDurationBetweenTwoDates(anyString(), anyString())).thenReturn(60);
 
         // Act
-        WydotTravelerInputData result = uut.createTim(new WydotTim(), timTypeStr, startDateTime, endDateTime, allMileposts, reducedMileposts, anchor, dotGnisId);
+        OdeTravelerInputData result = uut.createTim(new WydotTim(), timTypeStr, startDateTime, endDateTime, allMileposts, reducedMileposts, anchor, dotGnisId);
 
         // Assert
         assertEquals(60, result.getTim().getDataframes()[0].getDurationTime());
@@ -299,12 +294,12 @@ public class WydotTimServiceTest {
         Milepost anchor = new Milepost();
         String dotGnisId = "1B2843";
 
-        WydotTravelerInputData timToSend = getMockWydotTravelerInputDataWithDataFrame();
+        OdeTravelerInputData timToSend = getMockWydotTravelerInputDataWithDataFrame();
 
         when(mockCreateBaseTimUtil.buildTim(any(), any(), any(), any(), any())).thenReturn(timToSend);
 
         // Act
-        WydotTravelerInputData result = uut.createTim(new WydotTim(), timTypeStr, startDateTime, endDateTime, allMileposts, reducedMileposts, anchor, dotGnisId);
+        OdeTravelerInputData result = uut.createTim(new WydotTim(), timTypeStr, startDateTime, endDateTime, allMileposts, reducedMileposts, anchor, dotGnisId);
 
         // Assert
         assertEquals(120, result.getTim().getDataframes()[0].getDurationTime());
@@ -321,12 +316,12 @@ public class WydotTimServiceTest {
         Milepost anchor = new Milepost();
         String dotGnisId = "1B2843";
 
-        WydotTravelerInputData timToSend = getMockWydotTravelerInputDataWithDataFrame();
+        OdeTravelerInputData timToSend = getMockWydotTravelerInputDataWithDataFrame();
 
         when(mockCreateBaseTimUtil.buildTim(any(), any(), any(), any(), any())).thenReturn(timToSend);
 
         // Act
-        WydotTravelerInputData result = uut.createTim(new WydotTim(), timTypeStr, startDateTime, endDateTime, allMileposts, reducedMileposts, anchor, dotGnisId);
+        OdeTravelerInputData result = uut.createTim(new WydotTim(), timTypeStr, startDateTime, endDateTime, allMileposts, reducedMileposts, anchor, dotGnisId);
 
         // Assert
         assertNotNull(result.getTim().getPacketID());
@@ -346,7 +341,7 @@ public class WydotTimServiceTest {
         Milepost anchor = new Milepost();
         String dotGnisId = "000000";
 
-        WydotTravelerInputData timToSend = getMockWydotTravelerInputDataWithDataFrame();
+        OdeTravelerInputData timToSend = getMockWydotTravelerInputDataWithDataFrame();
 
         when(mockCreateBaseTimUtil.buildTim(any(), any(), any(), any(), any())).thenReturn(timToSend);
 
@@ -403,7 +398,7 @@ public class WydotTimServiceTest {
         // Arrange
         when(mockActiveTimService.getActiveTimsByClientIdDirection(any(), any(), any())).thenReturn(new ArrayList<>());
         WydotTim wydotTim = getMockWydotTim();
-        WydotTravelerInputData timToSend = getMockWydotTravelerInputDataWithServiceRequest();
+        OdeTravelerInputData timToSend = getMockWydotTravelerInputDataWithServiceRequest();
         String regionNamePrev = "regionNamePrev";
         TimType timType = new TimType();
         Coordinate endPoint = new Coordinate(BigDecimal.valueOf(1), BigDecimal.valueOf(2));
@@ -424,7 +419,7 @@ public class WydotTimServiceTest {
         List<ActiveTim> activeSatTims = getActiveTims(true).subList(0, 1);
         when(mockActiveTimService.getActiveTimsByClientIdDirection(any(), any(), any())).thenReturn(activeSatTims);
         WydotTim wydotTim = getMockWydotTim();
-        WydotTravelerInputData timToSend = getMockWydotTravelerInputDataWithServiceRequest();
+        OdeTravelerInputData timToSend = getMockWydotTravelerInputDataWithServiceRequest();
         String regionNamePrev = "regionNamePrev";
         TimType timType = new TimType();
         Coordinate endPoint = new Coordinate(BigDecimal.valueOf(1), BigDecimal.valueOf(2));
@@ -458,7 +453,7 @@ public class WydotTimServiceTest {
         when(mockOdeService.findFirstAvailableIndexWithRsuIndex(any())).thenReturn(1);
 
         WydotTim wydotTim = getMockWydotTim();
-        WydotTravelerInputData timToSend = getMockWydotTravelerInputDataWithServiceRequest();
+        OdeTravelerInputData timToSend = getMockWydotTravelerInputDataWithServiceRequest();
         String regionNamePrev = "regionNamePrev";
         TimType timType = new TimType();
 
@@ -489,7 +484,7 @@ public class WydotTimServiceTest {
         when(mockTimService.getTim(any())).thenReturn(new WydotOdeTravelerInformationMessage());
 
         WydotTim wydotTim = getMockWydotTim();
-        WydotTravelerInputData timToSend = getMockWydotTravelerInputDataWithServiceRequest();
+        OdeTravelerInputData timToSend = getMockWydotTravelerInputDataWithServiceRequest();
         String regionNamePrev = "regionNamePrev";
         TimType timType = new TimType();
 

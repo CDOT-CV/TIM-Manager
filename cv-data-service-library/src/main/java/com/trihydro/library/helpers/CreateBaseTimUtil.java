@@ -13,13 +13,13 @@ import lombok.extern.slf4j.Slf4j;
 import com.trihydro.library.model.ContentEnum;
 import com.trihydro.library.model.Milepost;
 import com.trihydro.library.model.WydotTim;
-import com.trihydro.library.model.WydotTravelerInputData;
 import com.trihydro.library.service.TimGenerationProps;
 
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import us.dot.its.jpo.ode.model.OdeTravelerInputData;
 import us.dot.its.jpo.ode.plugin.ServiceRequest;
 import us.dot.its.jpo.ode.plugin.j2735.OdePosition3D;
 import us.dot.its.jpo.ode.plugin.j2735.OdeTravelerInformationMessage;
@@ -48,13 +48,13 @@ public class CreateBaseTimUtil {
      * @param anchor The Milepost object representing the anchor milepost.
      * @return The WydotTravelerInputData object containing the built TIM.
      */
-    public WydotTravelerInputData buildTim(WydotTim wydotTim, TimGenerationProps genProps,
-            List<Milepost> allMileposts, List<Milepost> reducedMileposts, Milepost anchor) {
+    public OdeTravelerInputData buildTim(WydotTim wydotTim, TimGenerationProps genProps,
+                                         List<Milepost> allMileposts, List<Milepost> reducedMileposts, Milepost anchor) {
 
         ContentEnum content = ContentEnum.advisory;
 
         // build TIM object with data
-        WydotTravelerInputData timToSend = new WydotTravelerInputData();
+        OdeTravelerInputData timToSend = new OdeTravelerInputData();
         OdeTravelerInformationMessage tim = new OdeTravelerInformationMessage();
         tim.setUrlB("null");
 

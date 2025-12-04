@@ -1,10 +1,9 @@
 package com.trihydro.library.helpers;
 
-import com.trihydro.library.model.WydotTravelerInputData;
-
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import us.dot.its.jpo.ode.model.OdeTravelerInputData;
 import us.dot.its.jpo.ode.plugin.SNMP;
 
 public class SnmpHelperTest {
@@ -14,7 +13,7 @@ public class SnmpHelperTest {
         var uut = new SnmpHelper();
         var startDateTime = "2020-12-12T00:00:00-06:00";
         var endDateTime = "2020-12-15T00:00:00-06:00";
-        WydotTravelerInputData timToSend = new WydotTravelerInputData();
+        OdeTravelerInputData timToSend = new OdeTravelerInputData();
 
         // Act
         var snmp = uut.getSnmp(startDateTime, endDateTime, timToSend);
