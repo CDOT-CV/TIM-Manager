@@ -105,50 +105,6 @@
             <version>1.19.0</version>
             <scope>test</scope>
         </dependency>
-        <dependency>
-            <groupId>usdot.jpo.ode</groupId>
-            <artifactId>jpo-ode-core</artifactId>
-            <version>4.0.0</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>*</groupId>
-                    <artifactId>*</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>usdot.jpo.ode</groupId>
-            <artifactId>jpo-ode-common</artifactId>
-            <version>4.0.0</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>*</groupId>
-                    <artifactId>*</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>usdot.jpo.ode</groupId>
-            <artifactId>jpo-ode-plugins</artifactId>
-            <version>4.0.0</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>*</groupId>
-                    <artifactId>*</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>usdot.jpo.ode</groupId>
-            <artifactId>jpo-ode-svcs</artifactId>
-            <version>4.0.0</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>*</groupId>
-                    <artifactId>*</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
     </dependencies>
 
     <properties>
