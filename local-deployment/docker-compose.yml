@@ -221,6 +221,8 @@ services:
       CONFIG_POINT_INCIDENT_BUFFER_MILES: 1
       CONFIG_DOT_GNIS_ID: ${DOT_GNIS_ID}
       LOGGING_LEVEL_COM_TRIHYDRO: ${LOGGING_LEVEL_COM_TRIHYDRO}
+    healthcheck:
+      test: ["CMD", "curl", "http://localhost:7777/rw-tim/"]
     ports:
       - "7777:7777"
     logging:
