@@ -305,22 +305,24 @@ public abstract class WydotTimBaseController {
         return result;
     }
 
+    // TODO: adjust to verify route is supported using the CdotUpstreamPathController rather then the milepost db
     public boolean routeSupported(String route) {
         // call out to REST service to get all routes once, then use that
-        if (routes.size() == 0) {
-            String url = String.format("%s/routes", configuration.getCvRestService());
-            log.trace("Getting routes from {}", url);
-            try {
-                ResponseEntity<String[]> response = restTemplateProvider.GetRestTemplate().getForEntity(url, String[].class);
-                if (response != null && response.getBody() != null) {
-                    routes = Arrays.asList(response.getBody());
-                }
-            } catch (Exception e) {
-                log.error("Unexpected error getting routes from {} ", url, e);
-            }
-        }
-        log.trace("Number of routes retrieved: {}", routes.size());
-        return routes.contains(route);
+//        if (routes.size() == 0) {
+//            String url = String.format("%s/routes", configuration.getCvRestService());
+//            log.trace("Getting routes from {}", url);
+//            try {
+//                ResponseEntity<String[]> response = restTemplateProvider.GetRestTemplate().getForEntity(url, String[].class);
+//                if (response != null && response.getBody() != null) {
+//                    routes = Arrays.asList(response.getBody());
+//                }
+//            } catch (Exception e) {
+//                log.error("Unexpected error getting routes from {} ", url, e);
+//            }
+//        }
+//        log.trace("Number of routes retrieved: {}", routes.size());
+//        return routes.contains(route);
+        return true;
     }
 
     protected ControllerResult validateInputRc(WydotTimRc tim) {

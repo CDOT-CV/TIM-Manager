@@ -69,7 +69,7 @@ public class PathController extends BaseController {
                 log.error("Exception", e);
             }
         }
-        // if we got here, its an error
+        // if we got here, it's an error
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Long.valueOf(0));
     }
 }

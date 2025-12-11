@@ -8,15 +8,11 @@ import java.util.List;
 import com.trihydro.library.helpers.CdotGisConnector;
 import com.trihydro.library.model.Milepost;
 
+import com.trihydro.library.model.WydotTim;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -129,22 +125,65 @@ public class CdotUpstreamPathController extends BaseController {
   public List<Milepost> getMilepostsForRoute(String routeId) throws JsonProcessingException,
       RestClientException {
     ResponseEntity<String> response = cdotGisService.getRouteById(routeId);
-    String routeJsonString = response.getBody();
-    ObjectMapper objectMapper = new ObjectMapper();
-    JsonNode rootNode = objectMapper.readTree(routeJsonString);
-    JsonNode pathNode = rootNode.path("features").get(0).path("geometry").path("paths").get(0);
+    return getMilepostsFromResponse(response, routeId);
+  }
+
+  /**
+   * Retrieves all mileposts between the start and end points
+   *
+   * <p>This method uses `CdotGisService.RouteBetweenMeasures()` to retrieve the route between the start and end
+   * in JSON format. The JSON response contains all the latitude and longitude points in the path. This information
+   * is then extracted into the `Milepost` model and returned as a list of mileposts.</p>
+   *
+   * @param wydotTim The WydotTim object containing the data for the TIM.
+   * @return a list of `Milepost` objects representing the mileposts from the start to the end point of a Tim
+   * @throws JsonProcessingException if there is an error processing the JSON response
+   * @throws RestClientException if an error occurs while making the request
+   */
+  @RequestMapping(method = RequestMethod.POST, produces = "application/json", value = "/get-milepost-path-start-end")
+  public ResponseEntity<List<Milepost>> getMilepostsByStartEndPoint(@RequestBody WydotTim wydotTim) throws JsonProcessingException,
+      RestClientException {
+      logger.warn("In MilePost correct version");
+    BigDecimal startLat = wydotTim.getStartPoint().getLatitude();
+    BigDecimal startLong = wydotTim.getStartPoint().getLongitude();
+    BigDecimal endLat = wydotTim.getEndPoint().getLatitude();
+    BigDecimal endLong = wydotTim.getEndPoint().getLongitude();
     List<Milepost> mileposts = new ArrayList<>();
-    for (JsonNode node : pathNode) {
+
+    String routeId = wydotTim.getRoute().replace('-', '_');
+
+    if(startLat.equals(endLat) && startLong.equals(endLong)) {
       Milepost milepost = new Milepost();
       milepost.setCommonName(routeId);
-      BigDecimal latitude = new BigDecimal(node.get(1).asText()).setScale(14, RoundingMode.HALF_UP);
-      BigDecimal longitude =
-          new BigDecimal(node.get(0).asText()).setScale(14, RoundingMode.HALF_UP);
-      milepost.setLatitude(latitude);
-      milepost.setLongitude(longitude);
+      milepost.setLatitude(startLat);
+      milepost.setLongitude(startLong);
       mileposts.add(milepost);
+      mileposts.add(milepost);
+      return ResponseEntity.ok(mileposts);
     }
-    return mileposts;
+
+    ResponseEntity<String> startRouteDetails = cdotGisService.getRouteDetails(startLat, startLong);
+    String startRouteJsonString = startRouteDetails.getBody();
+    ObjectMapper objectMapper = new ObjectMapper();
+    JsonNode rootNode = objectMapper.readTree(startRouteJsonString);
+    logger.info(rootNode.toString());
+    String startRoute = rootNode.path("features").get(0).path("attributes").get("Route").asText();
+    float startMeasure = rootNode.path("features").get(0).path("attributes").get("Measure").floatValue();
+
+    ResponseEntity<String> endRouteDetails = cdotGisService.getRouteDetails(endLat, endLong);
+    String endRouteJsonString = endRouteDetails.getBody();
+    rootNode = objectMapper.readTree(endRouteJsonString);
+    String endRoute = rootNode.path("features").get(0).path("attributes").get("Route").asText();
+    float endMeasure = rootNode.path("features").get(0).path("attributes").get("Measure").floatValue();
+
+    if (!startRoute.equals(endRoute)) {
+      logger.warn("Unable to find route");
+      return ResponseEntity.badRequest().body(null);
+    }
+
+    ResponseEntity<String> response = cdotGisService.getRouteBetweenMeasures(startRoute, startMeasure, endMeasure);
+    logger.info(String.valueOf(response));
+    return ResponseEntity.ok(getMilepostsFromResponse(response, routeId));
   }
 
   public PathDirection getPathDirection(List<Milepost> pathMileposts, List<Milepost> allMileposts)
@@ -167,6 +206,25 @@ public class CdotUpstreamPathController extends BaseController {
     } else {
       return PathDirection.DESCENDING;
     }
+  }
+
+  private List<Milepost> getMilepostsFromResponse(ResponseEntity<String> response, String routeId) throws JsonProcessingException {
+    String routeJsonString = response.getBody();
+    ObjectMapper objectMapper = new ObjectMapper();
+    JsonNode rootNode = objectMapper.readTree(routeJsonString);
+    JsonNode pathNode = rootNode.path("features").get(0).path("geometry").path("paths").get(0);
+    List<Milepost> mileposts = new ArrayList<>();
+    for (JsonNode node : pathNode) {
+      Milepost milepost = new Milepost();
+      milepost.setCommonName(routeId);
+      BigDecimal latitude = new BigDecimal(node.get(1).asText()).setScale(14, RoundingMode.HALF_UP);
+      BigDecimal longitude =
+              new BigDecimal(node.get(0).asText()).setScale(14, RoundingMode.HALF_UP);
+      milepost.setLatitude(latitude);
+      milepost.setLongitude(longitude);
+      mileposts.add(milepost);
+    }
+    return mileposts;
   }
 
   private int getIndexOfMilepost(List<Milepost> mileposts, Milepost milepost) {
