@@ -18,46 +18,46 @@ import java.util.*;
 
 @Component
 public class CdotGisConnector {
-  private final String baseUrl = "https://dtdapps.codot.gov/server/rest/services/LRS/Routes_withDEC/MapServer/exts/CdotLrsAccessRounded";
-  private final int tolerance = 10000;
-  private final int SR = 4326;
+    private final String baseUrl = "https://dtdapps.codot.gov/server/rest/services/LRS/Routes_withDEC/MapServer/exts/CdotLrsAccessRounded";
+    private final int tolerance = 10000;
+    private final int SR = 4326;
 
-  private final RestTemplateProvider restTemplateProvider;
+    private final RestTemplateProvider restTemplateProvider;
 
-  private final Logger logger = LoggerFactory.getLogger(CdotGisConnector.class);
+    private final Logger logger = LoggerFactory.getLogger(CdotGisConnector.class);
 
-  public CdotGisConnector(RestTemplateProvider _restTemplateProvider) {
-    this.restTemplateProvider = _restTemplateProvider;
-  }
+    public CdotGisConnector(RestTemplateProvider _restTemplateProvider) {
+        this.restTemplateProvider = _restTemplateProvider;
+    }
 
-  public String getBaseUrl() {
-    return baseUrl;
-  }
+    public String getBaseUrl() {
+        return baseUrl;
+    }
 
-  public RestTemplateProvider getRestTemplateProvider() {
-    return restTemplateProvider;
-  }
+    public RestTemplateProvider getRestTemplateProvider() {
+        return restTemplateProvider;
+    }
 
-  /**
-   * Retrieves the route information from the CDOT GIS service by route ID.
-   *
-   * <p>This method sends a GET request to the CDOT GIS service to retrieve the route information
-   * in JSON format. The JSON response includes every latitude and longitude point associated
-   * with the specified route, such as I-25.</p>
-   *
-   * @param routeId the ID of the route to retrieve
-   * @return a ResponseEntity containing the JSON response from the CDOT GIS service
-   * @throws RestClientException if an error occurs while making the request
-   */
-  public ResponseEntity<String> getRouteById(String routeId) throws RestClientException {
-    String targetUrl = baseUrl + "/Route";
-    logger.info("Getting route with ID {} from CDOT GIS service at: {}", routeId, targetUrl);
-    String params = "?routeId=" + routeId + "&outSR=" + SR + "&f=json";
-    HttpHeaders headers = new HttpHeaders();
-    headers.set("Accept", "application/json");
-    HttpEntity<String> entity = new HttpEntity<>(headers);
-    return restTemplateProvider.GetRestTemplate().exchange(targetUrl + params, HttpMethod.GET, entity, String.class);
-  }
+    /**
+     * Retrieves the route information from the CDOT GIS service by route ID.
+     *
+     * <p>This method sends a GET request to the CDOT GIS service to retrieve the route information
+     * in JSON format. The JSON response includes every latitude and longitude point associated
+     * with the specified route, such as I-25.</p>
+     *
+     * @param routeId the ID of the route to retrieve
+     * @return a ResponseEntity containing the JSON response from the CDOT GIS service
+     * @throws RestClientException if an error occurs while making the request
+     */
+    public ResponseEntity<String> getRouteById(String routeId) throws RestClientException {
+        String targetUrl = baseUrl + "/Route";
+        logger.info("Getting route with ID {} from CDOT GIS service at: {}", routeId, targetUrl);
+        String params = "?routeId=" + routeId + "&outSR=" + SR + "&f=json";
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("Accept", "application/json");
+        HttpEntity<String> entity = new HttpEntity<>(headers);
+        return restTemplateProvider.GetRestTemplate().exchange(targetUrl + params, HttpMethod.GET, entity, String.class);
+    }
 
     /**
      * Retrieves the route details for a point from the CDOT GIS service
@@ -66,7 +66,7 @@ public class CdotGisConnector {
      * in JSON format. The JSON response includes the measure of the point which is used in
      * getting the mileposts of a route from one point to another</p>
      *
-     * @param latitude latitude of a point
+     * @param latitude  latitude of a point
      * @param longitude longitude of a point
      * @return a ResponseEntity containing the JSON response from the CDOT GIS service
      * @throws RestClientException if an error occurs while making the request
@@ -99,19 +99,19 @@ public class CdotGisConnector {
      * <p>Sends a GET request to the CDOT GIS service to retrieve every latitude and longitude point on the specified
      * route that falls between the provided begin and end measures.</p>
      *
-     * @param routeId GIS server route ID
+     * @param routeId      GIS server route ID
      * @param startMeasure Start measure on route (miles)
-     * @param endMeasure End measure on route (miles)
+     * @param endMeasure   End measure on route (miles)
      * @return a ResponseEntity containing the JSON response from the CDOT GIS service
      * @throws RestClientException if an error occurs while making the request
      */
     public ResponseEntity<String> getRouteBetweenMeasures(String routeId, float startMeasure, float endMeasure) throws RestClientException {
 
-        if(isRouteDescending(startMeasure, endMeasure)) {
+        if (isRouteDescending(startMeasure, endMeasure)) {
             routeId = routeId.replace("_DEC", "") + "_DEC";
         }
 
-        if(isRouteIDDescending(routeId)) {
+        if (isRouteIDDescending(routeId)) {
             if (startMeasure < endMeasure) {
                 float newEndMeasure = startMeasure;
                 startMeasure = endMeasure;
@@ -145,7 +145,7 @@ public class CdotGisConnector {
         return endMeasure < startMeasure;
     }
 
-    private boolean isRouteIDDescending(String routeId)
-    {
+    private boolean isRouteIDDescending(String routeId) {
         return routeId.toLowerCase().endsWith("_dec");
-    }}
+    }
+}
