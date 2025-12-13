@@ -1,0 +1,1 @@
+ALTER TABLE active_tim_holding ADD COLUMN tim_end timestamp DEFAULT null;
