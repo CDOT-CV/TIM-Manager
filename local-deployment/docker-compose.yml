@@ -73,6 +73,7 @@ services:
       KAFKA_PARTITIONER_CLASS: org.apache.kafka.clients.producer.internals.DefaultPartitioner
       ODE_TIM_INGEST_MONITORING_ENABLED: false
       ODE_TIM_INGEST_MONITORING_INTERVAL: 10000
+      ODE_STOMP_EXPORTER_ENABLED: true
     depends_on:
       - kafka
     volumes:
