@@ -8,9 +8,11 @@ import java.util.List;
 import com.trihydro.library.helpers.CdotGisConnector;
 import com.trihydro.library.model.Milepost;
 
+import com.trihydro.library.model.MilepostBuffer;
 import com.trihydro.library.model.WydotTim;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -168,13 +170,13 @@ public class CdotUpstreamPathController extends BaseController {
         JsonNode rootNode = objectMapper.readTree(startRouteJsonString);
         logger.info(rootNode.toString());
         String startRoute = rootNode.path("features").get(0).path("attributes").get("Route").asText();
-        float startMeasure = rootNode.path("features").get(0).path("attributes").get("Measure").floatValue();
+        double startMeasure = rootNode.path("features").get(0).path("attributes").get("Measure").floatValue();
 
         ResponseEntity<String> endRouteDetails = cdotGisService.getRouteDetails(endLat, endLong);
         String endRouteJsonString = endRouteDetails.getBody();
         rootNode = objectMapper.readTree(endRouteJsonString);
         String endRoute = rootNode.path("features").get(0).path("attributes").get("Route").asText();
-        float endMeasure = rootNode.path("features").get(0).path("attributes").get("Measure").floatValue();
+        double endMeasure = rootNode.path("features").get(0).path("attributes").get("Measure").floatValue();
 
         if (!startRoute.equals(endRoute)) {
             logger.warn("Unable to find route");
@@ -184,6 +186,70 @@ public class CdotUpstreamPathController extends BaseController {
         ResponseEntity<String> response = cdotGisService.getRouteBetweenMeasures(startRoute, startMeasure, endMeasure);
         logger.info(String.valueOf(response));
         return ResponseEntity.ok(getMilepostsFromResponse(response, routeId));
+    }
+
+    /**
+     * Retrieves all mileposts between the buffer point and a buffer
+     *
+     * <p>This method uses `CdotGisService.GetRouteDetails()` to retrieve the route for the buffer point
+     * in JSON format. This is then used to find the endpoint that is the buffered amount away from the buffer point.
+     * It then uses the 'CdotGisService.RouteBetweenMeasures()' to get a route between the two measures. The JSON
+     * response contains all the latitude and longitude points in the path. This information is then extracted into the
+     * `Milepost` model and returned as a list of mileposts.</p>
+     *
+     * @param milepostBuffer The milepost buffer containing the data for the buffer and the starting point
+     * @return a list of `Milepost` objects representing the mileposts from the start to the end point of a buffer
+     * @throws JsonProcessingException if there is an error processing the JSON response
+     * @throws RestClientException     if an error occurs while making the request
+     */
+    @RequestMapping(method = RequestMethod.POST, produces = "application/json", value = "/get-milepost-single-point")
+    public ResponseEntity<List<Milepost>> getMilepostsByPointWithBuffer(
+            @RequestBody MilepostBuffer milepostBuffer) throws JsonProcessingException, RestClientException {
+
+        // check startPoint
+        if (milepostBuffer.getPoint() == null || milepostBuffer.getPoint().getLatitude() == null
+                || milepostBuffer.getPoint().getLongitude() == null) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+        }
+
+        // check direction, route
+        if (milepostBuffer.getDirection() == null || milepostBuffer.getCommonName() == null) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+        }
+
+        var milepost = milepostBuffer.getPoint();
+        ResponseEntity<String> endRouteDetails = cdotGisService.getRouteDetails(milepost.getLatitude(), milepost.getLongitude());
+
+        String endRouteJsonString = endRouteDetails.getBody();
+        ObjectMapper objectMapper = new ObjectMapper();
+        JsonNode rootNode = objectMapper.readTree(endRouteJsonString);
+
+        String milepostRoute = rootNode.path("features").get(0).path("attributes").get("Route").asText();
+        if(!milepostRoute.equals(milepostBuffer.getCommonName())) {
+            logger.warn("Unable to find measure on route");
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+        }
+
+        double milepostMeasure = rootNode.path("features").get(0).path("attributes").get("Measure").floatValue();
+        double bufferMilepost;
+        if (milepostRoute.toLowerCase().endsWith("_dec")) {
+            bufferMilepost = milepostMeasure - milepostBuffer.getBufferMiles();
+        } else {
+            bufferMilepost = milepostMeasure + milepostBuffer.getBufferMiles();
+        }
+
+        double mMin = rootNode.path("features").get(0).path("attributes").get("MMin").floatValue();
+        double mMax = rootNode.path("features").get(0).path("attributes").get("MMax").floatValue();
+        if(bufferMilepost < mMin) {
+            bufferMilepost = mMin;
+        }
+        if(bufferMilepost > mMax) {
+            bufferMilepost = mMax;
+        }
+
+        ResponseEntity<String> response = cdotGisService.getRouteBetweenMeasures(milepostRoute, milepostMeasure, bufferMilepost);
+        logger.info(String.valueOf(response));
+        return ResponseEntity.ok(getMilepostsFromResponse(response, milepostRoute));
     }
 
     public PathDirection getPathDirection(List<Milepost> pathMileposts, List<Milepost> allMileposts)

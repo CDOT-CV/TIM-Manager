@@ -105,7 +105,7 @@ public class CdotGisConnector {
      * @return a ResponseEntity containing the JSON response from the CDOT GIS service
      * @throws RestClientException if an error occurs while making the request
      */
-    public ResponseEntity<String> getRouteBetweenMeasures(String routeId, float startMeasure, float endMeasure) throws RestClientException {
+    public ResponseEntity<String> getRouteBetweenMeasures(String routeId, double startMeasure, double endMeasure) throws RestClientException {
 
         if (isRouteDescending(startMeasure, endMeasure)) {
             routeId = routeId.replace("_DEC", "") + "_DEC";
@@ -113,13 +113,13 @@ public class CdotGisConnector {
 
         if (isRouteIDDescending(routeId)) {
             if (startMeasure < endMeasure) {
-                float newEndMeasure = startMeasure;
+                double newEndMeasure = startMeasure;
                 startMeasure = endMeasure;
                 endMeasure = newEndMeasure;
             }
         } else {
             if (startMeasure > endMeasure) {
-                float newEndMeasure = startMeasure;
+                double newEndMeasure = startMeasure;
                 startMeasure = endMeasure;
                 endMeasure = newEndMeasure;
             }
@@ -141,7 +141,7 @@ public class CdotGisConnector {
         return restTemplateProvider.GetRestTemplate().exchange(targetUrl + paramString, HttpMethod.GET, entity, String.class);
     }
 
-    private boolean isRouteDescending(float startMeasure, float endMeasure) {
+    private boolean isRouteDescending(double startMeasure, double endMeasure) {
         return endMeasure < startMeasure;
     }
 
