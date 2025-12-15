@@ -18,7 +18,7 @@ import java.util.*;
 
 @Component
 public class CdotGisConnector {
-    private final String baseUrl = "https://dtdapps.codot.gov/server/rest/services/LRS/Routes_withDEC/MapServer/exts/CdotLrsAccessRounded";
+    private final String baseUrl = "https://dtdapps.codot.gov/server/rest/services/LRS/Routes_withDEC/MapServer/exts/LrsServerRounded";
     private final int tolerance = 10000;
     private final int SR = 4326;
 
