@@ -21,6 +21,7 @@ public class CdotGisConnector {
     private final String baseUrl = "https://dtdapps.codot.gov/server/rest/services/LRS/Routes_withDEC/MapServer/exts/LrsServerRounded";
     private final int tolerance = 10000;
     private final int sr = 4326;
+    private final String f = "json";
 
     private final RestTemplateProvider restTemplateProvider;
 
@@ -52,7 +53,7 @@ public class CdotGisConnector {
     public ResponseEntity<String> getRouteById(String routeId) throws RestClientException {
         String targetUrl = baseUrl + "/Route";
         logger.info("Getting route with ID {} from CDOT GIS service at: {}", routeId, targetUrl);
-        String params = "?routeId=" + routeId + "&outSR=" + sr + "&f=json";
+        String params = "?routeId=" + routeId + "&outSR=" + sr + "&f=" + f;
         HttpHeaders headers = new HttpHeaders();
         headers.set("Accept", "application/json");
         HttpEntity<String> entity = new HttpEntity<>(headers);
@@ -81,7 +82,7 @@ public class CdotGisConnector {
                 .queryParam("tolerance", tolerance)
                 .queryParam("outSR", sr)
                 .queryParam("inSR", sr)
-                .queryParam("f", "json")
+                .queryParam("f", f)
                 .build(true)
                 .toUri();
 
@@ -112,7 +113,7 @@ public class CdotGisConnector {
                 .queryParam("fromMeasure", fromMeasure)
                 .queryParam("toMeasure", toMeasure)
                 .queryParam("outSR", sr)
-                .queryParam("f", "json")
+                .queryParam("f", f)
                 .build(true)
                 .toUri();
 
