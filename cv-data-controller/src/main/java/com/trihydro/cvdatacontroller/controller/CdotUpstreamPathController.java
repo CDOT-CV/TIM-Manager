@@ -164,7 +164,7 @@ public class CdotUpstreamPathController extends BaseController {
             return ResponseEntity.ok(mileposts);
         }
 
-        ResponseEntity<String> startRouteDetails = cdotGisService.getRouteDetails(startLat, startLong);
+        ResponseEntity<String> startRouteDetails = cdotGisService.getMeasureAtPoint(startLat, startLong);
         String startRouteJsonString = startRouteDetails.getBody();
         ObjectMapper objectMapper = new ObjectMapper();
         JsonNode rootNode = objectMapper.readTree(startRouteJsonString);
@@ -172,7 +172,7 @@ public class CdotUpstreamPathController extends BaseController {
         String startRoute = rootNode.path("features").get(0).path("attributes").get("Route").asText();
         double startMeasure = rootNode.path("features").get(0).path("attributes").get("Measure").floatValue();
 
-        ResponseEntity<String> endRouteDetails = cdotGisService.getRouteDetails(endLat, endLong);
+        ResponseEntity<String> endRouteDetails = cdotGisService.getMeasureAtPoint(endLat, endLong);
         String endRouteJsonString = endRouteDetails.getBody();
         rootNode = objectMapper.readTree(endRouteJsonString);
         String endRoute = rootNode.path("features").get(0).path("attributes").get("Route").asText();
@@ -218,7 +218,7 @@ public class CdotUpstreamPathController extends BaseController {
         }
 
         var milepost = milepostBuffer.getPoint();
-        ResponseEntity<String> endRouteDetails = cdotGisService.getRouteDetails(milepost.getLatitude(), milepost.getLongitude());
+        ResponseEntity<String> endRouteDetails = cdotGisService.getMeasureAtPoint(milepost.getLatitude(), milepost.getLongitude());
 
         String endRouteJsonString = endRouteDetails.getBody();
         ObjectMapper objectMapper = new ObjectMapper();

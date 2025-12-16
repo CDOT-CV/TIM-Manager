@@ -71,7 +71,7 @@ public class CdotGisConnector {
      * @return a ResponseEntity containing the JSON response from the CDOT GIS service
      * @throws RestClientException if an error occurs while making the request
      */
-    public ResponseEntity<String> getRouteDetails(BigDecimal latitude, BigDecimal longitude) throws RestClientException {
+    public ResponseEntity<String> getMeasureAtPoint(BigDecimal latitude, BigDecimal longitude) throws RestClientException {
         URI base = URI.create(baseUrl + "/MeasureAtPoint");
 
         URI targetUrl = UriComponentsBuilder
