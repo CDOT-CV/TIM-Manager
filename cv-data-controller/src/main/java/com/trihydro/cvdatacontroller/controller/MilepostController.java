@@ -6,24 +6,14 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
-import java.util.stream.Collectors;
 
-import com.mapbox.services.commons.geojson.Feature;
-import com.mapbox.services.commons.geojson.FeatureCollection;
-import com.mapbox.services.commons.geojson.LineString;
-import com.mapbox.services.commons.models.Position;
 import lombok.extern.slf4j.Slf4j;
 
-import com.trihydro.cvdatacontroller.services.MilepostService;
 import com.trihydro.library.model.Milepost;
-import com.trihydro.library.model.MilepostBuffer;
-import com.trihydro.library.model.WydotTim;
 import com.trihydro.library.model.SetMilepostCacheRequest;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -41,13 +31,7 @@ import springfox.documentation.annotations.ApiIgnore;
 @ApiIgnore
 public class MilepostController extends BaseController {
 
-  private MilepostService milepostService;
 	private final HashMap<String, List<Milepost>> milepostCache = new HashMap<>();
-
-	@Autowired
-	public void InjectDependencies(MilepostService _milepostService) {
-		this.milepostService = _milepostService;
-	}
 
 	@RequestMapping(value = "/routes", method = RequestMethod.GET)
 	public ResponseEntity<List<String>> getRoutes() {
@@ -280,40 +264,6 @@ public class MilepostController extends BaseController {
 		}
 	}
 
-	/**
-	 * Gets a collection of Mileposts between a start and end point, along the given
-	 * route. Includes a buffer point ahead of start point as an anchor
-	 * 
-	 * @param wydotTim
-	 * @return Collection of Milepost objects representing the path
-	 */
-	@RequestMapping(method = RequestMethod.POST, produces = "application/json", value = "/get-milepost-start-end")
-	public ResponseEntity<Collection<com.trihydro.cvdatacontroller.model.Milepost>> getMilepostsByStartEndPoint(
-			@RequestBody WydotTim wydotTim) {
-
-		// check startPoint
-		if (wydotTim.getStartPoint() == null || wydotTim.getStartPoint().getLatitude() == null
-				|| wydotTim.getStartPoint().getLongitude() == null) {
-			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
-		}
-
-		// check endpoint
-		if (wydotTim.getEndPoint() == null || wydotTim.getEndPoint().getLatitude() == null
-				|| wydotTim.getEndPoint().getLongitude() == null) {
-			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
-		}
-
-		// check direction, route
-		if (wydotTim.getDirection() == null || wydotTim.getRoute() == null) {
-			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
-		}
-
-		Collection<com.trihydro.cvdatacontroller.model.Milepost> data = milepostService.getPathWithBuffer(
-				wydotTim.getRoute(), wydotTim.getStartPoint().getLatitude(), wydotTim.getStartPoint().getLongitude(),
-				wydotTim.getEndPoint().getLatitude(), wydotTim.getEndPoint().getLongitude(), wydotTim.getDirection());
-		return ResponseEntity.ok(data);
-	}
-
 	@RequestMapping(method = RequestMethod.POST, value="/set-milepost-cache")
 	public ResponseEntity<String> setMilepostCache(@RequestBody SetMilepostCacheRequest milepostCacheBody) {
 
@@ -380,69 +330,6 @@ public class MilepostController extends BaseController {
 			log.error("Error retrieving active TIM IDs ", e); // Improved logging
 		}
 		return activeTimIds;
-	}
-
-	/**
-	 * Rewrite of getMilepostsByStartEndPoint used in testing to cut time on geojson
-	 * creation to test continuity
-	 * 
-	 * @param wydotTim
-	 * @return
-	 */
-	@RequestMapping(method = RequestMethod.POST, value = "/get-feature-collection", produces = "application/json")
-	public ResponseEntity<String> getMilepostsFeatureCollectionByStartEndPoint(@RequestBody WydotTim wydotTim) {
-
-		// check startPoint
-		if (wydotTim.getStartPoint() == null || wydotTim.getStartPoint().getLatitude() == null
-				|| wydotTim.getStartPoint().getLongitude() == null) {
-			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
-		}
-
-		// check endpoint
-		if (wydotTim.getEndPoint() == null || wydotTim.getEndPoint().getLatitude() == null
-				|| wydotTim.getEndPoint().getLongitude() == null) {
-			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
-		}
-
-		// check direction, route
-		if (wydotTim.getDirection() == null || wydotTim.getRoute() == null) {
-			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
-		}
-
-		Collection<com.trihydro.cvdatacontroller.model.Milepost> data = milepostService.getPathWithBuffer(
-				wydotTim.getRoute(), wydotTim.getStartPoint().getLatitude(), wydotTim.getStartPoint().getLongitude(),
-				wydotTim.getEndPoint().getLatitude(), wydotTim.getEndPoint().getLongitude(), wydotTim.getDirection());
-
-		List<Feature> features = new ArrayList<>();
-		var coordinates = data.stream().map(x -> Position.fromCoordinates(x.getLongitude(), x.getLatitude()))
-				.collect(Collectors.toList());
-		LineString ls = LineString.fromCoordinates(coordinates);
-		var feature = Feature.fromGeometry(ls);
-		features.add(feature);
-		FeatureCollection fc = FeatureCollection.fromFeatures(features);
-
-		return ResponseEntity.ok(fc.toJson());
-	}
-
-	@RequestMapping(method = RequestMethod.POST, produces = "application/json", value = "/get-milepost-single-point")
-	public ResponseEntity<Collection<com.trihydro.cvdatacontroller.model.Milepost>> getMilepostsByPointWithBuffer(
-			@RequestBody MilepostBuffer milepostBuffer) {
-		// check startPoint
-		if (milepostBuffer.getPoint() == null || milepostBuffer.getPoint().getLatitude() == null
-				|| milepostBuffer.getPoint().getLongitude() == null) {
-			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
-		}
-
-		// check direction, route
-		if (milepostBuffer.getDirection() == null || milepostBuffer.getCommonName() == null) {
-			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
-		}
-
-		Collection<com.trihydro.cvdatacontroller.model.Milepost> data = milepostService.getPathWithSpecifiedBuffer(
-				milepostBuffer.getCommonName(), milepostBuffer.getPoint().getLatitude(),
-				milepostBuffer.getPoint().getLongitude(), milepostBuffer.getDirection(),
-				milepostBuffer.getBufferMiles());
-		return ResponseEntity.ok(data);
 	}
 
 	/**
