@@ -34,13 +34,13 @@ import org.springframework.http.ResponseEntity;
 
 class CdotUpstreamPathControllerTest {
     private final String DESCENDING_ROUTE_ID = "025A_DEC"; // I-25
-    private final String ASCENDING_ROUTE_ID = "025A_DEC";
+    private final String ASCENDING_ROUTE_ID = "025A";
     private final String PATH_TO_ROUTE_JSON_TEST_DATA =
             "src/test/resources/com/trihydro/cvdatacontroller/controller/cdotRouteResponseForI25_First30Mileposts.json";
     private final String PATH_TO_MEASURE_AT_POINT_DESCENDING_ROUTE_JSON_TEST_DATA =
             "src/test/resources/com/trihydro/cvdatacontroller/controller/cdotMeasureAtPointResponse_DescendingRoute.json";
     private final String PATH_TO_MEASURE_AT_POINT_ASCENDING_ROUTE_JSON_TEST_DATA =
-            "src/test/resources/com/trihydro/cvdatacontroller/controller/cdotMeasureAtPointResponse_AscendingRouteRoute.json";
+            "src/test/resources/com/trihydro/cvdatacontroller/controller/cdotMeasureAtPointResponse_AscendingRoute.json";
 
     @Mock
     CdotGisConnector cdotGisService = Mockito.mock(CdotGisConnector.class);
@@ -166,7 +166,7 @@ class CdotUpstreamPathControllerTest {
         MilepostBuffer mpb = new MilepostBuffer();
         mpb.setBufferMiles(1.0);
         mpb.setCommonName(DESCENDING_ROUTE_ID);
-        mpb.setDirection("I");
+        mpb.setDirection("D");
         mpb.setPoint(point);
 
         ResponseEntity<String> measureResponse =
@@ -225,6 +225,8 @@ class CdotUpstreamPathControllerTest {
         mpb.setDirection("I");
         mpb.setPoint(point);
 
+        String expectedCommonName = mpb.getCommonName();
+
         ResponseEntity<String> measureResponse =
                 new ResponseEntity<>(measureAtPointJsonString, HttpStatus.OK);
         when(cdotGisService.getMeasureAtPoint(
@@ -246,7 +248,7 @@ class CdotUpstreamPathControllerTest {
 
         // verify
         verify(cdotGisService).getRouteBetweenMeasures(
-                eq(DESCENDING_ROUTE_ID),
+                eq(ASCENDING_ROUTE_ID),
                 doubleThat(d -> Math.abs(d - originalMeasure) < 0.0001),
                 doubleThat(d -> Math.abs(d - bufferedMeasure) < 0.0001)
         );
@@ -255,7 +257,7 @@ class CdotUpstreamPathControllerTest {
         for (int i = 0; i < expectedMileposts.size(); i++) {
             Milepost expected = expectedMileposts.get(i);
             Milepost actual = mileposts.get(i);
-            Assertions.assertEquals(expected.getCommonName(), actual.getCommonName());
+            Assertions.assertEquals(expectedCommonName, actual.getCommonName());
             Assertions.assertNull(actual.getMilepost());
             Assertions.assertNull(actual.getDirection());
             Assertions.assertEquals(expected.getLatitude(), actual.getLatitude());
