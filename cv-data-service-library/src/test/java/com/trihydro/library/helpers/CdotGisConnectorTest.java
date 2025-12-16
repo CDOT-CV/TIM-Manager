@@ -79,7 +79,7 @@ class CdotGisConnectorTest extends BaseServiceTest {
         when(mockRestTemplate.exchange(expectedUri, HttpMethod.GET, mockEntity, String.class)).thenReturn(mockResponse);
 
         // execute
-        ResponseEntity<String> response = uut.getMeasureAtPoint(latitude, longitude);
+        ResponseEntity<String> response = uut.getMeasureAtPoint(longitude, latitude);
 
         // verify
         Assertions.assertEquals(mockResponse.getStatusCode(), response.getStatusCode());

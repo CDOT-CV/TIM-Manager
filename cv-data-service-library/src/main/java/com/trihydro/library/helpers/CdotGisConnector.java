@@ -67,12 +67,12 @@ public class CdotGisConnector {
      * in JSON format. The JSON response includes the measure of the point which is used in
      * getting the mileposts of a route from one point to another</p>
      *
-     * @param latitude  latitude of a point
      * @param longitude longitude of a point
+     * @param latitude  latitude of a point
      * @return a ResponseEntity containing the JSON response from the CDOT GIS service
      * @throws RestClientException if an error occurs while making the request
      */
-    public ResponseEntity<String> getMeasureAtPoint(BigDecimal latitude, BigDecimal longitude) throws RestClientException {
+    public ResponseEntity<String> getMeasureAtPoint(BigDecimal longitude, BigDecimal latitude) throws RestClientException {
         URI base = URI.create(baseUrl + "/MeasureAtPoint");
 
         URI targetUrl = UriComponentsBuilder
