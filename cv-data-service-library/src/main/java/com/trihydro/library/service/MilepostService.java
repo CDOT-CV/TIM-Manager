@@ -31,7 +31,7 @@ public class MilepostService extends CvDataServiceLibrary {
 	}
 
 	public List<Milepost> getMilepostsByPointWithBuffer(MilepostBuffer milepostBuffer) {
-		String url = String.format("%s/get-milepost-single-point", config.getCvRestService());
+		String url = String.format("%s/cdot-upstream-path/get-milepost-single-point", config.getCvRestService());
 		HttpHeaders headers = new HttpHeaders();
 		headers.setContentType(MediaType.APPLICATION_JSON);
 		HttpEntity<MilepostBuffer> entity = new HttpEntity<MilepostBuffer>(milepostBuffer, headers);
