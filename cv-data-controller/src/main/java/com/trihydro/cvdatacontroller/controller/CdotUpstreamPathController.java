@@ -142,7 +142,7 @@ public class CdotUpstreamPathController extends BaseController {
      * @throws JsonProcessingException if there is an error processing the JSON response
      * @throws RestClientException     if an error occurs while making the request
      */
-    @RequestMapping(method = RequestMethod.POST, produces = "application/json", value = "/get-milepost-path-start-end")
+    @RequestMapping(method = RequestMethod.POST, produces = "application/json", value = "/get-milepost-start-end")
     public ResponseEntity<List<Milepost>> getMilepostsByStartEndPoint(@RequestBody WydotTim wydotTim) throws JsonProcessingException,
             RestClientException {
         logger.warn("In MilePost correct version");
