@@ -98,24 +98,27 @@ public class CdotGisConnector {
      * route that falls between the provided begin and end measures.</p>
      *
      * @param routeId      GIS server route ID
-     * @param startMeasure Start measure on route (miles)
-     * @param endMeasure   End measure on route (miles)
+     * @param fromMeasure Start measure on route (miles)
+     * @param toMeasure   End measure on route (miles)
      * @return a ResponseEntity containing the JSON response from the CDOT GIS service
      * @throws RestClientException if an error occurs while making the request
      */
-    public ResponseEntity<String> getRouteBetweenMeasures(String routeId, double startMeasure, double endMeasure) throws RestClientException {
-        logger.info("Getting route between measure {} to {} on route {}", startMeasure, endMeasure, routeId);
-        String targetUrl = baseUrl + "/RouteBetweenMeasures?";
-        List<String> parameters = new ArrayList<>();
-        parameters.add("routeId=" + routeId);
-        parameters.add("fromMeasure=" + startMeasure);
-        parameters.add("toMeasure=" + endMeasure);
-        parameters.add("outSR=" + sr);
-        parameters.add("f=json");
-        String paramString = String.join("&", parameters);
+    public ResponseEntity<String> getRouteBetweenMeasures(String routeId, double fromMeasure, double toMeasure) throws RestClientException {
+        logger.info("Getting route between measure {} to {} on route {}", fromMeasure, toMeasure, routeId);
+        URI base = URI.create(baseUrl + "/RouteBetweenMeasures?");
+        URI targetUrl = UriComponentsBuilder
+                .fromUri(base)
+                .queryParam("routeId", routeId)
+                .queryParam("fromMeasure", fromMeasure)
+                .queryParam("toMeasure", toMeasure)
+                .queryParam("outSR", sr)
+                .queryParam("f", "json")
+                .build(true)
+                .toUri();
+
         HttpHeaders headers = new HttpHeaders();
         headers.set("Accept", "application/json");
         HttpEntity<String> entity = new HttpEntity<>(headers);
-        return restTemplateProvider.GetRestTemplate().exchange(targetUrl + paramString, HttpMethod.GET, entity, String.class);
+        return restTemplateProvider.GetRestTemplate().exchange(targetUrl, HttpMethod.GET, entity, String.class);
     }
 }
