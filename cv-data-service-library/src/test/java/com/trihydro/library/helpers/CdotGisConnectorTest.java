@@ -1,13 +1,10 @@
 package com.trihydro.library.helpers;
 
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -40,7 +37,6 @@ class CdotGisConnectorTest extends BaseServiceTest {
     // prepare
     String expectedTargetUrl = expectedBaseUrl + "/Route";
     int outSR = 4326;
-    String f = "json";
     String expectedParams = "?routeId=" + routeId + "&outSR=" + outSR + "&f=" + f;
     HttpHeaders mockHeaders = new HttpHeaders();
     mockHeaders.set("Accept", "application/json");
@@ -61,12 +57,12 @@ class CdotGisConnectorTest extends BaseServiceTest {
     @Test
     void testGetRouteDetails() {
         // prepare
-        String expectedTargetUrl = expectedBaseUrl + "/MeasureAtPoint";
+        URI expectedTargetUrl = URI.create(expectedBaseUrl + "/MeasureAtPoint?");
         BigDecimal latitude = new BigDecimal("123.456");
         BigDecimal longitude = new BigDecimal("234.567");
         int tolerance = 10000;
         URI expectedUri = UriComponentsBuilder
-                .fromHttpUrl(expectedTargetUrl)
+                .fromUri(expectedTargetUrl)
                 .queryParam("x", longitude.toPlainString())
                 .queryParam("y", latitude.toPlainString())
                 .queryParam("tolerance", tolerance)
@@ -94,12 +90,12 @@ class CdotGisConnectorTest extends BaseServiceTest {
     @Test
     void testGetRouteBetweenMeasures() {
         // prepare
-        String expectedTargetUrl = expectedBaseUrl + "/RouteBetweenMeasures";
+        URI expectedTargetUrl = URI.create(expectedBaseUrl + "/RouteBetweenMeasures?");
         double startMeasure = 123.456;
         double endMeasure = 123.456;
 
         URI expectedUri = UriComponentsBuilder
-                .fromHttpUrl(expectedTargetUrl)
+                .fromUri(expectedTargetUrl)
                 .queryParam("routeId", routeId)
                 .queryParam("fromMeasure", startMeasure)
                 .queryParam("toMeasure", endMeasure)
