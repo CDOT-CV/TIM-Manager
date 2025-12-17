@@ -199,7 +199,6 @@ public class CdotUpstreamPathController extends BaseController {
         }
 
         ResponseEntity<String> response = cdotGisService.getRouteBetweenMeasures(startRoute, startMeasure, endMeasure);
-        logger.info(String.valueOf(response));
         return ResponseEntity.ok(getMilepostsFromResponse(response, routeId));
     }
 
