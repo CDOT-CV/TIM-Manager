@@ -18,9 +18,10 @@ import java.util.*;
 
 @Component
 public class CdotGisConnector {
-    private final String baseUrl = "https://dtdapps.codot.gov/server/rest/services/LRS/Routes_withDEC/MapServer/exts/CdotLrsAccessRounded";
+    private final String baseUrl = "https://dtdapps.codot.gov/server/rest/services/LRS/Routes_withDEC/MapServer/exts/LrsServerRounded";
     private final int tolerance = 10000;
-    private final int SR = 4326;
+    private final int sr = 4326;
+    private final String f = "json";
 
     private final RestTemplateProvider restTemplateProvider;
 
@@ -52,7 +53,7 @@ public class CdotGisConnector {
     public ResponseEntity<String> getRouteById(String routeId) throws RestClientException {
         String targetUrl = baseUrl + "/Route";
         logger.info("Getting route with ID {} from CDOT GIS service at: {}", routeId, targetUrl);
-        String params = "?routeId=" + routeId + "&outSR=" + SR + "&f=json";
+        String params = "?routeId=" + routeId + "&outSR=" + sr + "&f=" + f;
         HttpHeaders headers = new HttpHeaders();
         headers.set("Accept", "application/json");
         HttpEntity<String> entity = new HttpEntity<>(headers);
@@ -66,12 +67,12 @@ public class CdotGisConnector {
      * in JSON format. The JSON response includes the measure of the point which is used in
      * getting the mileposts of a route from one point to another</p>
      *
-     * @param latitude  latitude of a point
      * @param longitude longitude of a point
+     * @param latitude  latitude of a point
      * @return a ResponseEntity containing the JSON response from the CDOT GIS service
      * @throws RestClientException if an error occurs while making the request
      */
-    public ResponseEntity<String> getRouteDetails(BigDecimal latitude, BigDecimal longitude) throws RestClientException {
+    public ResponseEntity<String> getMeasureAtPoint(BigDecimal longitude, BigDecimal latitude) throws RestClientException {
         URI base = URI.create(baseUrl + "/MeasureAtPoint");
 
         URI targetUrl = UriComponentsBuilder
@@ -79,14 +80,12 @@ public class CdotGisConnector {
                 .queryParam("x", longitude.toPlainString())
                 .queryParam("y", latitude.toPlainString())
                 .queryParam("tolerance", tolerance)
-                .queryParam("outSR", SR)
-                .queryParam("inSR", SR)
-                .queryParam("f", "pjson")
+                .queryParam("outSR", sr)
+                .queryParam("inSR", sr)
+                .queryParam("f", f)
                 .build(true)
                 .toUri();
 
-        // Log entire request URL
-        logger.warn("Requesting URL: {}", targetUrl);
         HttpHeaders headers = new HttpHeaders();
         headers.set("Accept", "application/json");
         HttpEntity<String> entity = new HttpEntity<>(headers);
@@ -100,52 +99,27 @@ public class CdotGisConnector {
      * route that falls between the provided begin and end measures.</p>
      *
      * @param routeId      GIS server route ID
-     * @param startMeasure Start measure on route (miles)
-     * @param endMeasure   End measure on route (miles)
+     * @param fromMeasure Start measure on route (miles)
+     * @param toMeasure   End measure on route (miles)
      * @return a ResponseEntity containing the JSON response from the CDOT GIS service
      * @throws RestClientException if an error occurs while making the request
      */
-    public ResponseEntity<String> getRouteBetweenMeasures(String routeId, double startMeasure, double endMeasure) throws RestClientException {
+    public ResponseEntity<String> getRouteBetweenMeasures(String routeId, double fromMeasure, double toMeasure) throws RestClientException {
+        logger.info("Getting route between measure {} to {} on route {}", fromMeasure, toMeasure, routeId);
+        URI base = URI.create(baseUrl + "/RouteBetweenMeasures?");
+        URI targetUrl = UriComponentsBuilder
+                .fromUri(base)
+                .queryParam("routeId", routeId)
+                .queryParam("fromMeasure", fromMeasure)
+                .queryParam("toMeasure", toMeasure)
+                .queryParam("outSR", sr)
+                .queryParam("f", f)
+                .build(true)
+                .toUri();
 
-        if (isRouteDescending(startMeasure, endMeasure)) {
-            routeId = routeId.replace("_DEC", "") + "_DEC";
-        }
-
-        if (isRouteIDDescending(routeId)) {
-            if (startMeasure < endMeasure) {
-                double newEndMeasure = startMeasure;
-                startMeasure = endMeasure;
-                endMeasure = newEndMeasure;
-            }
-        } else {
-            if (startMeasure > endMeasure) {
-                double newEndMeasure = startMeasure;
-                startMeasure = endMeasure;
-                endMeasure = newEndMeasure;
-            }
-        }
-
-        String targetUrl = baseUrl + "/RouteBetweenMeasures?";
-        logger.warn("hitting: " + targetUrl);
-        logger.info("Getting route route between measures {} and {} from CDOT GIS service at: {}", startMeasure, endMeasure, targetUrl);
-        List<String> parameters = new ArrayList<>();
-        parameters.add("routeId=" + routeId);
-        parameters.add("fromMeasure=" + startMeasure);
-        parameters.add("toMeasure=" + endMeasure);
-        parameters.add("outSR=" + SR);
-        parameters.add("f=pjson");
-        String paramString = String.join("&", parameters);
         HttpHeaders headers = new HttpHeaders();
         headers.set("Accept", "application/json");
         HttpEntity<String> entity = new HttpEntity<>(headers);
-        return restTemplateProvider.GetRestTemplate().exchange(targetUrl + paramString, HttpMethod.GET, entity, String.class);
-    }
-
-    private boolean isRouteDescending(double startMeasure, double endMeasure) {
-        return endMeasure < startMeasure;
-    }
-
-    private boolean isRouteIDDescending(String routeId) {
-        return routeId.toLowerCase().endsWith("_dec");
+        return restTemplateProvider.GetRestTemplate().exchange(targetUrl, HttpMethod.GET, entity, String.class);
     }
 }

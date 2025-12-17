@@ -1,8 +1,5 @@
 package com.trihydro.cvdatacontroller.controller;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyDouble;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.isA;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
@@ -11,14 +8,10 @@ import static org.mockito.Mockito.when;
 
 import java.math.BigDecimal;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 
-import com.trihydro.cvdatacontroller.services.MilepostService;
 import com.trihydro.library.model.Coordinate;
 import com.trihydro.library.model.Milepost;
-import com.trihydro.library.model.MilepostBuffer;
 import com.trihydro.library.model.WydotTim;
 
 import org.junit.jupiter.api.Assertions;
@@ -37,12 +30,8 @@ public class MilepostControllerTest extends TestBase<MilepostController> {
     private double fromMilepost = 0d;
     private double toMilepost = 10d;
 
-    @Mock
-    MilepostService mockMilepostService;
-
     @BeforeEach
     public void setupSubTest() {
-        uut.InjectDependencies(mockMilepostService);
         
         startPoint = new Coordinate(BigDecimal.valueOf(-1), BigDecimal.valueOf(-2));
         endPoint = new Coordinate(BigDecimal.valueOf(-3), BigDecimal.valueOf(-4));
@@ -131,102 +120,6 @@ public class MilepostControllerTest extends TestBase<MilepostController> {
         // Assert
         Assertions.assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, data.getStatusCode());
         Assertions.assertEquals(0, data.getBody().size());
-    }
-
-    @Test
-    public void getMilepostsByStartEndPoint_FAIL_startPoint() {
-        // Arrange
-        setupWydotTim();
-        wydotTim.setStartPoint(null);
-
-        // Act
-        ResponseEntity<Collection<com.trihydro.cvdatacontroller.model.Milepost>> data = uut
-                .getMilepostsByStartEndPoint(wydotTim);
-
-        // Assert
-        Assertions.assertEquals(HttpStatus.BAD_REQUEST, data.getStatusCode());
-    }
-
-    @Test
-    public void getMilepostsByStartEndPoint_FAIL_endPoint() {
-        // Arrange
-        setupWydotTim();
-        wydotTim.setEndPoint(null);
-
-        // Act
-        ResponseEntity<Collection<com.trihydro.cvdatacontroller.model.Milepost>> data = uut
-                .getMilepostsByStartEndPoint(wydotTim);
-
-        // Assert
-        Assertions.assertEquals(HttpStatus.BAD_REQUEST, data.getStatusCode());
-    }
-
-    @Test
-    public void getMilepostsByStartEndPoint_FAIL_direction() {
-        // Arrange
-        setupWydotTim();
-        wydotTim.setDirection(null);
-
-        // Act
-        ResponseEntity<Collection<com.trihydro.cvdatacontroller.model.Milepost>> data = uut
-                .getMilepostsByStartEndPoint(wydotTim);
-
-        // Assert
-        Assertions.assertEquals(HttpStatus.BAD_REQUEST, data.getStatusCode());
-    }
-
-    @Test
-    public void getMilepostsByStartEndPoint_FAIL_route() {
-        // Arrange
-        setupWydotTim();
-        wydotTim.setRoute(null);
-
-        // Act
-        ResponseEntity<Collection<com.trihydro.cvdatacontroller.model.Milepost>> data = uut
-                .getMilepostsByStartEndPoint(wydotTim);
-
-        // Assert
-        Assertions.assertEquals(HttpStatus.BAD_REQUEST, data.getStatusCode());
-    }
-
-    @Test
-    public void getMilepostsByStartEndPoint_SUCCESS() {
-        // Arrange
-        setupWydotTim();
-        Collection<com.trihydro.cvdatacontroller.model.Milepost> resp = new ArrayList<>();
-        resp.add(new com.trihydro.cvdatacontroller.model.Milepost());
-        doReturn(resp).when(mockMilepostService).getPathWithBuffer(anyString(), any(), any(), any(),
-                any(), anyString());
-
-        // Act
-        ResponseEntity<Collection<com.trihydro.cvdatacontroller.model.Milepost>> data = uut
-                .getMilepostsByStartEndPoint(wydotTim);
-
-        // Assert
-        Assertions.assertEquals(HttpStatus.OK, data.getStatusCode());
-        Assertions.assertEquals(1, data.getBody().size());
-    }
-
-    @Test
-    public void getMilepostsByPointWithBuffer_SUCCESS() {
-        // Arrange
-        Collection<com.trihydro.cvdatacontroller.model.Milepost> resp = new ArrayList<>();
-        resp.add(new com.trihydro.cvdatacontroller.model.Milepost());
-        doReturn(resp).when(mockMilepostService).getPathWithSpecifiedBuffer(anyString(), any(), any(),
-                anyString(), anyDouble());
-        MilepostBuffer mpb = new MilepostBuffer();
-        mpb.setCommonName("route");
-        mpb.setDirection("direction");
-        mpb.setPoint(endPoint);
-        mpb.setBufferMiles(1d);
-
-        // Act
-        ResponseEntity<Collection<com.trihydro.cvdatacontroller.model.Milepost>> data = uut
-                .getMilepostsByPointWithBuffer(mpb);
-
-        // Assert
-        Assertions.assertEquals(HttpStatus.OK, data.getStatusCode());
-        Assertions.assertEquals(1, data.getBody().size());
     }
 
     @Test

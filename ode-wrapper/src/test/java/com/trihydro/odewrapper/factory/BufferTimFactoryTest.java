@@ -210,4 +210,71 @@ public class BufferTimFactoryTest implements BufferTimFactory {
         assertEquals("I", tim.getDirection());
         assertEquals(List.of("1309", "7364"), tim.getItisCodes());
     }
+
+    @Test
+    void testMakeBufferTims_noGeometry() {
+        // Arrange
+        when(milepostService.getMilepostsByStartEndPointDirection(any()))
+                .thenReturn(getMileposts());
+        when(milepostService.getBufferForPath(any(), eq(1.0), any()))
+                .thenReturn(getMileposts());
+        // Set a buffer ITIS code that matches the end of an ITIS entry
+        List<Integer> bufferCodes = List.of(7364);
+        wydotTim.setItisCodes(List.of("1309 7364"));  // Ends in 7364 -> matches buffer code
+        wydotTim.setGeometry(null);
+
+        // Act
+        List<WydotTim> result = makeBufferTims(wydotTim, bufferCodes, milepostService);
+
+        // Assert
+        verify(milepostService, times(1)).getMilepostsByStartEndPointDirection(any());
+        assertEquals(1, result.size());
+        WydotTim tim = result.get(0);
+
+        // Assert that clientId has been updated with "%BUFF"
+        assertTrue(tim.getClientId().contains("%BUFF"));
+
+        // Assert geometry was set correctly
+        assertNotNull(wydotTim.getGeometry());
+        assertEquals(4, wydotTim.getGeometry().size());
+        assertEquals(BigDecimal.valueOf(200), wydotTim.getGeometry().get(0).getLatitude());
+        assertEquals(BigDecimal.valueOf(300), wydotTim.getGeometry().get(0).getLongitude());
+
+        // Assert direction and ITIS code structure
+        assertEquals("I", tim.getDirection());
+        assertEquals(List.of("1309", "7364"), tim.getItisCodes());
+    }
+
+    @Test
+    void testMakeBufferTims_noGeometrySinglePoint() {
+        // Arrange
+        when(milepostService.getMilepostsByPointWithBuffer(any()))
+                .thenReturn(getMileposts());
+        // Set a buffer ITIS code that matches the end of an ITIS entry
+        List<Integer> bufferCodes = List.of(7364);
+        wydotTim.setItisCodes(List.of("1309 7364"));  // Ends in 7364 -> matches buffer code
+        wydotTim.setGeometry(null);
+        wydotTim.setEndPoint(null);
+
+        // Act
+        List<WydotTim> result = makeBufferTims(wydotTim, bufferCodes, milepostService);
+
+        // Assert
+        verify(milepostService, times(1)).getMilepostsByPointWithBuffer(any());
+        assertEquals(1, result.size());
+        WydotTim tim = result.get(0);
+
+        // Assert that clientId has been updated with "%BUFF"
+        assertTrue(tim.getClientId().contains("%BUFF"));
+
+        // Assert geometry was set correctly
+        assertNotNull(wydotTim.getGeometry());
+        assertEquals(4, wydotTim.getGeometry().size());
+        assertEquals(BigDecimal.valueOf(200), wydotTim.getGeometry().get(0).getLatitude());
+        assertEquals(BigDecimal.valueOf(300), wydotTim.getGeometry().get(0).getLongitude());
+
+        // Assert direction and ITIS code structure
+        assertEquals("I", tim.getDirection());
+        assertEquals(List.of("1309", "7364"), tim.getItisCodes());
+    }
 }

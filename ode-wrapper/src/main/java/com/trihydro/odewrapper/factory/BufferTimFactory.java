@@ -2,6 +2,7 @@ package com.trihydro.odewrapper.factory;
 
 import com.trihydro.library.model.Coordinate;
 import com.trihydro.library.model.Milepost;
+import com.trihydro.library.model.MilepostBuffer;
 import com.trihydro.library.model.WydotTim;
 import com.trihydro.library.service.MilepostService;
 import com.trihydro.odewrapper.helpers.SetItisCodes;
@@ -42,11 +43,24 @@ public interface BufferTimFactory {
     default List<WydotTim> makeBufferTims(WydotTim wydotTim, List<Integer> bufferTimITISCodes, MilepostService milepostService) {
         if(wydotTim.getRoute() != null) {
             List<Milepost> mileposts = wydotTim.toMileposts();
+            List<Milepost> bufferMps;
             if(mileposts.isEmpty()) {
-                mileposts = milepostService.getMilepostsByStartEndPointDirection(wydotTim);
+                if(wydotTim.getEndPoint() != null) {
+                    mileposts = milepostService.getMilepostsByStartEndPointDirection(wydotTim);
+                    // If the route of the TIM is supported, create buffer based on mileposts associated with that route
+                    bufferMps = milepostService.getBufferForPath(wydotTim.getRoute().replace('-', '_'), 1.0, mileposts);
+                }else {
+                    // point incident, buffered
+                    MilepostBuffer mpb = new MilepostBuffer();
+                    mpb.setBufferMiles(1.0);
+                    mpb.setCommonName(wydotTim.getRoute());
+                    mpb.setDirection(wydotTim.getDirection());
+                    mpb.setPoint(wydotTim.getStartPoint());
+                    bufferMps = milepostService.getMilepostsByPointWithBuffer(mpb);
+                }
+            } else {
+                bufferMps = mileposts;
             }
-            // If the route of the TIM is supported, create buffer based on mileposts associated with that route
-            List<Milepost> bufferMps = milepostService.getBufferForPath(wydotTim.getRoute().replace('-', '_'), 1.0, mileposts);
             wydotTim.setGeometry(milepostToGeometry(bufferMps));
             wydotTim.setClientId(wydotTim.getClientId() + "%BUFF");
         }
