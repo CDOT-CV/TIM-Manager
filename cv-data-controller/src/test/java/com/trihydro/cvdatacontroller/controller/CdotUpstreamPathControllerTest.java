@@ -37,6 +37,8 @@ class CdotUpstreamPathControllerTest {
     private final String ASCENDING_ROUTE_ID = "025A";
     private final String PATH_TO_ROUTE_JSON_TEST_DATA =
             "src/test/resources/com/trihydro/cvdatacontroller/controller/cdotRouteResponseForI25_First30Mileposts.json";
+    private final String PATH_TO_ROUTE_NOT_SUPPORTED_JSON_TEST_DATA =
+            "src/test/resources/com/trihydro/cvdatacontroller/controller/cdotRouteNotSupported.json";
     private final String PATH_TO_MEASURE_AT_POINT_DESCENDING_ROUTE_JSON_TEST_DATA =
             "src/test/resources/com/trihydro/cvdatacontroller/controller/cdotMeasureAtPointResponse_DescendingRoute.json";
     private final String PATH_TO_MEASURE_AT_POINT_ASCENDING_ROUTE_JSON_TEST_DATA =
@@ -347,6 +349,38 @@ class CdotUpstreamPathControllerTest {
         assertThrows(CdotUpstreamPathController.MilepostNotFoundException.class, () -> {
             uut.getPathDirection(pathMileposts, allMileposts);
         });
+    }
+
+    @Test
+    void testGetIsRouteSupported_RouteSupported() throws IOException {
+        // prepare
+        String routeJsonString =
+                new String(Files.readAllBytes(Paths.get(PATH_TO_ROUTE_JSON_TEST_DATA)));
+        ResponseEntity<String> mockResponse = new ResponseEntity<>(routeJsonString, HttpStatus.OK);
+        when(cdotGisService.getRouteById(DESCENDING_ROUTE_ID)).thenReturn(mockResponse);
+
+        // execute
+        ResponseEntity<Boolean> response = uut.isRouteSupported(DESCENDING_ROUTE_ID);
+
+        // verify
+        Assertions.assertNotNull(response.getBody());
+        Assertions.assertTrue(response.getBody());
+    }
+
+    @Test
+    void testGetIsRouteSupported_RouteNotSupported() throws IOException {
+        // prepare
+        String routeJsonString =
+                new String(Files.readAllBytes(Paths.get(PATH_TO_ROUTE_NOT_SUPPORTED_JSON_TEST_DATA)));
+        ResponseEntity<String> mockResponse = new ResponseEntity<>(routeJsonString, HttpStatus.OK);
+        when(cdotGisService.getRouteById(DESCENDING_ROUTE_ID)).thenReturn(mockResponse);
+
+        // execute
+        ResponseEntity<Boolean> response = uut.isRouteSupported(DESCENDING_ROUTE_ID);
+
+        // verify
+        Assertions.assertNotNull(response.getBody());
+        Assertions.assertFalse(response.getBody());
     }
 
     @Test

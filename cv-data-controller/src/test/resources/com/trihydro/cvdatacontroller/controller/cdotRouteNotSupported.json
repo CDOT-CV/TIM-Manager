@@ -1,0 +1,46 @@
+{
+  "displayFieldName": "",
+  "fieldAliases": {
+    "OBJECTID": "OBJECTID",
+    "Route": "Route",
+    "MMin": "MMin",
+    "MMax": "MMax",
+    "SHAPE_Length": "SHAPE_Length"
+  },
+  "geometryType": "esriGeometryPolyline",
+  "spatialReference": {
+    "wkid": 4326,
+    "latestWkid": 4326
+  },
+  "fields": [
+    {
+      "name": "OBJECTID",
+      "type": "esriFieldTypeOID",
+      "alias": "OBJECTID"
+    },
+    {
+      "name": "Route",
+      "type": "esriFieldTypeString",
+      "alias": "Route",
+      "length": 90
+    },
+    {
+      "name": "MMin",
+      "type": "esriFieldTypeDouble",
+      "alias": "MMin"
+    },
+    {
+      "name": "MMax",
+      "type": "esriFieldTypeDouble",
+      "alias": "MMax"
+    },
+    {
+      "name": "SHAPE_Length",
+      "type": "esriFieldTypeDouble",
+      "alias": "SHAPE_Length"
+    }
+  ],
+  "features": [
+
+  ]
+}

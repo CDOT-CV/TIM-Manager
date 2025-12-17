@@ -131,6 +131,29 @@ public class CdotUpstreamPathController extends BaseController {
     }
 
     /**
+     * Determines if the route is supported.
+     *
+     * <p>This method uses `CdotGisService.getRouteById()` to retrieve the route information
+     * in JSON format. If the JSON format does not contain the route, it is not supported.</p>
+     *
+     * @param routeId the ID of the route to retrieve mileposts for
+     * @return boolean indicating whether the route is supported or not
+     */
+    @RequestMapping(method = RequestMethod.POST, produces = "application/json", value = "/get-route-supported")
+    public ResponseEntity<Boolean> isRouteSupported(String routeId) {
+        ResponseEntity<String> response = cdotGisService.getRouteById(routeId);
+        try {
+            String routeJsonString = response.getBody();
+            ObjectMapper objectMapper = new ObjectMapper();
+            JsonNode rootNode = objectMapper.readTree(routeJsonString);
+            rootNode.path("features").get(0).path("geometry").path("paths").get(0);
+        } catch (Exception e) {
+            return ResponseEntity.ok(false);
+        }
+        return ResponseEntity.ok(true);
+    }
+
+    /**
      * Retrieves all mileposts between the start and end points
      *
      * <p>This method uses `CdotGisService.RouteBetweenMeasures()` to retrieve the route between the start and end

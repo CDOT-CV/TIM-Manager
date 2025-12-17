@@ -1,5 +1,7 @@
 package com.trihydro.library.service;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -28,6 +30,9 @@ public class MilepostServiceTest extends BaseServiceTest {
 
     @Mock
     private ResponseEntity<List<Milepost>> mockRespMilepostList;
+
+    @Mock
+    private ResponseEntity<Boolean> mockRespBoolean;
 
     @Mock
     private CVRestServiceProps mockConfig;
@@ -151,5 +156,23 @@ public class MilepostServiceTest extends BaseServiceTest {
         // verify
         verify(mockRestTemplate).exchange(url, HttpMethod.POST, entity, responseType);
         Assertions.assertNull(data);
+    }
+
+    @Test
+    public void getRouteSupported_Success() {
+        // prepare
+        String routeId = "routeId";
+
+        Boolean expectedResponse = true;
+        when(mockRespBoolean.getBody()).thenReturn(expectedResponse);
+        String url = String.format("%s/cdot-upstream-path/get-route-supported/%s", baseUrl, routeId);
+        when(mockRestTemplate.exchange(eq(url), eq(HttpMethod.GET), any(), eq(Boolean.class))).thenReturn(mockRespBoolean);
+
+        // execute
+        Boolean data = uut.isRouteSupported(routeId);
+
+        // verify
+        verify(mockRestTemplate).exchange(eq(url), eq(HttpMethod.GET), any(), eq(Boolean.class));
+        Assertions.assertEquals(expectedResponse, data);
     }
 }

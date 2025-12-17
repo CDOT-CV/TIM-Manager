@@ -102,4 +102,20 @@ public class MilepostService extends CvDataServiceLibrary {
 				entity, responseType);
 		return response.getBody();
 	}
+
+    /**
+     * Retrieves whether a route is supported by the CDOT upstream service.
+     *
+     * @param routeId the ID of the route for which the buffer is to be retrieved
+     * @return a boolean indicating whether the route is supported by the CDOT upstream service
+     */
+    public Boolean isRouteSupported(String routeId) {
+        String url = String.format("%s/cdot-upstream-path/get-route-supported/%s", config.getCvRestService(), routeId);
+        HttpHeaders headers = new HttpHeaders();
+        HttpEntity<String> entity = new HttpEntity<>(null, headers);
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        ResponseEntity<Boolean> response = restTemplateProvider.GetRestTemplate().exchange(url, HttpMethod.GET,
+                entity, Boolean.class);
+        return response.getBody();
+    }
 }
