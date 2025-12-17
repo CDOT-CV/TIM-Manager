@@ -173,19 +173,7 @@ public class CdotUpstreamPathController extends BaseController {
         BigDecimal startLong = wydotTim.getStartPoint().getLongitude();
         BigDecimal endLat = wydotTim.getEndPoint().getLatitude();
         BigDecimal endLong = wydotTim.getEndPoint().getLongitude();
-        List<Milepost> mileposts = new ArrayList<>();
-
         String routeId = wydotTim.getRoute().replace('-', '_');
-
-        if (startLat.equals(endLat) && startLong.equals(endLong)) {
-            Milepost milepost = new Milepost();
-            milepost.setCommonName(routeId);
-            milepost.setLatitude(startLat);
-            milepost.setLongitude(startLong);
-            mileposts.add(milepost);
-            mileposts.add(milepost);
-            return ResponseEntity.ok(mileposts);
-        }
 
         ResponseEntity<String> startRouteDetails = cdotGisService.getMeasureAtPoint(startLong, startLat);
         String startRouteJsonString = startRouteDetails.getBody();
@@ -201,9 +189,13 @@ public class CdotUpstreamPathController extends BaseController {
         String endRoute = rootNode.path("features").get(0).path("attributes").get("Route").asText();
         double endMeasure = rootNode.path("features").get(0).path("attributes").get("Measure").floatValue();
 
-        if (!startRoute.equals(endRoute)) {
+        if (!startRoute.equals(endRoute) || !startRoute.equals(routeId)) {
             logger.warn("Unable to find route");
             return ResponseEntity.badRequest().body(null);
+        }
+
+        if (startMeasure == endMeasure) {
+            endMeasure = getBufferedMeasure(routeId, startMeasure, 1.0, rootNode);
         }
 
         ResponseEntity<String> response = cdotGisService.getRouteBetweenMeasures(startRoute, startMeasure, endMeasure);
@@ -254,21 +246,7 @@ public class CdotUpstreamPathController extends BaseController {
         }
 
         double milepostMeasure = rootNode.path("features").get(0).path("attributes").get("Measure").floatValue();
-        double bufferMilepost;
-        if (milepostRoute.toLowerCase().endsWith("_dec")) {
-            bufferMilepost = milepostMeasure - milepostBuffer.getBufferMiles();
-        } else {
-            bufferMilepost = milepostMeasure + milepostBuffer.getBufferMiles();
-        }
-
-        double mMin = rootNode.path("features").get(0).path("attributes").get("MMin").floatValue();
-        double mMax = rootNode.path("features").get(0).path("attributes").get("MMax").floatValue();
-        if(bufferMilepost < mMin) {
-            bufferMilepost = mMin;
-        }
-        if(bufferMilepost > mMax) {
-            bufferMilepost = mMax;
-        }
+        double bufferMilepost = getBufferedMeasure(milepostRoute, milepostMeasure, milepostBuffer.getBufferMiles(), rootNode);
 
         ResponseEntity<String> response = cdotGisService.getRouteBetweenMeasures(milepostRoute, milepostMeasure, bufferMilepost);
         logger.info(String.valueOf(response));
@@ -342,6 +320,25 @@ public class CdotUpstreamPathController extends BaseController {
             }
         }
         return closestIndex;
+    }
+
+    private double getBufferedMeasure(String route, double measure, double bufferMiles, JsonNode rootNode) throws RestClientException {
+        double bufferMeasure;
+        if (route.toLowerCase().endsWith("_dec")) {
+            bufferMeasure = measure - bufferMiles;
+        } else {
+            bufferMeasure = measure + bufferMiles;
+        }
+
+        double mMin = rootNode.path("features").get(0).path("attributes").get("MMin").floatValue();
+        double mMax = rootNode.path("features").get(0).path("attributes").get("MMax").floatValue();
+        if(bufferMeasure < mMin) {
+            bufferMeasure = mMin;
+        }
+        if(bufferMeasure > mMax) {
+            bufferMeasure = mMax;
+        }
+        return bufferMeasure;
     }
 
     private String convertMilepostsToGeojsonString(List<Milepost> mileposts) {

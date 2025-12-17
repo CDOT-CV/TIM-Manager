@@ -43,6 +43,8 @@ class CdotUpstreamPathControllerTest {
             "src/test/resources/com/trihydro/cvdatacontroller/controller/cdotMeasureAtPointResponse_DescendingRoute.json";
     private final String PATH_TO_MEASURE_AT_POINT_ASCENDING_ROUTE_JSON_TEST_DATA =
             "src/test/resources/com/trihydro/cvdatacontroller/controller/cdotMeasureAtPointResponse_AscendingRoute.json";
+    private final String SECOND_PATH_TO_MEASURE_AT_POINT_DESCENDING_ROUTE_JSON_TEST_DATA =
+            "src/test/resources/com/trihydro/cvdatacontroller/controller/cdotMeasureAtPointResponse_DescendingRoute_MatchingMeasure.json";
 
     @Mock
     CdotGisConnector cdotGisService = Mockito.mock(CdotGisConnector.class);
@@ -104,6 +106,93 @@ class CdotUpstreamPathControllerTest {
     @Test
     void testGetMilepostsByStartEndPoint() throws IOException {
         // prepare
+        String firstMeasureAtPointJsonString =
+                new String(Files.readAllBytes(Paths.get(PATH_TO_MEASURE_AT_POINT_DESCENDING_ROUTE_JSON_TEST_DATA)));
+        String secondMeasureAtPointJsonString =
+                new String(Files.readAllBytes(Paths.get(SECOND_PATH_TO_MEASURE_AT_POINT_DESCENDING_ROUTE_JSON_TEST_DATA)));
+        String routeJsonString =
+                new String(Files.readAllBytes(Paths.get(PATH_TO_ROUTE_JSON_TEST_DATA)));
+        WydotTim wydotTim = new WydotTim();
+        BigDecimal fromLatitude = new BigDecimal("39.613210472000048");
+        BigDecimal fromLongitude = new BigDecimal("-104.89573840099996");
+        Coordinate fromPoint = new Coordinate(fromLongitude, fromLatitude);
+        BigDecimal toLatitude = new BigDecimal("40.73654117648727");
+        BigDecimal toLongitude = new BigDecimal("-104.99349024587299");
+        Coordinate toPoint = new Coordinate(toLongitude, toLatitude);
+        wydotTim.setStartPoint(fromPoint);
+        wydotTim.setEndPoint(toPoint);
+        wydotTim.setRoute(DESCENDING_ROUTE_ID);
+
+        ResponseEntity<String> firstMeasureResponse =
+                new ResponseEntity<>(firstMeasureAtPointJsonString, HttpStatus.OK);
+        ResponseEntity<String> secondMeasureResponse =
+                new ResponseEntity<>(secondMeasureAtPointJsonString, HttpStatus.OK);
+        when(cdotGisService.getMeasureAtPoint(
+                any(),
+                any()
+        )).thenReturn(firstMeasureResponse).thenReturn(secondMeasureResponse);
+        ResponseEntity<String> routeResponse =
+                new ResponseEntity<>(routeJsonString, HttpStatus.OK);
+        when(cdotGisService.getRouteBetweenMeasures(
+                anyString(),
+                anyDouble(),
+                anyDouble()
+        )).thenReturn(routeResponse);
+
+        List<Milepost> expectedMileposts = getMockMileposts();
+
+
+        // execute
+        List<Milepost> mileposts = uut.getMilepostsByStartEndPoint(wydotTim).getBody();
+
+        // verify
+        Assertions.assertNotNull(mileposts);
+        Assertions.assertEquals(expectedMileposts.size(), mileposts.size());
+        for (int i = 0; i < expectedMileposts.size(); i++) {
+            Milepost expected = expectedMileposts.get(i);
+            Milepost actual = mileposts.get(i);
+            Assertions.assertEquals(expected.getCommonName(), actual.getCommonName());
+            Assertions.assertNull(actual.getMilepost());
+            Assertions.assertNull(actual.getDirection());
+            Assertions.assertEquals(expected.getLatitude(), actual.getLatitude());
+            Assertions.assertEquals(expected.getLongitude(), actual.getLongitude());
+        }
+    }
+
+    @Test
+    void testGetMilepostsByStartEndPoint_MismatchingRoutes() throws IOException {
+        // prepare
+        String measureAtPointJsonString =
+                new String(Files.readAllBytes(Paths.get(PATH_TO_MEASURE_AT_POINT_DESCENDING_ROUTE_JSON_TEST_DATA)));
+        WydotTim wydotTim = new WydotTim();
+        BigDecimal fromLatitude = new BigDecimal("39.613210472000048");
+        BigDecimal fromLongitude = new BigDecimal("-104.89573840099996");
+        Coordinate fromPoint = new Coordinate(fromLongitude, fromLatitude);
+        BigDecimal toLatitude = new BigDecimal("40.73654117648727");
+        BigDecimal toLongitude = new BigDecimal("-104.99349024587299");
+        Coordinate toPoint = new Coordinate(toLongitude, toLatitude);
+        wydotTim.setStartPoint(fromPoint);
+        wydotTim.setEndPoint(toPoint);
+        wydotTim.setRoute(ASCENDING_ROUTE_ID);
+
+        ResponseEntity<String> measureResponse =
+                new ResponseEntity<>(measureAtPointJsonString, HttpStatus.OK);
+        when(cdotGisService.getMeasureAtPoint(
+                any(),
+                any()
+        )).thenReturn(measureResponse);
+
+        // execute
+        List<Milepost> mileposts = uut.getMilepostsByStartEndPoint(wydotTim).getBody();
+
+        // verify
+        Assertions.assertNull(mileposts);
+    }
+
+
+    @Test
+    void testGetMilepostsByStartEndPoint_SameMeasure() throws IOException {
+        // prepare
         String measureAtPointJsonString =
                 new String(Files.readAllBytes(Paths.get(PATH_TO_MEASURE_AT_POINT_DESCENDING_ROUTE_JSON_TEST_DATA)));
         String routeJsonString =
@@ -134,7 +223,6 @@ class CdotUpstreamPathControllerTest {
         )).thenReturn(routeResponse);
 
         List<Milepost> expectedMileposts = getMockMileposts();
-
 
         // execute
         List<Milepost> mileposts = uut.getMilepostsByStartEndPoint(wydotTim).getBody();
