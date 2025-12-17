@@ -139,8 +139,8 @@ public class CdotUpstreamPathController extends BaseController {
      * @param routeId the ID of the route to retrieve mileposts for
      * @return boolean indicating whether the route is supported or not
      */
-    @RequestMapping(method = RequestMethod.POST, produces = "application/json", value = "/get-route-supported")
-    public ResponseEntity<Boolean> isRouteSupported(String routeId) {
+    @RequestMapping(method = RequestMethod.GET, produces = "application/json", value = "/get-route-supported/{routeId}")
+    public ResponseEntity<Boolean> isRouteSupported(@PathVariable String routeId) {
         ResponseEntity<String> response = cdotGisService.getRouteById(routeId);
         try {
             String routeJsonString = response.getBody();
