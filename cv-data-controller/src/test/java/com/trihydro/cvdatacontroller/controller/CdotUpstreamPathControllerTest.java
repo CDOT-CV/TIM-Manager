@@ -187,7 +187,7 @@ class CdotUpstreamPathControllerTest {
         List<Milepost> mileposts = uut.getMilepostsByStartEndPoint(wydotTim).getBody();
 
         // verify
-        Assertions.assertNull(mileposts);
+        Assertions.assertEquals(0, mileposts.size());
     }
 
 
@@ -523,7 +523,7 @@ class CdotUpstreamPathControllerTest {
 
         // verify
         List<Milepost> buffer = response.getBody();
-        Assertions.assertNull(buffer);
+        Assertions.assertEquals(0, buffer.size());
     }
 
     @Test
@@ -577,7 +577,7 @@ class CdotUpstreamPathControllerTest {
 
         // verify
         List<Milepost> buffer = response.getBody();
-        Assertions.assertNull(buffer);
+        Assertions.assertEquals(0, buffer.size());
     }
 
     @Test
@@ -600,7 +600,7 @@ class CdotUpstreamPathControllerTest {
 
         // verify
         List<Milepost> buffer = response.getBody();
-        Assertions.assertNull(buffer);
+        Assertions.assertEquals(0, buffer.size());
     }
 
     private double getDistanceInMiles(List<Milepost> buffer) {

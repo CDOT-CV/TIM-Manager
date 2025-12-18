@@ -679,9 +679,6 @@ public abstract class WydotTimBaseController {
             activeTimService.getActiveTimsByClientIdDirection(wydotTim.getClientId(), timTypeId,
                 wydotTim.getDirection());
 
-        // Use wydotTimService to get all mileposts for the TIM
-        List<Milepost> milepostsAll = wydotTimService.getAllMilepostsForTim(wydotTim);
-
         // Expire existing tims
         List<Long> existingTimIds = new ArrayList<>();
         for (ActiveTim existingTim : existingTims) {
@@ -691,6 +688,9 @@ public abstract class WydotTimBaseController {
         if (resubmitTimExceptions.size() > 0) {
             log.warn("One or more TIMs failed to resubmit to ODE. See logs for details.");
         }
+
+        // Use wydotTimService to get all mileposts for the TIM
+        List<Milepost> milepostsAll = wydotTimService.getAllMilepostsForTim(wydotTim);
 
         // Per J2735, NodeSetLL's must contain at least 2 nodes. ODE will fail to
         // PER-encode TIM if we supply less than 2.

@@ -64,25 +64,25 @@ public class CdotUpstreamPathController extends BaseController {
             allMileposts = getMilepostsForRoute(routeId);
         } catch (RestClientException e) {
             logger.error("Error getting mileposts for route", e);
-            return ResponseEntity.badRequest().body(null);
+            return ResponseEntity.badRequest().body(new ArrayList<>());
         }
         if (allMileposts == null || allMileposts.isEmpty()) {
             logger.warn("No mileposts found for route");
-            return ResponseEntity.badRequest().body(null);
+            return ResponseEntity.badRequest().body(new ArrayList<>());
         }
         PathDirection direction;
         try {
             direction = getPathDirection(pathMileposts, allMileposts);
         } catch (NotEnoughMilepostsException e) {
             logger.warn("Not enough mileposts in path", e);
-            return ResponseEntity.badRequest().body(null);
+            return ResponseEntity.badRequest().body(new ArrayList<>());
         } catch (MilepostNotFoundException e) {
             logger.warn("Milepost not found in route", e);
-            return ResponseEntity.badRequest().body(null);
+            return ResponseEntity.badRequest().body(new ArrayList<>());
         }
         if (direction == null) {
             logger.warn("Invalid path direction");
-            return ResponseEntity.badRequest().body(null);
+            return ResponseEntity.badRequest().body(new ArrayList<>());
         }
         Milepost firstMilepostInPath = pathMileposts.get(0);
         int startIndex = getIndexOfMilepost(allMileposts, firstMilepostInPath);
@@ -98,12 +98,12 @@ public class CdotUpstreamPathController extends BaseController {
         if (buffer.size() < 2) {
             // at least 2 mileposts are needed to create a valid buffer path
             logger.warn("Buffer path has less than 2 mileposts");
-            return ResponseEntity.badRequest().body(null);
+            return ResponseEntity.badRequest().body(new ArrayList<>());
         }
         double distanceInMiles = traverseContext.getDistanceInMiles();
         if (distanceInMiles < desiredDistanceInMiles) {
             logger.warn("Buffer path has less distance than desired distance");
-            return ResponseEntity.badRequest().body(null);
+            return ResponseEntity.badRequest().body(new ArrayList<>());
         }
         logger.info("Distance of buffer path: {} miles", distanceInMiles);
         if (logger.isDebugEnabled()) {
@@ -194,7 +194,7 @@ public class CdotUpstreamPathController extends BaseController {
 
         if (!startRoute.equals(endRoute) || !startRoute.equals(routeId)) {
             logger.warn("Unable to find route");
-            return ResponseEntity.badRequest().body(null);
+            return ResponseEntity.badRequest().body(new ArrayList<>());
         }
 
         if (startMeasure == endMeasure) {
@@ -226,12 +226,12 @@ public class CdotUpstreamPathController extends BaseController {
         // check startPoint
         if (milepostBuffer.getPoint() == null || milepostBuffer.getPoint().getLatitude() == null
                 || milepostBuffer.getPoint().getLongitude() == null) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ArrayList<>());
         }
 
         // check direction, route
         if (milepostBuffer.getDirection() == null || milepostBuffer.getCommonName() == null) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ArrayList<>());
         }
 
         var milepost = milepostBuffer.getPoint();
@@ -243,7 +243,7 @@ public class CdotUpstreamPathController extends BaseController {
         String milepostRoute = rootNode.path("features").get(0).path("attributes").get("Route").asText();
         if (!milepostRoute.equals(milepostBuffer.getCommonName())) {
             logger.warn("Unable to find measure on route");
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ArrayList<>());
         }
 
         double milepostMeasure = rootNode.path("features").get(0).path("attributes").get("Measure").floatValue();
