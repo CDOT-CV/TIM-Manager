@@ -41,15 +41,15 @@ public interface BufferTimFactory {
     }
 
     default List<WydotTim> makeBufferTims(WydotTim wydotTim, List<Integer> bufferTimITISCodes, MilepostService milepostService) {
-        if(wydotTim.getRoute() != null) {
+        if (wydotTim.getRoute() != null) {
             List<Milepost> mileposts = wydotTim.toMileposts();
             List<Milepost> bufferMps;
-            if(mileposts.isEmpty()) {
-                if(wydotTim.getEndPoint() != null) {
+            if (mileposts.isEmpty()) {
+                if (wydotTim.getEndPoint() != null) {
                     mileposts = milepostService.getMilepostsByStartEndPointDirection(wydotTim);
-                    // If the route of the TIM is supported, create buffer based on mileposts associated with that route
+                    // If the route of the TIM is supported, create a buffer based on mileposts associated with that route
                     bufferMps = milepostService.getBufferForPath(wydotTim.getRoute().replace('-', '_'), 1.0, mileposts);
-                }else {
+                } else {
                     // point incident, buffered
                     MilepostBuffer mpb = new MilepostBuffer();
                     mpb.setBufferMiles(1.0);
