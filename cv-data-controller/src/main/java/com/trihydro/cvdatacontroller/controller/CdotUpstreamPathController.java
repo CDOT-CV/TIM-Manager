@@ -26,11 +26,13 @@ import org.springframework.web.client.RestClientException;
 @RequestMapping("cdot-upstream-path")
 public class CdotUpstreamPathController extends BaseController {
     private final CdotGisConnector cdotGisService;
+    private final ObjectMapper objectMapper;
 
     private final Logger logger = LoggerFactory.getLogger(CdotUpstreamPathController.class);
 
-    public CdotUpstreamPathController(CdotGisConnector cdotGisService) {
+    public CdotUpstreamPathController(CdotGisConnector cdotGisService, ObjectMapper objectMapper) {
         this.cdotGisService = cdotGisService;
+        this.objectMapper = objectMapper;
     }
 
     /**
@@ -144,7 +146,6 @@ public class CdotUpstreamPathController extends BaseController {
         ResponseEntity<String> response = cdotGisService.getRouteById(routeId);
         try {
             String routeJsonString = response.getBody();
-            ObjectMapper objectMapper = new ObjectMapper();
             JsonNode rootNode = objectMapper.readTree(routeJsonString);
             rootNode.path("features").get(0).path("geometry").path("paths").get(0);
         } catch (Exception e) {
@@ -168,7 +169,6 @@ public class CdotUpstreamPathController extends BaseController {
     @RequestMapping(method = RequestMethod.POST, produces = "application/json", value = "/get-milepost-start-end")
     public ResponseEntity<List<Milepost>> getMilepostsByStartEndPoint(@RequestBody WydotTim wydotTim) throws JsonProcessingException,
             RestClientException {
-        logger.warn("In MilePost correct version");
         BigDecimal startLat = wydotTim.getStartPoint().getLatitude();
         BigDecimal startLong = wydotTim.getStartPoint().getLongitude();
         BigDecimal endLat = wydotTim.getEndPoint().getLatitude();
@@ -177,14 +177,14 @@ public class CdotUpstreamPathController extends BaseController {
 
         ResponseEntity<String> startRouteDetails = cdotGisService.getMeasureAtPoint(startLong, startLat);
         String startRouteJsonString = startRouteDetails.getBody();
-        ObjectMapper objectMapper = new ObjectMapper();
+
         JsonNode rootNode = objectMapper.readTree(startRouteJsonString);
-        logger.info(rootNode.toString());
         String startRoute = rootNode.path("features").get(0).path("attributes").get("Route").asText();
         double startMeasure = rootNode.path("features").get(0).path("attributes").get("Measure").floatValue();
 
         ResponseEntity<String> endRouteDetails = cdotGisService.getMeasureAtPoint(endLong, endLat);
         String endRouteJsonString = endRouteDetails.getBody();
+
         rootNode = objectMapper.readTree(endRouteJsonString);
         String endRoute = rootNode.path("features").get(0).path("attributes").get("Route").asText();
         double endMeasure = rootNode.path("features").get(0).path("attributes").get("Measure").floatValue();
@@ -235,11 +235,10 @@ public class CdotUpstreamPathController extends BaseController {
         ResponseEntity<String> endRouteDetails = cdotGisService.getMeasureAtPoint(milepost.getLongitude(), milepost.getLatitude());
 
         String endRouteJsonString = endRouteDetails.getBody();
-        ObjectMapper objectMapper = new ObjectMapper();
         JsonNode rootNode = objectMapper.readTree(endRouteJsonString);
 
         String milepostRoute = rootNode.path("features").get(0).path("attributes").get("Route").asText();
-        if(!milepostRoute.equals(milepostBuffer.getCommonName())) {
+        if (!milepostRoute.equals(milepostBuffer.getCommonName())) {
             logger.warn("Unable to find measure on route");
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
         }
@@ -248,7 +247,6 @@ public class CdotUpstreamPathController extends BaseController {
         double bufferMilepost = getBufferedMeasure(milepostRoute, milepostMeasure, milepostBuffer.getBufferMiles(), rootNode);
 
         ResponseEntity<String> response = cdotGisService.getRouteBetweenMeasures(milepostRoute, milepostMeasure, bufferMilepost);
-        logger.info(String.valueOf(response));
         return ResponseEntity.ok(getMilepostsFromResponse(response, milepostRoute));
     }
 
@@ -276,7 +274,6 @@ public class CdotUpstreamPathController extends BaseController {
 
     private List<Milepost> getMilepostsFromResponse(ResponseEntity<String> response, String routeId) throws JsonProcessingException {
         String routeJsonString = response.getBody();
-        ObjectMapper objectMapper = new ObjectMapper();
         JsonNode rootNode = objectMapper.readTree(routeJsonString);
         JsonNode pathNode = rootNode.path("features").get(0).path("geometry").path("paths").get(0);
         List<Milepost> mileposts = new ArrayList<>();
@@ -331,10 +328,10 @@ public class CdotUpstreamPathController extends BaseController {
 
         double mMin = rootNode.path("features").get(0).path("attributes").get("MMin").floatValue();
         double mMax = rootNode.path("features").get(0).path("attributes").get("MMax").floatValue();
-        if(bufferMeasure < mMin) {
+        if (bufferMeasure < mMin) {
             bufferMeasure = mMin;
         }
-        if(bufferMeasure > mMax) {
+        if (bufferMeasure > mMax) {
             bufferMeasure = mMax;
         }
         return bufferMeasure;
@@ -380,7 +377,7 @@ public class CdotUpstreamPathController extends BaseController {
     }
 
     /**
-     * Context class for traversing mileposts to get buffer path
+     * Context class for traversing mileposts to get a buffered path
      */
     public static class TraverseContext {
         private final List<Milepost> allMileposts;
@@ -444,14 +441,14 @@ public class CdotUpstreamPathController extends BaseController {
     }
 
     /**
-     * Interface for traverse strategy to get buffer path
+     * Interface for traverse strategy to get a buffered path
      */
     public interface TraverseStrategy {
         void traverse(TraverseContext context);
     }
 
     /**
-     * Traverse strategy to get buffer path by traversing the mileposts in ascending
+     * Traverse strategy to get a buffered path by traversing the mileposts in ascending
      * or descending direction from a starting milepost.
      */
     public abstract static class AbstractTraverseStrategy implements TraverseStrategy {
@@ -492,7 +489,7 @@ public class CdotUpstreamPathController extends BaseController {
     }
 
     /**
-     * Traverse strategy to get buffer path by traversing the mileposts in ascending
+     * Traverse strategy to get a buffered path by traversing the mileposts in an ascending
      * direction from a starting milepost.
      */
     public static class AscendingTraverseStrategy extends AbstractTraverseStrategy {
@@ -504,7 +501,7 @@ public class CdotUpstreamPathController extends BaseController {
     }
 
     /**
-     * Traverse strategy to get buffer path by traversing the mileposts in descending
+     * Traverse strategy to get a buffered path by traversing the mileposts in a descending
      * direction from a starting milepost.
      */
     public static class DescendingTraverseStrategy extends AbstractTraverseStrategy {
@@ -516,7 +513,7 @@ public class CdotUpstreamPathController extends BaseController {
     }
 
     /**
-     * Helper class to calculate distance between two points and total distance of a buffer path
+     * Helper class to calculate the distance between two points and total distance of a buffer path
      */
     public static class DistanceCalculator {
         final static int R = 6371000; // Radius of the earth in meters

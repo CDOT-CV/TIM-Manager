@@ -45,6 +45,7 @@ class CdotUpstreamPathControllerTest {
             "src/test/resources/com/trihydro/cvdatacontroller/controller/cdotMeasureAtPointResponse_AscendingRoute.json";
     private final String SECOND_PATH_TO_MEASURE_AT_POINT_DESCENDING_ROUTE_JSON_TEST_DATA =
             "src/test/resources/com/trihydro/cvdatacontroller/controller/cdotMeasureAtPointResponse_DescendingRoute_MatchingMeasure.json";
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Mock
     CdotGisConnector cdotGisService = Mockito.mock(CdotGisConnector.class);
@@ -74,7 +75,7 @@ class CdotUpstreamPathControllerTest {
 
     @BeforeEach
     void setUp() {
-        uut = new CdotUpstreamPathController(cdotGisService);
+        uut = new CdotUpstreamPathController(cdotGisService, objectMapper);
     }
 
     @Test
