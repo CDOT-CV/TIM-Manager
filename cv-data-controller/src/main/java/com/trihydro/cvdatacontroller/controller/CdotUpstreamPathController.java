@@ -147,11 +147,14 @@ public class CdotUpstreamPathController extends BaseController {
         try {
             String routeJsonString = response.getBody();
             JsonNode rootNode = objectMapper.readTree(routeJsonString);
-            rootNode.path("features").get(0).path("geometry").path("paths").get(0);
+            JsonNode pathNode = rootNode.path("features");
+
+            // Check that a path exists, is an array, and is not empty
+            boolean hasPaths = pathNode.isArray() && !pathNode.isEmpty();
+            return ResponseEntity.ok(hasPaths);
         } catch (Exception e) {
             return ResponseEntity.ok(false);
         }
-        return ResponseEntity.ok(true);
     }
 
     /**
