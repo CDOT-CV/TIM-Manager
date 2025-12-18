@@ -254,16 +254,19 @@ public class CdotUpstreamPathController extends BaseController {
         if (pathMileposts.size() < 2) {
             throw new NotEnoughMilepostsException("Path has less than 2 mileposts");
         }
+
         Milepost firstMilepostInPath = pathMileposts.get(0);
         Milepost secondMilepostInPath = pathMileposts.get(1);
         int firstMilepostInPathIndex = getIndexOfMilepost(allMileposts, firstMilepostInPath);
         if (firstMilepostInPathIndex == -1) {
             throw new MilepostNotFoundException("First milepost not found in route");
         }
+
         int secondMilepostInPathIndex = getIndexOfMilepost(allMileposts, secondMilepostInPath);
         if (secondMilepostInPathIndex == -1) {
             throw new MilepostNotFoundException("Second milepost not found in route");
         }
+
         if (firstMilepostInPathIndex < secondMilepostInPathIndex) {
             return PathDirection.ASCENDING;
         } else {
