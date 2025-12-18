@@ -5,6 +5,8 @@ import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.trihydro.cvdatacontroller.model.Measure.Measure;
+import com.trihydro.cvdatacontroller.model.Route.Route;
 import com.trihydro.library.helpers.CdotGisConnector;
 import com.trihydro.library.model.Milepost;
 
@@ -17,7 +19,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.web.client.RestClientException;
 
@@ -140,21 +141,19 @@ public class CdotUpstreamPathController extends BaseController {
      *
      * @param routeId the ID of the route to retrieve mileposts for
      * @return boolean indicating whether the route is supported or not
+     * @throws JsonProcessingException if there is an error processing the JSON response
+     * @throws RestClientException     if an error occurs while making the request
      */
     @RequestMapping(method = RequestMethod.GET, produces = "application/json", value = "/get-route-supported/{routeId}")
-    public ResponseEntity<Boolean> isRouteSupported(@PathVariable String routeId) {
-        ResponseEntity<String> response = cdotGisService.getRouteById(routeId);
-        try {
-            String routeJsonString = response.getBody();
-            JsonNode rootNode = objectMapper.readTree(routeJsonString);
-            JsonNode pathNode = rootNode.path("features");
+    public ResponseEntity<Boolean> isRouteSupported(@PathVariable String routeId) throws JsonProcessingException,
+            RestClientException {
 
-            // Check that a path exists, is an array, and is not empty
-            boolean hasPaths = pathNode.isArray() && !pathNode.isEmpty();
-            return ResponseEntity.ok(hasPaths);
-        } catch (Exception e) {
-            return ResponseEntity.ok(false);
-        }
+        ResponseEntity<String> response = cdotGisService.getRouteById(routeId);
+        Route routeDetails =
+                objectMapper.readValue(response.getBody(), Route.class);
+
+        // If a routeDetails has no routes, the route does not exist
+        return ResponseEntity.ok(routeDetails.hasRoutes());
     }
 
     /**
@@ -178,27 +177,25 @@ public class CdotUpstreamPathController extends BaseController {
         BigDecimal endLong = wydotTim.getEndPoint().getLongitude();
         String routeId = wydotTim.getRoute().replace('-', '_');
 
-        ResponseEntity<String> startRouteDetails = cdotGisService.getMeasureAtPoint(startLong, startLat);
-        String startRouteJsonString = startRouteDetails.getBody();
+        ResponseEntity<String> startMeasureDetailsJson = cdotGisService.getMeasureAtPoint(startLong, startLat);
+        Measure startMeasureDetails =
+                objectMapper.readValue(startMeasureDetailsJson.getBody(), Measure.class);
+        String startRoute = startMeasureDetails.getFeatures().get(0).getAttributes().getRoute();
+        double startMeasure = startMeasureDetails.getFeatures().get(0).getAttributes().getMeasure();
 
-        JsonNode rootNode = objectMapper.readTree(startRouteJsonString);
-        String startRoute = rootNode.path("features").get(0).path("attributes").get("Route").asText();
-        double startMeasure = rootNode.path("features").get(0).path("attributes").get("Measure").floatValue();
-
-        ResponseEntity<String> endRouteDetails = cdotGisService.getMeasureAtPoint(endLong, endLat);
-        String endRouteJsonString = endRouteDetails.getBody();
-
-        rootNode = objectMapper.readTree(endRouteJsonString);
-        String endRoute = rootNode.path("features").get(0).path("attributes").get("Route").asText();
-        double endMeasure = rootNode.path("features").get(0).path("attributes").get("Measure").floatValue();
+        ResponseEntity<String> endMeasureDetailsJson = cdotGisService.getMeasureAtPoint(endLat, endLong);
+        Measure endMeasureDetails =
+                objectMapper.readValue(endMeasureDetailsJson.getBody(), Measure.class);
+        String endRoute = endMeasureDetails.getFeatures().get(0).getAttributes().getRoute();
+        double endMeasure = endMeasureDetails.getFeatures().get(0).getAttributes().getMeasure();
 
         if (!startRoute.equals(endRoute) || !startRoute.equals(routeId)) {
-            logger.warn("Unable to find route");
+            logger.warn("Unable to find route. Generated route does not match.");
             return ResponseEntity.badRequest().body(new ArrayList<>());
         }
 
         if (startMeasure == endMeasure) {
-            endMeasure = getBufferedMeasure(routeId, startMeasure, 1.0, rootNode);
+            endMeasure = getBufferedMeasure(routeId, startMeasureDetails, 1.0);
         }
 
         ResponseEntity<String> response = cdotGisService.getRouteBetweenMeasures(startRoute, startMeasure, endMeasure);
@@ -235,19 +232,18 @@ public class CdotUpstreamPathController extends BaseController {
         }
 
         var milepost = milepostBuffer.getPoint();
-        ResponseEntity<String> endRouteDetails = cdotGisService.getMeasureAtPoint(milepost.getLongitude(), milepost.getLatitude());
+        ResponseEntity<String> measureDetailsJson = cdotGisService.getMeasureAtPoint(milepost.getLongitude(), milepost.getLatitude());
+        Measure measureDetails =
+                objectMapper.readValue(measureDetailsJson.getBody(), Measure.class);
 
-        String endRouteJsonString = endRouteDetails.getBody();
-        JsonNode rootNode = objectMapper.readTree(endRouteJsonString);
-
-        String milepostRoute = rootNode.path("features").get(0).path("attributes").get("Route").asText();
+        String milepostRoute = measureDetails.getFeatures().get(0).getAttributes().getRoute();
         if (!milepostRoute.equals(milepostBuffer.getCommonName())) {
             logger.warn("Unable to find measure on route");
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ArrayList<>());
         }
 
-        double milepostMeasure = rootNode.path("features").get(0).path("attributes").get("Measure").floatValue();
-        double bufferMilepost = getBufferedMeasure(milepostRoute, milepostMeasure, milepostBuffer.getBufferMiles(), rootNode);
+        double milepostMeasure = measureDetails.getFeatures().get(0).getAttributes().getMeasure();
+        double bufferMilepost = getBufferedMeasure(milepostRoute, measureDetails, milepostBuffer.getBufferMiles());
 
         ResponseEntity<String> response = cdotGisService.getRouteBetweenMeasures(milepostRoute, milepostMeasure, bufferMilepost);
         return ResponseEntity.ok(getMilepostsFromResponse(response, milepostRoute));
@@ -276,16 +272,17 @@ public class CdotUpstreamPathController extends BaseController {
     }
 
     private List<Milepost> getMilepostsFromResponse(ResponseEntity<String> response, String routeId) throws JsonProcessingException {
-        String routeJsonString = response.getBody();
-        JsonNode rootNode = objectMapper.readTree(routeJsonString);
-        JsonNode pathNode = rootNode.path("features").get(0).path("geometry").path("paths").get(0);
+        Route routeDetails =
+                objectMapper.readValue(response.getBody(), Route.class);
+        List<List<Double>> path = routeDetails.getFeatures().get(0).getGeometry().getPaths().get(0);
+
         List<Milepost> mileposts = new ArrayList<>();
-        for (JsonNode node : pathNode) {
+        for (List<Double> coordinate : path) {
             Milepost milepost = new Milepost();
             milepost.setCommonName(routeId);
-            BigDecimal latitude = new BigDecimal(node.get(1).asText()).setScale(14, RoundingMode.HALF_UP);
+            BigDecimal latitude = new BigDecimal(coordinate.get(1).toString()).setScale(14, RoundingMode.HALF_UP);
             BigDecimal longitude =
-                    new BigDecimal(node.get(0).asText()).setScale(14, RoundingMode.HALF_UP);
+                    new BigDecimal(coordinate.get(0).toString()).setScale(14, RoundingMode.HALF_UP);
             milepost.setLatitude(latitude);
             milepost.setLongitude(longitude);
             mileposts.add(milepost);
@@ -321,7 +318,9 @@ public class CdotUpstreamPathController extends BaseController {
         return closestIndex;
     }
 
-    private double getBufferedMeasure(String route, double measure, double bufferMiles, JsonNode rootNode) throws RestClientException {
+    private double getBufferedMeasure(String route, Measure measureDetails, double bufferMiles) throws RestClientException {
+        var attributes = measureDetails.getFeatures().get(0).getAttributes();
+        double measure = attributes.getMeasure();
         double bufferMeasure;
         if (route.toLowerCase().endsWith("_dec")) {
             bufferMeasure = measure - bufferMiles;
@@ -329,8 +328,8 @@ public class CdotUpstreamPathController extends BaseController {
             bufferMeasure = measure + bufferMiles;
         }
 
-        double mMin = rootNode.path("features").get(0).path("attributes").get("MMin").floatValue();
-        double mMax = rootNode.path("features").get(0).path("attributes").get("MMax").floatValue();
+        double mMin = attributes.getMMin();
+        double mMax = attributes.getMMax();
         if (bufferMeasure < mMin) {
             bufferMeasure = mMin;
         }
