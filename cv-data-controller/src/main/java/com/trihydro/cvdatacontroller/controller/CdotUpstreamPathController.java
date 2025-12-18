@@ -183,7 +183,7 @@ public class CdotUpstreamPathController extends BaseController {
         String startRoute = startMeasureDetails.getFeatures().get(0).getAttributes().getRoute();
         double startMeasure = startMeasureDetails.getFeatures().get(0).getAttributes().getMeasure();
 
-        ResponseEntity<String> endMeasureDetailsJson = cdotGisService.getMeasureAtPoint(endLat, endLong);
+        ResponseEntity<String> endMeasureDetailsJson = cdotGisService.getMeasureAtPoint(endLong, endLat);
         Measure endMeasureDetails =
                 objectMapper.readValue(endMeasureDetailsJson.getBody(), Measure.class);
         String endRoute = endMeasureDetails.getFeatures().get(0).getAttributes().getRoute();
