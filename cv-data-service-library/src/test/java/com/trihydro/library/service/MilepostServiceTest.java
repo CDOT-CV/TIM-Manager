@@ -163,7 +163,7 @@ public class MilepostServiceTest extends BaseServiceTest {
         // prepare
         String routeId = "routeId";
 
-        Boolean expectedResponse = true;
+        boolean expectedResponse = true;
         when(mockRespBoolean.getBody()).thenReturn(expectedResponse);
         String url = String.format("%s/cdot-upstream-path/get-route-supported/%s", baseUrl, routeId);
         when(mockRestTemplate.exchange(eq(url), eq(HttpMethod.GET), any(), eq(Boolean.class))).thenReturn(mockRespBoolean);
