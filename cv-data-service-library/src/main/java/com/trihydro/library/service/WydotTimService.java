@@ -43,8 +43,8 @@ import com.trihydro.library.model.WydotOdeTravelerInformationMessage;
 import com.trihydro.library.model.WydotRsu;
 import com.trihydro.library.model.WydotTim;
 import com.trihydro.library.model.WydotTimRw;
-import com.trihydro.library.model.WydotTravelerInputData;
 
+import us.dot.its.jpo.ode.model.OdeTravelerInputData;
 import us.dot.its.jpo.ode.plugin.RoadSideUnit.RSU;
 import us.dot.its.jpo.ode.plugin.SituationDataWarehouse.SDW;
 import us.dot.its.jpo.ode.plugin.SituationDataWarehouse.SDW.TimeToLive;
@@ -112,12 +112,12 @@ public class WydotTimService {
     RSU[] rsuArr = new RSU[1];
     DateTimeFormatter utcformatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
 
-    public WydotTravelerInputData createTim(WydotTim wydotTim, String timTypeStr, String startDateTime,
-            String endDateTime, List<Milepost> allMileposts,
-            List<Milepost> reducedMileposts, Milepost anchor, String dotGnisId) {
+    public OdeTravelerInputData createTim(WydotTim wydotTim, String timTypeStr, String startDateTime,
+                                          String endDateTime, List<Milepost> allMileposts,
+                                          List<Milepost> reducedMileposts, Milepost anchor, String dotGnisId) {
 
         // build base TIM
-        WydotTravelerInputData timToSend = createBaseTimUtil.buildTim(wydotTim, genProps,
+        OdeTravelerInputData timToSend = createBaseTimUtil.buildTim(wydotTim, genProps,
                 allMileposts, reducedMileposts, anchor);
 
         if (timToSend == null) {
@@ -197,8 +197,8 @@ public class WydotTimService {
         return milepostsAll;
     }
 
-    public void sendTimToSDW(WydotTim wydotTim, WydotTravelerInputData timToSend, String regionNamePrev,
-            TimType timType, Integer pk, Coordinate endPoint, List<Milepost> reducedMileposts, String desiredEndDateTime) {
+    public void sendTimToSDW(WydotTim wydotTim, OdeTravelerInputData timToSend, String regionNamePrev,
+                             TimType timType, Integer pk, Coordinate endPoint, List<Milepost> reducedMileposts, String desiredEndDateTime) {
 
         // find active TIMs by client Id and direction, then filter by SAT TIMs
         List<ActiveTim> activeSatTims = null;
@@ -258,8 +258,8 @@ public class WydotTimService {
         }
     }
 
-    public void sendTimToRsus(WydotTim wydotTim, WydotTravelerInputData timToSend, String regionNamePrev,
-            TimType timType, Integer pk, String endDateTime, Coordinate endPoint, String desiredEndDateTime) {
+    public void sendTimToRsus(WydotTim wydotTim, OdeTravelerInputData timToSend, String regionNamePrev,
+                              TimType timType, Integer pk, String endDateTime, Coordinate endPoint, String desiredEndDateTime) {
         // FIND ALL RSUS TO SEND TO
         // TODO: should this query a graph db instead to follow with milepost?
 
@@ -573,7 +573,7 @@ public class WydotTimService {
         return wydotRsu;
     }
 
-    private void sendNewTimToSdw(WydotTravelerInputData timToSend, String recordId, List<Milepost> reducedMileposts) {
+    private void sendNewTimToSdw(OdeTravelerInputData timToSend, String recordId, List<Milepost> reducedMileposts) {
 
         // set msgCnt to 1 and create new packetId
         timToSend.getTim().setMsgCnt(1);
@@ -605,10 +605,10 @@ public class WydotTimService {
         }
     }
 
-    public void updateTimOnRsu(WydotTravelerInputData timToSend, Long timId, WydotOdeTravelerInformationMessage tim,
-            Integer rsuId, String endDateTime) {
+    public void updateTimOnRsu(OdeTravelerInputData timToSend, Long timId, WydotOdeTravelerInformationMessage tim,
+                               Integer rsuId, String endDateTime) {
 
-        WydotTravelerInputData updatedTim = updateTim(timToSend, timId, tim);
+        OdeTravelerInputData updatedTim = updateTim(timToSend, timId, tim);
 
         // set rsu index here
         DataFrame df = updatedTim.getTim().getDataframes()[0];
@@ -629,10 +629,10 @@ public class WydotTimService {
         }
     }
 
-    public void updateTimOnSdw(WydotTravelerInputData timToSend, Long timId, String recordId,
-            WydotOdeTravelerInformationMessage tim, List<Milepost> reducedMileposts) {
+    public void updateTimOnSdw(OdeTravelerInputData timToSend, Long timId, String recordId,
+                               WydotOdeTravelerInformationMessage tim, List<Milepost> reducedMileposts) {
 
-        WydotTravelerInputData updatedTim = updateTim(timToSend, timId, tim);
+        OdeTravelerInputData updatedTim = updateTim(timToSend, timId, tim);
 
         SDW sdw = new SDW();
 
@@ -661,8 +661,8 @@ public class WydotTimService {
         }
     }
 
-    public WydotTravelerInputData updateTim(WydotTravelerInputData timToSend, Long timId,
-            WydotOdeTravelerInformationMessage tim) {
+    public OdeTravelerInputData updateTim(OdeTravelerInputData timToSend, Long timId,
+                                          WydotOdeTravelerInformationMessage tim) {
 
         // set TIM packetId
         timToSend.getTim().setPacketID(tim.getPacketID());

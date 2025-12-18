@@ -7,20 +7,18 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.TimeZone;
 
-import com.trihydro.library.model.WydotTravelerInputData;
-
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.slf4j.Logger;
 import org.springframework.stereotype.Component;
 
+import us.dot.its.jpo.ode.model.OdeTravelerInputData;
 import us.dot.its.jpo.ode.plugin.SNMP;
 
 @Component
 @Slf4j
 public class SnmpHelper {
 
-    public SNMP getSnmp(String startDateTime, String endDateTime, WydotTravelerInputData timToSend) {
+    public SNMP getSnmp(String startDateTime, String endDateTime, OdeTravelerInputData timToSend) {
         SNMP snmp = new SNMP();
         snmp.setChannel(183);
         snmp.setRsuid("83");// RSU wants hex 83, and the ODE is expecting a hex value to parse. This parses
