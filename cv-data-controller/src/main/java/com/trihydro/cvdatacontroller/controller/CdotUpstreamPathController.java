@@ -65,22 +65,25 @@ public class CdotUpstreamPathController extends BaseController {
                 logger.warn("No mileposts found for route");
                 return ResponseEntity.badRequest().body(new ArrayList<>());
             }
-            PathDirection direction;
-            direction = getPathDirection(pathMileposts, allMileposts);
+
+            PathDirection direction = getPathDirection(pathMileposts, allMileposts);
             if (direction == null) {
                 logger.warn("Invalid path direction");
                 return ResponseEntity.badRequest().body(new ArrayList<>());
             }
+
             Milepost firstMilepostInPath = pathMileposts.get(0);
             int startIndex = getIndexOfMilepost(allMileposts, firstMilepostInPath);
             TraverseContext traverseContext =
                     new TraverseContext(allMileposts, startIndex, desiredDistanceInMiles, direction);
+
             if (direction == PathDirection.ASCENDING) {
                 traverseContext.setTraverseStrategy(new DescendingTraverseStrategy());
             } else {
                 traverseContext.setTraverseStrategy(new AscendingTraverseStrategy());
             }
             traverseContext.performTraversal();
+
             List<Milepost> buffer = traverseContext.getBuffer();
             if (buffer.size() < 2) {
                 // at least 2 mileposts are needed to create a valid buffer path
@@ -92,11 +95,12 @@ public class CdotUpstreamPathController extends BaseController {
                 logger.warn("Buffer path has less distance than desired distance");
                 return ResponseEntity.badRequest().body(new ArrayList<>());
             }
-            logger.info("Distance of buffer path: {} miles", distanceInMiles);
+
             if (logger.isDebugEnabled()) {
                 String geojsonString = convertMilepostsToGeojsonString(buffer);
                 logger.debug("Geojson string for buffer: {}", geojsonString);
             }
+
             return ResponseEntity.ok(buffer);
         } catch (NotEnoughMilepostsException e) {
             logger.warn("Not enough mileposts in path", e);
