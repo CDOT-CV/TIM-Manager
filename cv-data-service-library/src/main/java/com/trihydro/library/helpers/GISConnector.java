@@ -14,7 +14,6 @@ import org.springframework.web.util.UriComponentsBuilder;
 
 import java.math.BigDecimal;
 import java.net.URI;
-import java.util.*;
 
 @Component
 public class CdotGisConnector {
@@ -25,9 +24,7 @@ public class CdotGisConnector {
 
     private final RestTemplateProvider restTemplateProvider;
 
-    private final Logger logger = LoggerFactory.getLogger(CdotGisConnector.class);
-
-    public CdotGisConnector(RestTemplateProvider _restTemplateProvider) {
+    public GISConnector(RestTemplateProvider _restTemplateProvider) {
         this.restTemplateProvider = _restTemplateProvider;
     }
 
