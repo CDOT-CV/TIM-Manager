@@ -20,7 +20,7 @@ public class CdotGisConnector {
     private final String baseUrl = "https://dtdapps.codot.gov/server/rest/services/LRS/Routes_withDEC/MapServer/exts/LrsServerRounded";
     private final int tolerance = 10000;
     private final int sr = 4326;
-    private final String f = "json";
+    private final String format = "json";
 
     private final RestTemplateProvider restTemplateProvider;
 
@@ -79,7 +79,7 @@ public class CdotGisConnector {
                 .queryParam("tolerance", tolerance)
                 .queryParam("outSR", sr)
                 .queryParam("inSR", sr)
-                .queryParam("f", f)
+                .queryParam("f", format)
                 .build(true)
                 .toUri();
 
@@ -110,7 +110,7 @@ public class CdotGisConnector {
                 .queryParam("fromMeasure", fromMeasure)
                 .queryParam("toMeasure", toMeasure)
                 .queryParam("outSR", sr)
-                .queryParam("f", f)
+                .queryParam("f", format)
                 .build(true)
                 .toUri();
 
