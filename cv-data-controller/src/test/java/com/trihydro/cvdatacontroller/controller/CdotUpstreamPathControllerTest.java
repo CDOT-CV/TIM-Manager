@@ -1,7 +1,6 @@
 package com.trihydro.cvdatacontroller.controller;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -17,12 +16,10 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.trihydro.cvdatacontroller.controller.CdotUpstreamPathController.DistanceCalculator;
 import com.trihydro.cvdatacontroller.controller.CdotUpstreamPathController.PathDirection;
-import com.trihydro.library.helpers.CdotGisConnector;
-import com.trihydro.library.model.Coordinate;
+import com.trihydro.cvdatacontroller.controller.CdotUpstreamPathController.PathDirection;
+import com.trihydro.library.helpers.GISConnector;
 import com.trihydro.library.model.Milepost;
 
-import com.trihydro.library.model.MilepostBuffer;
-import com.trihydro.library.model.WydotTim;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -33,22 +30,12 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
 class CdotUpstreamPathControllerTest {
-    private final String DESCENDING_ROUTE_ID = "025A_DEC"; // I-25
-    private final String ASCENDING_ROUTE_ID = "025A";
+    private final String ROUTE_ID = "025A"; // I-25
     private final String PATH_TO_ROUTE_JSON_TEST_DATA =
             "src/test/resources/com/trihydro/cvdatacontroller/controller/cdotRouteResponseForI25_First30Mileposts.json";
-    private final String PATH_TO_ROUTE_NOT_SUPPORTED_JSON_TEST_DATA =
-            "src/test/resources/com/trihydro/cvdatacontroller/controller/cdotRouteNotSupported.json";
-    private final String PATH_TO_MEASURE_AT_POINT_DESCENDING_ROUTE_JSON_TEST_DATA =
-            "src/test/resources/com/trihydro/cvdatacontroller/controller/cdotMeasureAtPointResponse_DescendingRoute.json";
-    private final String PATH_TO_MEASURE_AT_POINT_ASCENDING_ROUTE_JSON_TEST_DATA =
-            "src/test/resources/com/trihydro/cvdatacontroller/controller/cdotMeasureAtPointResponse_AscendingRoute.json";
-    private final String SECOND_PATH_TO_MEASURE_AT_POINT_DESCENDING_ROUTE_JSON_TEST_DATA =
-            "src/test/resources/com/trihydro/cvdatacontroller/controller/cdotMeasureAtPointResponse_DescendingRoute_MatchingMeasure.json";
-    private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Mock
-    CdotGisConnector cdotGisService = Mockito.mock(CdotGisConnector.class);
+    GISConnector gisConnector = Mockito.mock(GISConnector.class);
 
     @InjectMocks
     CdotUpstreamPathController uut;
@@ -62,7 +49,7 @@ class CdotUpstreamPathControllerTest {
         List<Milepost> mileposts = new ArrayList<>();
         for (JsonNode node : pathNode) {
             Milepost milepost = new Milepost();
-            milepost.setCommonName(DESCENDING_ROUTE_ID);
+            milepost.setCommonName(ROUTE_ID);
             BigDecimal latitude = new BigDecimal(node.get(1).asText()).setScale(14, RoundingMode.HALF_UP);
             BigDecimal longitude =
                     new BigDecimal(node.get(0).asText()).setScale(14, RoundingMode.HALF_UP);
@@ -75,7 +62,7 @@ class CdotUpstreamPathControllerTest {
 
     @BeforeEach
     void setUp() {
-        uut = new CdotUpstreamPathController(cdotGisService, objectMapper);
+        uut = new CdotUpstreamPathController(gisConnector);
     }
 
     @Test
@@ -84,271 +71,19 @@ class CdotUpstreamPathControllerTest {
         String routeJsonString =
                 new String(Files.readAllBytes(Paths.get(PATH_TO_ROUTE_JSON_TEST_DATA)));
         ResponseEntity<String> mockResponse = new ResponseEntity<>(routeJsonString, HttpStatus.OK);
-        when(cdotGisService.getRouteById(DESCENDING_ROUTE_ID)).thenReturn(mockResponse);
+        when(gisConnector.getRouteById(ROUTE_ID)).thenReturn(mockResponse);
         List<Milepost> expectedMileposts = getMockMileposts();
 
         // execute
-        List<Milepost> mileposts = uut.getMilepostsForRoute(DESCENDING_ROUTE_ID);
+        List<Milepost> mileposts = uut.getMilepostsForRoute(ROUTE_ID);
 
         // verify
-        verify(cdotGisService).getRouteById(DESCENDING_ROUTE_ID);
+        verify(gisConnector).getRouteById(ROUTE_ID);
         Assertions.assertEquals(expectedMileposts.size(), mileposts.size());
         for (int i = 0; i < expectedMileposts.size(); i++) {
             Milepost expected = expectedMileposts.get(i);
             Milepost actual = mileposts.get(i);
             Assertions.assertEquals(expected.getCommonName(), actual.getCommonName());
-            Assertions.assertNull(actual.getMilepost());
-            Assertions.assertNull(actual.getDirection());
-            Assertions.assertEquals(expected.getLatitude(), actual.getLatitude());
-            Assertions.assertEquals(expected.getLongitude(), actual.getLongitude());
-        }
-    }
-
-    @Test
-    void testGetMilepostsByStartEndPoint() throws IOException {
-        // prepare
-        String firstMeasureAtPointJsonString =
-                new String(Files.readAllBytes(Paths.get(PATH_TO_MEASURE_AT_POINT_DESCENDING_ROUTE_JSON_TEST_DATA)));
-        String secondMeasureAtPointJsonString =
-                new String(Files.readAllBytes(Paths.get(SECOND_PATH_TO_MEASURE_AT_POINT_DESCENDING_ROUTE_JSON_TEST_DATA)));
-        String routeJsonString =
-                new String(Files.readAllBytes(Paths.get(PATH_TO_ROUTE_JSON_TEST_DATA)));
-        WydotTim wydotTim = new WydotTim();
-        BigDecimal fromLatitude = new BigDecimal("39.613210472000048");
-        BigDecimal fromLongitude = new BigDecimal("-104.89573840099996");
-        Coordinate fromPoint = new Coordinate(fromLongitude, fromLatitude);
-        BigDecimal toLatitude = new BigDecimal("40.73654117648727");
-        BigDecimal toLongitude = new BigDecimal("-104.99349024587299");
-        Coordinate toPoint = new Coordinate(toLongitude, toLatitude);
-        wydotTim.setStartPoint(fromPoint);
-        wydotTim.setEndPoint(toPoint);
-        wydotTim.setRoute(DESCENDING_ROUTE_ID);
-
-        ResponseEntity<String> firstMeasureResponse =
-                new ResponseEntity<>(firstMeasureAtPointJsonString, HttpStatus.OK);
-        ResponseEntity<String> secondMeasureResponse =
-                new ResponseEntity<>(secondMeasureAtPointJsonString, HttpStatus.OK);
-        when(cdotGisService.getMeasureAtPoint(
-                any(),
-                any()
-        )).thenReturn(firstMeasureResponse).thenReturn(secondMeasureResponse);
-        ResponseEntity<String> routeResponse =
-                new ResponseEntity<>(routeJsonString, HttpStatus.OK);
-        when(cdotGisService.getRouteBetweenMeasures(
-                anyString(),
-                anyDouble(),
-                anyDouble()
-        )).thenReturn(routeResponse);
-
-        List<Milepost> expectedMileposts = getMockMileposts();
-
-
-        // execute
-        List<Milepost> mileposts = uut.getMilepostsByStartEndPoint(wydotTim).getBody();
-
-        // verify
-        Assertions.assertNotNull(mileposts);
-        Assertions.assertEquals(expectedMileposts.size(), mileposts.size());
-        for (int i = 0; i < expectedMileposts.size(); i++) {
-            Milepost expected = expectedMileposts.get(i);
-            Milepost actual = mileposts.get(i);
-            Assertions.assertEquals(expected.getCommonName(), actual.getCommonName());
-            Assertions.assertNull(actual.getMilepost());
-            Assertions.assertNull(actual.getDirection());
-            Assertions.assertEquals(expected.getLatitude(), actual.getLatitude());
-            Assertions.assertEquals(expected.getLongitude(), actual.getLongitude());
-        }
-    }
-
-    @Test
-    void testGetMilepostsByStartEndPoint_MismatchingRoutes() throws IOException {
-        // prepare
-        String measureAtPointJsonString =
-                new String(Files.readAllBytes(Paths.get(PATH_TO_MEASURE_AT_POINT_DESCENDING_ROUTE_JSON_TEST_DATA)));
-        WydotTim wydotTim = new WydotTim();
-        BigDecimal fromLatitude = new BigDecimal("39.613210472000048");
-        BigDecimal fromLongitude = new BigDecimal("-104.89573840099996");
-        Coordinate fromPoint = new Coordinate(fromLongitude, fromLatitude);
-        BigDecimal toLatitude = new BigDecimal("40.73654117648727");
-        BigDecimal toLongitude = new BigDecimal("-104.99349024587299");
-        Coordinate toPoint = new Coordinate(toLongitude, toLatitude);
-        wydotTim.setStartPoint(fromPoint);
-        wydotTim.setEndPoint(toPoint);
-        wydotTim.setRoute(ASCENDING_ROUTE_ID);
-
-        ResponseEntity<String> measureResponse =
-                new ResponseEntity<>(measureAtPointJsonString, HttpStatus.OK);
-        when(cdotGisService.getMeasureAtPoint(
-                any(),
-                any()
-        )).thenReturn(measureResponse);
-
-        // execute
-        List<Milepost> mileposts = uut.getMilepostsByStartEndPoint(wydotTim).getBody();
-
-        // verify
-        Assertions.assertEquals(0, mileposts.size());
-    }
-
-
-    @Test
-    void testGetMilepostsByStartEndPoint_SameMeasure() throws IOException {
-        // prepare
-        String measureAtPointJsonString =
-                new String(Files.readAllBytes(Paths.get(PATH_TO_MEASURE_AT_POINT_DESCENDING_ROUTE_JSON_TEST_DATA)));
-        String routeJsonString =
-                new String(Files.readAllBytes(Paths.get(PATH_TO_ROUTE_JSON_TEST_DATA)));
-        WydotTim wydotTim = new WydotTim();
-        BigDecimal fromLatitude = new BigDecimal("39.613210472000048");
-        BigDecimal fromLongitude = new BigDecimal("-104.89573840099996");
-        Coordinate fromPoint = new Coordinate(fromLongitude, fromLatitude);
-        BigDecimal toLatitude = new BigDecimal("40.73654117648727");
-        BigDecimal toLongitude = new BigDecimal("-104.99349024587299");
-        Coordinate toPoint = new Coordinate(toLongitude, toLatitude);
-        wydotTim.setStartPoint(fromPoint);
-        wydotTim.setEndPoint(toPoint);
-        wydotTim.setRoute(DESCENDING_ROUTE_ID);
-
-        ResponseEntity<String> measureResponse =
-                new ResponseEntity<>(measureAtPointJsonString, HttpStatus.OK);
-        when(cdotGisService.getMeasureAtPoint(
-                any(),
-                any()
-        )).thenReturn(measureResponse);
-        ResponseEntity<String> routeResponse =
-                new ResponseEntity<>(routeJsonString, HttpStatus.OK);
-        when(cdotGisService.getRouteBetweenMeasures(
-                anyString(),
-                anyDouble(),
-                anyDouble()
-        )).thenReturn(routeResponse);
-
-        List<Milepost> expectedMileposts = getMockMileposts();
-
-        // execute
-        List<Milepost> mileposts = uut.getMilepostsByStartEndPoint(wydotTim).getBody();
-
-        // verify
-        Assertions.assertNotNull(mileposts);
-        Assertions.assertEquals(expectedMileposts.size(), mileposts.size());
-        for (int i = 0; i < expectedMileposts.size(); i++) {
-            Milepost expected = expectedMileposts.get(i);
-            Milepost actual = mileposts.get(i);
-            Assertions.assertEquals(expected.getCommonName(), actual.getCommonName());
-            Assertions.assertNull(actual.getMilepost());
-            Assertions.assertNull(actual.getDirection());
-            Assertions.assertEquals(expected.getLatitude(), actual.getLatitude());
-            Assertions.assertEquals(expected.getLongitude(), actual.getLongitude());
-        }
-    }
-
-    @Test
-    void testGetMilepostsByPointWithBufferForDescendingRoute() throws IOException {
-        // prepare
-        String measureAtPointJsonString =
-                new String(Files.readAllBytes(Paths.get(PATH_TO_MEASURE_AT_POINT_DESCENDING_ROUTE_JSON_TEST_DATA)));
-        String routeJsonString =
-                new String(Files.readAllBytes(Paths.get(PATH_TO_ROUTE_JSON_TEST_DATA)));
-        double originalMeasure = 198.61099999999999;
-        double bufferedMeasure = 198.61099999999999 - 1.0;
-        BigDecimal latitude = new BigDecimal("39.613210472000048");
-        BigDecimal longitude = new BigDecimal("-104.89573840099996");
-        Coordinate point = new Coordinate(latitude, longitude);
-        MilepostBuffer mpb = new MilepostBuffer();
-        mpb.setBufferMiles(1.0);
-        mpb.setCommonName(DESCENDING_ROUTE_ID);
-        mpb.setDirection("D");
-        mpb.setPoint(point);
-
-        ResponseEntity<String> measureResponse =
-                new ResponseEntity<>(measureAtPointJsonString, HttpStatus.OK);
-        when(cdotGisService.getMeasureAtPoint(
-                any(),
-                any()
-        )).thenReturn(measureResponse);
-        ResponseEntity<String> routeResponse =
-                new ResponseEntity<>(routeJsonString, HttpStatus.OK);
-        when(cdotGisService.getRouteBetweenMeasures(
-                anyString(),
-                anyDouble(),
-                anyDouble()
-        )).thenReturn(routeResponse);
-
-        List<Milepost> expectedMileposts = getMockMileposts();
-
-        // execute
-        List<Milepost> mileposts = uut.getMilepostsByPointWithBuffer(mpb).getBody();
-
-        // verify
-        verify(cdotGisService).getRouteBetweenMeasures(
-                eq(DESCENDING_ROUTE_ID),
-                doubleThat(d -> Math.abs(d - originalMeasure) < 0.0001),
-                doubleThat(d -> Math.abs(d - bufferedMeasure) < 0.0001)
-        );
-        Assertions.assertNotNull(mileposts);
-        Assertions.assertEquals(expectedMileposts.size(), mileposts.size());
-        for (int i = 0; i < expectedMileposts.size(); i++) {
-            Milepost expected = expectedMileposts.get(i);
-            Milepost actual = mileposts.get(i);
-            Assertions.assertEquals(expected.getCommonName(), actual.getCommonName());
-            Assertions.assertNull(actual.getMilepost());
-            Assertions.assertNull(actual.getDirection());
-            Assertions.assertEquals(expected.getLatitude(), actual.getLatitude());
-            Assertions.assertEquals(expected.getLongitude(), actual.getLongitude());
-        }
-    }
-
-    @Test
-    void testGetMilepostsByPointWithBufferForAscendingRoute() throws IOException {
-        // prepare
-        String measureAtPointJsonString =
-                new String(Files.readAllBytes(Paths.get(PATH_TO_MEASURE_AT_POINT_ASCENDING_ROUTE_JSON_TEST_DATA)));
-        String routeJsonString =
-                new String(Files.readAllBytes(Paths.get(PATH_TO_ROUTE_JSON_TEST_DATA)));
-        double originalMeasure = 198.61099999999999;
-        double bufferedMeasure = 198.61099999999999 + 1.0;
-        BigDecimal latitude = new BigDecimal("39.613210472000048");
-        BigDecimal longitude = new BigDecimal("-104.89573840099996");
-        Coordinate point = new Coordinate(latitude, longitude);
-        MilepostBuffer mpb = new MilepostBuffer();
-        mpb.setBufferMiles(1.0);
-        mpb.setCommonName(ASCENDING_ROUTE_ID);
-        mpb.setDirection("I");
-        mpb.setPoint(point);
-
-        String expectedCommonName = mpb.getCommonName();
-
-        ResponseEntity<String> measureResponse =
-                new ResponseEntity<>(measureAtPointJsonString, HttpStatus.OK);
-        when(cdotGisService.getMeasureAtPoint(
-                any(),
-                any()
-        )).thenReturn(measureResponse);
-        ResponseEntity<String> routeResponse =
-                new ResponseEntity<>(routeJsonString, HttpStatus.OK);
-        when(cdotGisService.getRouteBetweenMeasures(
-                anyString(),
-                anyDouble(),
-                anyDouble()
-        )).thenReturn(routeResponse);
-
-        List<Milepost> expectedMileposts = getMockMileposts();
-
-        // execute
-        List<Milepost> mileposts = uut.getMilepostsByPointWithBuffer(mpb).getBody();
-
-        // verify
-        verify(cdotGisService).getRouteBetweenMeasures(
-                eq(ASCENDING_ROUTE_ID),
-                doubleThat(d -> Math.abs(d - originalMeasure) < 0.0001),
-                doubleThat(d -> Math.abs(d - bufferedMeasure) < 0.0001)
-        );
-        Assertions.assertNotNull(mileposts);
-        Assertions.assertEquals(expectedMileposts.size(), mileposts.size());
-        for (int i = 0; i < expectedMileposts.size(); i++) {
-            Milepost expected = expectedMileposts.get(i);
-            Milepost actual = mileposts.get(i);
-            Assertions.assertEquals(expectedCommonName, actual.getCommonName());
             Assertions.assertNull(actual.getMilepost());
             Assertions.assertNull(actual.getDirection());
             Assertions.assertEquals(expected.getLatitude(), actual.getLatitude());
@@ -410,7 +145,7 @@ class CdotUpstreamPathControllerTest {
         // prepare
         List<Milepost> allMileposts = getMockMileposts();
         Milepost mp1 = new Milepost();
-        mp1.setCommonName(DESCENDING_ROUTE_ID);
+        mp1.setCommonName(ROUTE_ID);
         mp1.setLatitude(new BigDecimal("30.12").setScale(14, RoundingMode.HALF_UP));
         mp1.setLongitude(new BigDecimal("-100.34").setScale(14, RoundingMode.HALF_UP));
         Milepost mp2 = allMileposts.get(1);
@@ -429,7 +164,7 @@ class CdotUpstreamPathControllerTest {
         List<Milepost> allMileposts = getMockMileposts();
         Milepost mp1 = allMileposts.get(0);
         Milepost mp2 = new Milepost();
-        mp2.setCommonName(DESCENDING_ROUTE_ID);
+        mp2.setCommonName(ROUTE_ID);
         mp1.setLatitude(new BigDecimal("30.12").setScale(14, RoundingMode.HALF_UP));
         mp1.setLongitude(new BigDecimal("-100.34").setScale(14, RoundingMode.HALF_UP));
         List<Milepost> pathMileposts = List.of(mp1, mp2);
@@ -441,44 +176,12 @@ class CdotUpstreamPathControllerTest {
     }
 
     @Test
-    void testGetIsRouteSupported_RouteSupported() throws IOException {
-        // prepare
-        String routeJsonString =
-                new String(Files.readAllBytes(Paths.get(PATH_TO_ROUTE_JSON_TEST_DATA)));
-        ResponseEntity<String> mockResponse = new ResponseEntity<>(routeJsonString, HttpStatus.OK);
-        when(cdotGisService.getRouteById(DESCENDING_ROUTE_ID)).thenReturn(mockResponse);
-
-        // execute
-        ResponseEntity<Boolean> response = uut.isRouteSupported(DESCENDING_ROUTE_ID);
-
-        // verify
-        Assertions.assertNotNull(response.getBody());
-        Assertions.assertTrue(response.getBody());
-    }
-
-    @Test
-    void testGetIsRouteSupported_RouteNotSupported() throws IOException {
-        // prepare
-        String routeJsonString =
-                new String(Files.readAllBytes(Paths.get(PATH_TO_ROUTE_NOT_SUPPORTED_JSON_TEST_DATA)));
-        ResponseEntity<String> mockResponse = new ResponseEntity<>(routeJsonString, HttpStatus.OK);
-        when(cdotGisService.getRouteById(DESCENDING_ROUTE_ID)).thenReturn(mockResponse);
-
-        // execute
-        ResponseEntity<Boolean> response = uut.isRouteSupported(DESCENDING_ROUTE_ID);
-
-        // verify
-        Assertions.assertNotNull(response.getBody());
-        Assertions.assertFalse(response.getBody());
-    }
-
-    @Test
     void testGetBufferForPath_Ascending_Success() throws IOException {
         // prepare
         String routeJsonString =
                 new String(Files.readAllBytes(Paths.get(PATH_TO_ROUTE_JSON_TEST_DATA)));
         ResponseEntity<String> mockResponse = new ResponseEntity<>(routeJsonString, HttpStatus.OK);
-        when(cdotGisService.getRouteById(DESCENDING_ROUTE_ID)).thenReturn(mockResponse);
+        when(gisConnector.getRouteById(ROUTE_ID)).thenReturn(mockResponse);
 
         List<Milepost> allMileposts = getMockMileposts();
         Milepost mp1 = allMileposts.get(20);
@@ -489,7 +192,7 @@ class CdotUpstreamPathControllerTest {
 
         // execute
         ResponseEntity<List<Milepost>> response =
-                uut.getBufferForPath(pathMileposts, DESCENDING_ROUTE_ID, desiredDistanceInMiles);
+                uut.getBufferForPath(pathMileposts, ROUTE_ID, desiredDistanceInMiles);
 
         // verify
         List<Milepost> buffer = response.getBody();
@@ -508,7 +211,7 @@ class CdotUpstreamPathControllerTest {
         String routeJsonString =
                 new String(Files.readAllBytes(Paths.get(PATH_TO_ROUTE_JSON_TEST_DATA)));
         ResponseEntity<String> mockResponse = new ResponseEntity<>(routeJsonString, HttpStatus.OK);
-        when(cdotGisService.getRouteById(DESCENDING_ROUTE_ID)).thenReturn(mockResponse);
+        when(gisConnector.getRouteById(ROUTE_ID)).thenReturn(mockResponse);
 
         List<Milepost> allMileposts = getMockMileposts();
         Milepost mp1 = allMileposts.get(1);
@@ -519,11 +222,11 @@ class CdotUpstreamPathControllerTest {
 
         // execute
         ResponseEntity<List<Milepost>> response =
-                uut.getBufferForPath(pathMileposts, DESCENDING_ROUTE_ID, desiredDistanceInMiles);
+                uut.getBufferForPath(pathMileposts, ROUTE_ID, desiredDistanceInMiles);
 
         // verify
         List<Milepost> buffer = response.getBody();
-        Assertions.assertEquals(0, buffer.size());
+        Assertions.assertNull(buffer);
     }
 
     @Test
@@ -532,7 +235,7 @@ class CdotUpstreamPathControllerTest {
         String routeJsonString =
                 new String(Files.readAllBytes(Paths.get(PATH_TO_ROUTE_JSON_TEST_DATA)));
         ResponseEntity<String> mockResponse = new ResponseEntity<>(routeJsonString, HttpStatus.OK);
-        when(cdotGisService.getRouteById(DESCENDING_ROUTE_ID)).thenReturn(mockResponse);
+        when(gisConnector.getRouteById(ROUTE_ID)).thenReturn(mockResponse);
 
         List<Milepost> allMileposts = getMockMileposts();
         Milepost mp1 = allMileposts.get(1);
@@ -543,7 +246,7 @@ class CdotUpstreamPathControllerTest {
 
         // execute
         ResponseEntity<List<Milepost>> response =
-                uut.getBufferForPath(pathMileposts, DESCENDING_ROUTE_ID, desiredDistanceInMiles);
+                uut.getBufferForPath(pathMileposts, ROUTE_ID, desiredDistanceInMiles);
 
         // verify
         List<Milepost> buffer = response.getBody();
@@ -562,7 +265,7 @@ class CdotUpstreamPathControllerTest {
         String routeJsonString =
                 new String(Files.readAllBytes(Paths.get(PATH_TO_ROUTE_JSON_TEST_DATA)));
         ResponseEntity<String> mockResponse = new ResponseEntity<>(routeJsonString, HttpStatus.OK);
-        when(cdotGisService.getRouteById(DESCENDING_ROUTE_ID)).thenReturn(mockResponse);
+        when(gisConnector.getRouteById(ROUTE_ID)).thenReturn(mockResponse);
 
         List<Milepost> allMileposts = getMockMileposts();
         Milepost mp1 = allMileposts.get(28);
@@ -573,11 +276,11 @@ class CdotUpstreamPathControllerTest {
 
         // execute
         ResponseEntity<List<Milepost>> response =
-                uut.getBufferForPath(pathMileposts, DESCENDING_ROUTE_ID, desiredDistanceInMiles);
+                uut.getBufferForPath(pathMileposts, ROUTE_ID, desiredDistanceInMiles);
 
         // verify
         List<Milepost> buffer = response.getBody();
-        Assertions.assertEquals(0, buffer.size());
+        Assertions.assertNull(buffer);
     }
 
     @Test
@@ -586,7 +289,7 @@ class CdotUpstreamPathControllerTest {
         String routeJsonString =
                 new String(Files.readAllBytes(Paths.get(PATH_TO_ROUTE_JSON_TEST_DATA)));
         ResponseEntity<String> mockResponse = new ResponseEntity<>(routeJsonString, HttpStatus.OK);
-        when(cdotGisService.getRouteById(DESCENDING_ROUTE_ID)).thenReturn(mockResponse);
+        when(gisConnector.getRouteById(ROUTE_ID)).thenReturn(mockResponse);
 
         List<Milepost> allMileposts = getMockMileposts();
         Milepost mp1 = allMileposts.get(0);
@@ -596,11 +299,11 @@ class CdotUpstreamPathControllerTest {
 
         // execute
         ResponseEntity<List<Milepost>> response =
-                uut.getBufferForPath(pathMileposts, DESCENDING_ROUTE_ID, desiredDistanceInMiles);
+                uut.getBufferForPath(pathMileposts, ROUTE_ID, desiredDistanceInMiles);
 
         // verify
         List<Milepost> buffer = response.getBody();
-        Assertions.assertEquals(0, buffer.size());
+        Assertions.assertNull(buffer);
     }
 
     private double getDistanceInMiles(List<Milepost> buffer) {
