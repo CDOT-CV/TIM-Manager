@@ -304,8 +304,21 @@ public abstract class WydotTimBaseController {
     }
 
     public boolean routeSupported(String route) {
-        // call out to REST service to find if route is supported
-        return milepostService.isRouteSupported(route);
+        // call out to REST service to get all routes at once, then use that
+        if (routes.isEmpty()) {
+            String url = String.format("%s/routes", configuration.getCvRestService());
+            log.trace("Getting routes from {}", url);
+            try {
+                ResponseEntity<String[]> response = restTemplateProvider.GetRestTemplate().getForEntity(url, String[].class);
+                if (response.getBody() != null) {
+                    routes = Arrays.asList(response.getBody());
+                }
+            } catch (Exception e) {
+                log.error("Unexpected error getting routes from {} ", url, e);
+            }
+        }
+        log.trace("Number of routes retrieved: {}", routes.size());
+        return routes.contains(route);
     }
 
     protected ControllerResult validateInputRc(WydotTimRc tim) {

@@ -1,8 +1,10 @@
 package com.trihydro.cvdatacontroller.services;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.trihydro.cvdatacontroller.model.Measure.Measure;
+import com.trihydro.cvdatacontroller.model.Route.Attributes;
 import com.trihydro.cvdatacontroller.model.Route.Route;
 import com.trihydro.library.helpers.GISConnector;
 import com.trihydro.library.model.Milepost;
@@ -11,6 +13,7 @@ import com.trihydro.library.model.WydotTim;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.context.annotation.Profile;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClientException;
@@ -19,6 +22,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -31,6 +35,24 @@ public class GISMilepostImpl implements MilepostService {
     public void InjectDependencies(GISConnector _gisConnector, ObjectMapper _objectMapper) {
         this.gisConnector = _gisConnector;
         this.objectMapper = _objectMapper;
+    }
+
+    public List<String> getRoutes() {
+        try {
+            ResponseEntity<String> routesJson = gisConnector.getAllRoutes();
+
+            List<Attributes> routes = objectMapper
+                    .readerFor(new TypeReference<List<Attributes>>() {})
+                    .readValue(
+                            objectMapper.readTree(routesJson.getBody()).at("/routes")
+                    );
+
+            return routes.stream().map(Attributes::getRoute).collect(Collectors.toList());
+
+        } catch (Exception e) {
+            log.error("Error parsing JSON response from GIS service: {}", e.getMessage());
+            return new ArrayList<>();
+        }
     }
 
     public List<Milepost> getMilepostsByStartEndPoint(WydotTim wydotTim) throws JsonProcessingException {

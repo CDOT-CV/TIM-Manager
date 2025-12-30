@@ -83,7 +83,7 @@ public class MilepostServiceTest extends BaseServiceTest {
         mileposts.add(milepost);
         doReturn(mileposts).when(mockRespMilepostList).getBody();
         HttpEntity<MilepostBuffer> entity = getEntity(mpb, MilepostBuffer.class);
-        String url = String.format("%s/cdot-upstream-path/get-milepost-single-point", baseUrl);
+        String url = String.format("%s/get-milepost-single-point", baseUrl);
         ParameterizedTypeReference<List<Milepost>> responseType = new ParameterizedTypeReference<List<Milepost>>() {
         };
         when(mockRestTemplate.exchange(url, HttpMethod.POST, entity, responseType)).thenReturn(mockRespMilepostList);
@@ -156,23 +156,5 @@ public class MilepostServiceTest extends BaseServiceTest {
         // verify
         verify(mockRestTemplate).exchange(url, HttpMethod.POST, entity, responseType);
         Assertions.assertNull(data);
-    }
-
-    @Test
-    public void getRouteSupported_Success() {
-        // prepare
-        String routeId = "routeId";
-
-        boolean expectedResponse = true;
-        when(mockRespBoolean.getBody()).thenReturn(expectedResponse);
-        String url = String.format("%s/cdot-upstream-path/get-route-supported/%s", baseUrl, routeId);
-        when(mockRestTemplate.exchange(eq(url), eq(HttpMethod.GET), any(), eq(Boolean.class))).thenReturn(mockRespBoolean);
-
-        // execute
-        Boolean data = uut.isRouteSupported(routeId);
-
-        // verify
-        verify(mockRestTemplate).exchange(eq(url), eq(HttpMethod.GET), any(), eq(Boolean.class));
-        Assertions.assertEquals(expectedResponse, data);
     }
 }

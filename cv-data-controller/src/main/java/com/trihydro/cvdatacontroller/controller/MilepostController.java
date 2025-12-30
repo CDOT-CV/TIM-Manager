@@ -44,41 +44,14 @@ public class MilepostController extends BaseController {
 
     @RequestMapping(value = "/routes", method = RequestMethod.GET)
     public ResponseEntity<List<String>> getRoutes() {
-        Connection connection = null;
-        ResultSet rs = null;
-        PreparedStatement preparedStatement = null;
-        List<String> routes = new ArrayList<>();
-        try {
 
-            connection = dbInteractions.getConnectionPool();
+        List<String> routes = milepostService.getRoutes();
 
-            // build SQL query
-            String statementStr = "select distinct common_name from MILEPOST_VW_NEW";
-            preparedStatement = connection.prepareStatement(statementStr);
-            rs = preparedStatement.executeQuery();
-
-            while (rs.next()) {
-                routes.add(rs.getString("COMMON_NAME"));
-            }
-            return ResponseEntity.ok(routes);
-        } catch (SQLException e) {
-            log.error("Exception", e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(routes);
-        } finally {
-            try {
-                // close prepared statement
-                if (preparedStatement != null)
-                    preparedStatement.close();
-                // return connection back to pool
-                if (connection != null)
-                    connection.close();
-                // close result set
-                if (rs != null)
-                    rs.close();
-            } catch (SQLException e) {
-                log.error("Exception", e);
-            }
+        if (routes.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
+
+        return ResponseEntity.ok(routes);
     }
 
     /**

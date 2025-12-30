@@ -57,6 +57,29 @@ public class CdotGisConnector {
         return restTemplateProvider.GetRestTemplate().exchange(targetUrl + params, HttpMethod.GET, entity, String.class);
     }
 
+    public ResponseEntity<String> getAllRoutes() throws RestClientException {
+        URI base = URI.create(
+                baseUrl +
+                        "/Routes/query"
+        );
+
+        URI targetUrl = UriComponentsBuilder
+                .fromUri(base)
+                .queryParam("f", format)
+                .build(true)
+                .toUri();
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("Accept", "application/json");
+
+        HttpEntity<Void> entity = new HttpEntity<>(headers);
+
+        return restTemplateProvider
+                .GetRestTemplate()
+                .exchange(targetUrl, HttpMethod.GET, entity, String.class);
+    }
+
+
     /**
      * Retrieves the route details for a point from the CDOT GIS service
      *

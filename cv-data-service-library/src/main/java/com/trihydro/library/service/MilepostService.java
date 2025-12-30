@@ -31,7 +31,7 @@ public class MilepostService extends CvDataServiceLibrary {
 	}
 
 	public List<Milepost> getMilepostsByPointWithBuffer(MilepostBuffer milepostBuffer) {
-		String url = String.format("%s/cdot-upstream-path/get-milepost-single-point", config.getCvRestService());
+		String url = String.format("%s/get-milepost-single-point", config.getCvRestService());
 		HttpHeaders headers = new HttpHeaders();
 		headers.setContentType(MediaType.APPLICATION_JSON);
 		HttpEntity<MilepostBuffer> entity = new HttpEntity<MilepostBuffer>(milepostBuffer, headers);
@@ -102,20 +102,4 @@ public class MilepostService extends CvDataServiceLibrary {
 				entity, responseType);
 		return response.getBody();
 	}
-
-    /**
-     * Retrieves whether a route is supported by the CDOT upstream service.
-     *
-     * @param routeId the ID of the route for which the buffer is to be retrieved
-     * @return a boolean indicating whether the route is supported by the CDOT upstream service
-     */
-    public boolean isRouteSupported(String routeId) {
-        String url = String.format("%s/cdot-upstream-path/get-route-supported/%s", config.getCvRestService(), routeId);
-        HttpHeaders headers = new HttpHeaders();
-        HttpEntity<String> entity = new HttpEntity<>(null, headers);
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        ResponseEntity<Boolean> response = restTemplateProvider.GetRestTemplate().exchange(url, HttpMethod.GET,
-                entity, Boolean.class);
-        return Boolean.TRUE.equals(response.getBody());
-    }
 }

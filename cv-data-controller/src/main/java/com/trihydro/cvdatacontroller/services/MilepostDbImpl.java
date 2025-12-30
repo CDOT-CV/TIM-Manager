@@ -1,15 +1,23 @@
 package com.trihydro.cvdatacontroller.services;
 
+import com.trihydro.library.helpers.DbInteractions;
 import com.trihydro.library.model.Milepost;
 import com.trihydro.library.model.MilepostBuffer;
 import com.trihydro.library.model.WydotTim;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.context.annotation.Profile;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -19,10 +27,12 @@ import java.util.List;
 @ConditionalOnProperty(name="config.milepost.provider", havingValue="db")
 public class MilepostDbImpl implements MilepostService {
     private MilepostDbService milepostDbService;
+    protected DbInteractions dbInteractions;
 
     @Autowired
-    public void InjectDependencies(MilepostDbService _milepostDbService) {
+    public void InjectDependencies(MilepostDbService _milepostDbService, DbInteractions _dbInteractions) {
         this.milepostDbService = _milepostDbService;
+        this.dbInteractions = _dbInteractions;
     }
 
     public List<Milepost> getMilepostsByStartEndPoint(WydotTim wydotTim) {
@@ -67,6 +77,43 @@ public class MilepostDbImpl implements MilepostService {
                 milepostBuffer.getPoint().getLongitude(), milepostBuffer.getDirection(),
                 milepostBuffer.getBufferMiles());
         return getMilepostsFromResponse(data);
+    }
+
+    public List<String> getRoutes() {
+            Connection connection = null;
+            ResultSet rs = null;
+            PreparedStatement preparedStatement = null;
+            try {
+                List<String> routes = new ArrayList<>();
+                connection = dbInteractions.getConnectionPool();
+
+                // build SQL query
+                String statementStr = "select distinct common_name from MILEPOST_VW_NEW";
+                preparedStatement = connection.prepareStatement(statementStr);
+                rs = preparedStatement.executeQuery();
+
+                while (rs.next()) {
+                    routes.add(rs.getString("COMMON_NAME"));
+                }
+                return routes;
+            } catch (SQLException e) {
+                log.error("Exception", e);
+                return new ArrayList<>();
+            } finally {
+                try {
+                    // close prepared statement
+                    if (preparedStatement != null)
+                        preparedStatement.close();
+                    // return connection back to pool
+                    if (connection != null)
+                        connection.close();
+                    // close result set
+                    if (rs != null)
+                        rs.close();
+                } catch (SQLException e) {
+                    log.error("Exception", e);
+                }
+            }
     }
 
     private List<Milepost> getMilepostsFromResponse(Collection<com.trihydro.cvdatacontroller.model.Milepost> response) {

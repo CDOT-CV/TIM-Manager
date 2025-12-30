@@ -6,10 +6,13 @@ import java.util.Collection;
 import com.trihydro.cvdatacontroller.model.Milepost;
 import com.trihydro.cvdatacontroller.repositories.MilepostRepository;
 
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
+@ConditionalOnProperty(name="config.milepost.provider", havingValue="db")
 public class MilepostDbService {
     private final MilepostRepository milepostRepository;
 

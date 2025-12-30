@@ -9,4 +9,5 @@ import java.util.List;
 public interface MilepostService {
     List<Milepost> getMilepostsByStartEndPoint(WydotTim wydotTim) throws Exception;
     List<Milepost> getMilepostsByPointWithBuffer(MilepostBuffer milepostBuffer) throws Exception;
+    List<String> getRoutes();
 }
