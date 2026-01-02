@@ -1,6 +1,6 @@
 package com.trihydro.cvdatacontroller.model;
 
-import com.trihydro.library.helpers.CdotGisConnector;
+import com.trihydro.library.helpers.GISConnector;
 import com.trihydro.library.helpers.DbInteractions;
 import com.trihydro.library.helpers.EmailHelper;
 import com.trihydro.library.helpers.JavaMailSenderImplProvider;
@@ -21,7 +21,7 @@ import org.springframework.stereotype.Component;
 @Data
 @Import({ TimDbTables.class, SQLNullHandler.class, Utility.class, EmailHelper.class,
     JavaMailSenderImplProvider.class, LoggingTables.class, DbInteractions.class,
-    CdotGisConnector.class, RestTemplateProvider.class })
+    GISConnector.class, RestTemplateProvider.class })
 public class DataControllerConfigProperties implements DbInteractionsProps, EmailProps {
     private String dbUrl;
     private String dbUsername;
@@ -35,6 +35,8 @@ public class DataControllerConfigProperties implements DbInteractionsProps, Emai
     private String environmentName;
     private String mailHost;
     private int mailPort;
+
+    private String milepostProvider;
 
     public String getDbUrl() {
         return dbUrl;
@@ -114,5 +116,13 @@ public class DataControllerConfigProperties implements DbInteractionsProps, Emai
 
     public void setMailPort(int mailPort) {
         this.mailPort = mailPort;
+    }
+
+    public String getMilepostProvider() {
+        return milepostProvider;
+    }
+
+    public void setMilepostProvider(String milepostProvider) {
+        this.milepostProvider = milepostProvider;
     }
 }

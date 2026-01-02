@@ -20,7 +20,7 @@ import java.net.URI;
 class CdotGisConnectorTest extends BaseServiceTest {
 
     @InjectMocks
-    private CdotGisConnector uut;
+    private GISConnector uut;
 
     private final String expectedBaseUrl = "https://dtdapps.codot.gov/server/rest/services/LRS/Routes_withDEC/MapServer/exts/LrsServerRounded";
 

@@ -1,7 +1,6 @@
 package com.trihydro.library.helpers;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -16,7 +15,10 @@ import java.math.BigDecimal;
 import java.net.URI;
 
 @Component
-public class CdotGisConnector {
+@Slf4j
+public class GISConnector {
+    // pull this into a configuration value (spring)
+    @lombok.Getter
     private final String baseUrl = "https://dtdapps.codot.gov/server/rest/services/LRS/Routes_withDEC/MapServer/exts/LrsServerRounded";
     private final int tolerance = 10000;
     private final int sr = 4326;
@@ -26,14 +28,6 @@ public class CdotGisConnector {
 
     public GISConnector(RestTemplateProvider _restTemplateProvider) {
         this.restTemplateProvider = _restTemplateProvider;
-    }
-
-    public String getBaseUrl() {
-        return baseUrl;
-    }
-
-    public RestTemplateProvider getRestTemplateProvider() {
-        return restTemplateProvider;
     }
 
     /**
@@ -49,8 +43,8 @@ public class CdotGisConnector {
      */
     public ResponseEntity<String> getRouteById(String routeId) throws RestClientException {
         String targetUrl = baseUrl + "/Route";
-        logger.info("Getting route with ID {} from CDOT GIS service at: {}", routeId, targetUrl);
-        String params = "?routeId=" + routeId + "&outSR=" + sr + "&f=" + f;
+        log.info("Getting route with ID {} from CDOT GIS service at: {}", routeId, targetUrl);
+        String params = "?routeId=" + routeId + "&outSR=" + sr + "&f=" + format;
         HttpHeaders headers = new HttpHeaders();
         headers.set("Accept", "application/json");
         HttpEntity<String> entity = new HttpEntity<>(headers);
@@ -125,7 +119,7 @@ public class CdotGisConnector {
      * @throws RestClientException if an error occurs while making the request
      */
     public ResponseEntity<String> getRouteBetweenMeasures(String routeId, double fromMeasure, double toMeasure) throws RestClientException {
-        logger.info("Getting route between measure {} to {} on route {}", fromMeasure, toMeasure, routeId);
+        log.info("Getting route between measure {} to {} on route {}", fromMeasure, toMeasure, routeId);
         URI base = URI.create(baseUrl + "/RouteBetweenMeasures?");
         URI targetUrl = UriComponentsBuilder
                 .fromUri(base)
