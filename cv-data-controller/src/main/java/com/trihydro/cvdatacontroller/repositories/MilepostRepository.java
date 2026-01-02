@@ -4,9 +4,7 @@ import java.math.BigDecimal;
 import java.util.Collection;
 
 import com.trihydro.cvdatacontroller.model.Milepost;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 
-@ConditionalOnProperty(name="config.milepost.provider", havingValue="db")
 public interface MilepostRepository {
 
     Collection<Milepost> getMilepostsByCommonNameWithLimit(String commonName, int limit);

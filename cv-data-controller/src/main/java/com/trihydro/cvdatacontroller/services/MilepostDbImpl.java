@@ -24,7 +24,7 @@ import java.util.List;
 
 @Service
 @Slf4j
-@ConditionalOnProperty(name="config.milepost.provider", havingValue="db")
+@ConditionalOnProperty(name="config.milepostProvider", havingValue="db")
 public class MilepostDbImpl implements MilepostService {
     private MilepostDbService milepostDbService;
     protected DbInteractions dbInteractions;

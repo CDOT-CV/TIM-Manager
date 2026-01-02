@@ -26,7 +26,7 @@ import java.util.stream.Collectors;
 
 @Service
 @Slf4j
-@ConditionalOnProperty(name="config.milepost.provider", havingValue="gis")
+@ConditionalOnProperty(name="config.milepostProvider", havingValue="gis")
 public class GISMilepostImpl implements MilepostService {
     private GISConnector gisConnector;
     private ObjectMapper objectMapper;

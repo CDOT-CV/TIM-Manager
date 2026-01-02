@@ -12,7 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
-@ConditionalOnProperty(name="config.milepost.provider", havingValue="db")
+@ConditionalOnProperty(name="config.milepostProvider", havingValue="db")
 public class MilepostDbService {
     private final MilepostRepository milepostRepository;
 

@@ -20,7 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Slf4j
 @Repository
 @Transactional
-@ConditionalOnProperty(name="config.milepost.provider", havingValue="db")
+@ConditionalOnProperty(name="config.milepostProvider", havingValue="db")
 public class MilepostRepositoryImplementation implements MilepostRepository {
     private final Session session;
 
