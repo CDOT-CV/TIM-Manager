@@ -48,7 +48,7 @@ public class MilepostController extends BaseController {
         List<String> routes = milepostService.getRoutes();
 
         if (routes.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(routes);
         }
 
         return ResponseEntity.ok(routes);

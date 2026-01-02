@@ -108,7 +108,7 @@ public class MilepostControllerTest extends TestBase<MilepostController> {
     @Test
     public void getRoutes_SUCCESS() throws SQLException {
         // Arrange
-        doReturn("common name").when(mockRs).getString("COMMON_NAME");
+        when(mockMilepostService.getRoutes()).thenReturn(List.of("common name"));
 
         // Act
         ResponseEntity<List<String>> data = uut.getRoutes();
@@ -121,7 +121,7 @@ public class MilepostControllerTest extends TestBase<MilepostController> {
     @Test
     public void getRoutes_FAIL() throws SQLException {
         // Arrange
-        doThrow(new SQLException()).when(mockRs).getString("COMMON_NAME");
+        when(mockMilepostService.getRoutes()).thenReturn(new ArrayList<>());
 
         // Act
         ResponseEntity<List<String>> data = uut.getRoutes();
