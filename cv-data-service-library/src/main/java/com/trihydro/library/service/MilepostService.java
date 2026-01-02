@@ -19,7 +19,7 @@ import org.springframework.stereotype.Component;
 public class MilepostService extends CvDataServiceLibrary {
 
 	public List<Milepost> getMilepostsByStartEndPointDirection(WydotTim wydotTim) {
-		String url = String.format("%s/cdot-upstream-path/get-milepost-start-end", config.getCvRestService());
+		String url = String.format("%s/get-milepost-start-end", config.getCvRestService());
 		HttpHeaders headers = new HttpHeaders();
 		headers.setContentType(MediaType.APPLICATION_JSON);
 		HttpEntity<WydotTim> entity = new HttpEntity<WydotTim>(wydotTim, headers);

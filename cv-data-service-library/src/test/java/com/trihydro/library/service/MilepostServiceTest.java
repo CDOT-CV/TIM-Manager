@@ -58,7 +58,7 @@ public class MilepostServiceTest extends BaseServiceTest {
         mileposts.add(milepost);
         doReturn(mileposts).when(mockRespMilepostList).getBody();
         HttpEntity<WydotTim> entity = getEntity(wydotTim, WydotTim.class);
-        String url = String.format("%s/cdot-upstream-path/get-milepost-start-end", baseUrl);
+        String url = String.format("%s/get-milepost-start-end", baseUrl);
         ParameterizedTypeReference<List<Milepost>> responseType = new ParameterizedTypeReference<List<Milepost>>() {
         };
         when(mockRestTemplate.exchange(url, HttpMethod.POST, entity, responseType)).thenReturn(mockRespMilepostList);
