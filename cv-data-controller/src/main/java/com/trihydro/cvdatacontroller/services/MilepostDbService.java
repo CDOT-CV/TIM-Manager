@@ -21,8 +21,7 @@ public class MilepostDbService {
 
     @Transactional(readOnly = true)
     public Collection<Milepost> getMilepostsByCommonNameWithLimit(String commonName, int limit) {
-        Collection<Milepost> result = milepostRepository.getMilepostsByCommonNameWithLimit(commonName, limit);
-        return result;
+        return milepostRepository.getMilepostsByCommonNameWithLimit(commonName, limit);
     }
 
     @Transactional(readOnly = true)

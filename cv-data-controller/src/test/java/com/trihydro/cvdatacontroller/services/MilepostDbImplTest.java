@@ -58,7 +58,7 @@ public class MilepostDbImplTest {
         lenient().when(mockConnection.prepareStatement(isA(String.class), isA(String[].class)))
                 .thenReturn(mockPreparedStatement);
         lenient().doReturn(mockConnection).when(mockDbInteractions).getConnectionPool();
-        lenient().doReturn(-1l).when(mockDbInteractions).executeAndLog(isA(PreparedStatement.class),
+        lenient().doReturn(-1L).when(mockDbInteractions).executeAndLog(isA(PreparedStatement.class),
                 isA(String.class));
         lenient().doReturn(true).when(mockDbInteractions).updateOrDelete(mockPreparedStatement);
         lenient().doReturn(true).when(mockDbInteractions).deleteWithPossibleZero(mockPreparedStatement);
