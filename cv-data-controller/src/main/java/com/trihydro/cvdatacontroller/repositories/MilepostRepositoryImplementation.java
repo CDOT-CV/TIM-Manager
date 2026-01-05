@@ -11,9 +11,7 @@ import com.trihydro.cvdatacontroller.model.Milepost;
 
 import lombok.extern.slf4j.Slf4j;
 import org.neo4j.ogm.session.Session;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
