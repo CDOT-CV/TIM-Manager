@@ -23,7 +23,6 @@ public class MilepostRepositoryImplementation implements MilepostRepository {
     private final Session session;
 
     public MilepostRepositoryImplementation(Session session) {
-        log.info("MilepostRepositoryImplementation instantiated");
         this.session = session;
     }
 
@@ -39,7 +38,7 @@ public class MilepostRepositoryImplementation implements MilepostRepository {
 
     @Override
     public Collection<Milepost> getPathWithBuffer(String commonName, BigDecimal startLat, BigDecimal startLong,
-                                                  BigDecimal endLat, BigDecimal endLong, String direction) {
+            BigDecimal endLat, BigDecimal endLong, String direction) {
         String dirQuery = "[";
         if (!direction.equalsIgnoreCase("B")) {
             dirQuery += "'" + direction.toUpperCase() + "', ";
@@ -104,7 +103,7 @@ public class MilepostRepositoryImplementation implements MilepostRepository {
 
     @Override
     public Collection<Milepost> getPathWithSpecifiedBuffer(String commonName, BigDecimal lat, BigDecimal lon,
-                                                           String direction, Double bufferInMiles) {
+            String direction, Double bufferInMiles) {
         /**
          * This function creates a statement such as the following
          *
@@ -157,8 +156,7 @@ public class MilepostRepositoryImplementation implements MilepostRepository {
         query += " match(mp:Milepost{CommonName: $commonName})";
         query += " where mp.Direction in " + dirQuery;
         query += " with extremeMp, mp, distance(point({longitude:apoc.number.parseFloat($lon),latitude:apoc.number.parseFloat($lat)}), point({longitude:mp.Longitude,latitude:mp.Latitude})) as d1 ";
-        query += " with extremeMp, mp, d1 ORDER BY d1 ASC LIMIT 1";// here we have the closest point, now go back
-        // bufferInMiles
+        query += " with extremeMp, mp, d1 ORDER BY d1 ASC LIMIT 1";// here we have the closest point, now go back// bufferInMiles
 
         // determine the relationship name and buffer in miles (mileposts are in tenths
         // of a mile, so 1 mile = 10 mileposts)
