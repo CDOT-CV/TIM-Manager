@@ -31,10 +31,10 @@ import org.springframework.http.ResponseEntity;
 public class GISMilepostImplTest {
     private final String DESCENDING_ROUTE_ID = "025A_DEC"; // I-25
     private final String ASCENDING_ROUTE_ID = "025A";
+    private final String ROUTES_LIST =
+            "src/test/resources/com/trihydro/cvdatacontroller/controller/cdotRoutesList.json";
     private final String PATH_TO_ROUTE_JSON_TEST_DATA =
             "src/test/resources/com/trihydro/cvdatacontroller/controller/cdotRouteResponseForI25_First30Mileposts.json";
-    private final String PATH_TO_ROUTE_NOT_SUPPORTED_JSON_TEST_DATA =
-            "src/test/resources/com/trihydro/cvdatacontroller/controller/cdotRouteNotSupported.json";
     private final String PATH_TO_MEASURE_AT_POINT_DESCENDING_ROUTE_JSON_TEST_DATA =
             "src/test/resources/com/trihydro/cvdatacontroller/controller/cdotMeasureAtPointResponse_DescendingRoute.json";
     private final String PATH_TO_MEASURE_AT_POINT_ASCENDING_ROUTE_JSON_TEST_DATA =
@@ -73,6 +73,23 @@ public class GISMilepostImplTest {
     void setUp() {
         uut = new GISMilepostImpl();
         uut.InjectDependencies(gisConnector, objectMapper);
+    }
+
+    @Test
+    void testGetRoutesList() throws IOException {
+        // prepare
+        String routesJsonString =
+                new String(Files.readAllBytes(Paths.get(ROUTES_LIST)));
+        ResponseEntity<String> routesResponse =
+                new ResponseEntity<>(routesJsonString, HttpStatus.OK);
+        when(gisConnector.getAllRoutes()).thenReturn(routesResponse);
+
+        // execute
+        List<String> routes = uut.getRoutes();
+
+        // Verify
+        Assertions.assertNotNull(routes);
+        Assertions.assertEquals(576, routes.size());
     }
 
     @Test
