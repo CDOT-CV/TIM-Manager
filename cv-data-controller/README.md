@@ -90,26 +90,27 @@ You may configure these values in `cv-data-controller/src/main/resources/applica
 
 **IMPORTANT** When using the env file method, you must rename or duplicate the `sample.env` file to `.env`. If using the application.properties method, you must pass in the name of the environment to use with the `--spring.profiles.active` parameter.
 
-| Environment Variable | Variable name in `sample.env` | Property name in `application.properties` | Description                               | Example Value                                                  |
-| -------------------- | ------------------------------ | ----------------------------------------- | ----------------------------------------- | -------------------------------------------------------------- |
-| SERVER_PORT | CONTROLLER_SERVER_PORT | server.port | Port to bind to | 8888 |
-| CONFIG_DB_URL | CONTROLLER_CONFIG_DB_URL | config.dbUrl | Database URL | jdbc:postgresql://example.com:5432/dbname?user=username |
-| CONFIG_DB_USERNAME | CONTROLLER_CONFIG_DB_USERNAME | config.dbUsername | Database username | username |
-| CONFIG_DB_PASSWORD | CONTROLLER_CONFIG_DB_PASSWORD | config.dbPassword | Password for database user | password |
-| CONFIG_MAXIMUM_POOL_SIZE | CONTROLLER_CONFIG_MAXIMUM_POOL_SIZE | config.maximumPoolSize | Number of threads in ThreadPool | 7 |
-| CONFIG_CONNECTION_TIMEOUT | CONTROLLER_CONFIG_CONNECTION_TIMEOUT | config.connectionTimeout | Connection timeout in milliseconds | 10000 |
-| CONFIG_ODE_URL | CONTROLLER_CONFIG_ODE_URL | config.odeUrl | URL pointing to the ODE | https://example.ode:8443 |
-| CONFIG_ENV | CONTROLLER_CONFIG_ENV | N/A | Configuration environment | dev |
-| SPRING_DATA_NEO4j_URI | CONTROLLER_SPRING_DATA_NEO4J_URI | spring.data.neo4j.uri | Graph database URL for single transaction | http://localhost:6474/db/data/transaction/commit |
-| CONFIG_ALERT_ADDRESSES | CONTROLLER_CONFIG_ALERT_ADDRESSES | config.alertAddresses | List of email addresses to send alerts to | user@example.com,user2@example.com |
-| CONFIG_FROM_EMAIL | CONTROLLER_CONFIG_FROM_EMAIL | config.fromEmail | Email to send alerts from | support@example.com |
-| CONFIG_ENVIRONMENT_NAME | ENVIRONMENT_NAME | config.environmentName | Name of environment (for email subject) | DEV |
-| CONFIG_MAIL_HOST | MAIL_HOST | config.mailHost | IP of mail host | localhost |
-| CONFIG_MAIL_PORT | MAIL_PORT | config.mailPort | Port for mail host | 25 |
-| SERVER_SSL_KEY_STORE | CONTROLLER_SERVER_SSL_KEY_STORE | server.ssl.key-store | **PROD ONLY** Keystore to pull from for ssl | classpath:keystore.jks |
-| SERVER_SSL_KEY_STORE_PASSWORD | CONTROLLER_SERVER_SSL_KEY_STORE_PASSWORD | server.ssl.key-store-password | **PROD ONLY** Keystore password | pass |
-| SERVER_SSL_KEY_STORE_TYPE | CONTROLLER_SERVER_SSL_KEY_STORE_TYPE | server.ssl.keyStoreType | **PROD ONLY** Keystore type (JKS) | JKS |
-| SERVER_SSL_KEY_ALIAS | CONTROLLER_SERVER_SSL_KEY_ALIAS | server.ssl.keyAlias | **PROD ONLY** Alias for Keystore | example.alias |
+| Environment Variable          | Variable name in `sample.env`            | Property name in `application.properties` | Description                                 | Example Value                                           |
+|-------------------------------|------------------------------------------|-------------------------------------------|---------------------------------------------|---------------------------------------------------------|
+| SERVER_PORT                   | CONTROLLER_SERVER_PORT                   | server.port                               | Port to bind to                             | 8888                                                    |
+| CONFIG_DB_URL                 | CONTROLLER_CONFIG_DB_URL                 | config.dbUrl                              | Database URL                                | jdbc:postgresql://example.com:5432/dbname?user=username |
+| CONFIG_DB_USERNAME            | CONTROLLER_CONFIG_DB_USERNAME            | config.dbUsername                         | Database username                           | username                                                |
+| CONFIG_DB_PASSWORD            | CONTROLLER_CONFIG_DB_PASSWORD            | config.dbPassword                         | Password for database user                  | password                                                |
+| CONFIG_MAXIMUM_POOL_SIZE      | CONTROLLER_CONFIG_MAXIMUM_POOL_SIZE      | config.maximumPoolSize                    | Number of threads in ThreadPool             | 7                                                       |
+| CONFIG_CONNECTION_TIMEOUT     | CONTROLLER_CONFIG_CONNECTION_TIMEOUT     | config.connectionTimeout                  | Connection timeout in milliseconds          | 10000                                                   |
+| CONFIG_ODE_URL                | CONTROLLER_CONFIG_ODE_URL                | config.odeUrl                             | URL pointing to the ODE                     | https://example.ode:8443                                |
+| CONFIG_ENV                    | CONTROLLER_CONFIG_ENV                    | N/A                                       | Configuration environment                   | dev                                                     |
+| SPRING_DATA_NEO4j_URI         | CONTROLLER_SPRING_DATA_NEO4J_URI         | spring.data.neo4j.uri                     | Graph database URL for single transaction   | http://localhost:6474/db/data/transaction/commit        |
+| CONFIG_ALERT_ADDRESSES        | CONTROLLER_CONFIG_ALERT_ADDRESSES        | config.alertAddresses                     | List of email addresses to send alerts to   | user@example.com,user2@example.com                      |
+| CONFIG_FROM_EMAIL             | CONTROLLER_CONFIG_FROM_EMAIL             | config.fromEmail                          | Email to send alerts from                   | support@example.com                                     |
+| CONFIG_ENVIRONMENT_NAME       | ENVIRONMENT_NAME                         | config.environmentName                    | Name of environment (for email subject)     | DEV                                                     |
+| CONFIG_MAIL_HOST              | MAIL_HOST                                | config.mailHost                           | IP of mail host                             | localhost                                               |
+| CONFIG_MAIL_PORT              | MAIL_PORT                                | config.mailPort                           | Port for mail host                          | 25                                                      |
+| CONFIG_MILEPOST_PROVIDER      | MILEPOST_PROVIDER                        | config.milepostProvider                   | Milepost provider for DOT                   | GIS (CDOT) or db (WyDOT)                                |
+| SERVER_SSL_KEY_STORE          | CONTROLLER_SERVER_SSL_KEY_STORE          | server.ssl.key-store                      | **PROD ONLY** Keystore to pull from for ssl | classpath:keystore.jks                                  |
+| SERVER_SSL_KEY_STORE_PASSWORD | CONTROLLER_SERVER_SSL_KEY_STORE_PASSWORD | server.ssl.key-store-password             | **PROD ONLY** Keystore password             | pass                                                    |
+| SERVER_SSL_KEY_STORE_TYPE     | CONTROLLER_SERVER_SSL_KEY_STORE_TYPE     | server.ssl.keyStoreType                   | **PROD ONLY** Keystore type (JKS)           | JKS                                                     |
+| SERVER_SSL_KEY_ALIAS          | CONTROLLER_SERVER_SSL_KEY_ALIAS          | server.ssl.keyAlias                       | **PROD ONLY** Alias for Keystore            | example.alias                                           |
 
 ## Note on Neo4j Database
 The system expects a Neo4j database to be running and accessible at the address specified in the `application.properties` file or the `sample.env` file. The 
