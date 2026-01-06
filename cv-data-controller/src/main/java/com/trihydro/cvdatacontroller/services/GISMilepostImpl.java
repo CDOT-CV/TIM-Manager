@@ -3,9 +3,8 @@ package com.trihydro.cvdatacontroller.services;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.trihydro.cvdatacontroller.model.Measure.Measure;
-import com.trihydro.cvdatacontroller.model.Route.Attributes;
-import com.trihydro.cvdatacontroller.model.Route.Route;
+import com.trihydro.cvdatacontroller.model.GisResponse.GisResponse;
+import com.trihydro.cvdatacontroller.model.GisResponse.Attributes;
 import com.trihydro.library.helpers.GISConnector;
 import com.trihydro.library.model.Milepost;
 import com.trihydro.library.model.MilepostBuffer;
@@ -62,17 +61,17 @@ public class GISMilepostImpl implements MilepostService {
         String routeId = wydotTim.getRoute().replace('-', '_');
 
         ResponseEntity<String> startMeasureDetailsJson = gisConnector.getMeasureAtPoint(startLong, startLat);
-        Measure startMeasureDetails =
-                objectMapper.readValue(startMeasureDetailsJson.getBody(), Measure.class);
-        String startRoute = startMeasureDetails.getFeatures().get(0).getAttributes().getRoute();
-        double startMeasure = startMeasureDetails.getFeatures().get(0).getAttributes().getMeasure();
+        GisResponse startGisResponseDetails =
+                objectMapper.readValue(startMeasureDetailsJson.getBody(), GisResponse.class);
+        String startRoute = startGisResponseDetails.getFeatures().get(0).getAttributes().getRoute();
+        double startMeasure = startGisResponseDetails.getFeatures().get(0).getAttributes().getMeasure();
 
         // Measure endMeasureDetails = milepostService.getMeasureAtPoint(endLong, endLat);
         ResponseEntity<String> endMeasureDetailsJson = gisConnector.getMeasureAtPoint(endLong, endLat);
-        Measure endMeasureDetails =
-                objectMapper.readValue(endMeasureDetailsJson.getBody(), Measure.class);
-        String endRoute = endMeasureDetails.getFeatures().get(0).getAttributes().getRoute();
-        double endMeasure = endMeasureDetails.getFeatures().get(0).getAttributes().getMeasure();
+        GisResponse endGisResponseDetails =
+                objectMapper.readValue(endMeasureDetailsJson.getBody(), GisResponse.class);
+        String endRoute = endGisResponseDetails.getFeatures().get(0).getAttributes().getRoute();
+        double endMeasure = endGisResponseDetails.getFeatures().get(0).getAttributes().getMeasure();
 
         if (!startRoute.equals(endRoute) || !startRoute.equals(routeId)) {
             log.warn("Unable to find route. Generated route does not match.");
@@ -80,10 +79,9 @@ public class GISMilepostImpl implements MilepostService {
         }
 
         if (startMeasure == endMeasure) {
-            endMeasure = getBufferedMeasure(routeId, startMeasureDetails, 1.0);
+            endMeasure = getBufferedMeasure(routeId, startGisResponseDetails, 1.0);
         }
 
-        // String routeId = milepostService.getRouteBetweenMeasures(startRoute, startMeasure, endMeasure);
         ResponseEntity<String> response = gisConnector.getRouteBetweenMeasures(startRoute, startMeasure, endMeasure);
         return getMilepostsFromResponse(response, routeId);
     }
@@ -104,25 +102,25 @@ public class GISMilepostImpl implements MilepostService {
 
         var milepost = milepostBuffer.getPoint();
         ResponseEntity<String> measureDetailsJson = gisConnector.getMeasureAtPoint(milepost.getLongitude(), milepost.getLatitude());
-        Measure measureDetails =
-                objectMapper.readValue(measureDetailsJson.getBody(), Measure.class);
+        GisResponse gisResponseDetails =
+                objectMapper.readValue(measureDetailsJson.getBody(), GisResponse.class);
 
-        String milepostRoute = measureDetails.getFeatures().get(0).getAttributes().getRoute();
+        String milepostRoute = gisResponseDetails.getFeatures().get(0).getAttributes().getRoute();
         if (!milepostRoute.equals(milepostBuffer.getCommonName())) {
             log.warn("Unable to find measure on route");
             return new ArrayList<>();
         }
 
-        double milepostMeasure = measureDetails.getFeatures().get(0).getAttributes().getMeasure();
-        double bufferMilepost = getBufferedMeasure(milepostRoute, measureDetails, milepostBuffer.getBufferMiles());
+        double milepostMeasure = gisResponseDetails.getFeatures().get(0).getAttributes().getMeasure();
+        double bufferMilepost = getBufferedMeasure(milepostRoute, gisResponseDetails, milepostBuffer.getBufferMiles());
 
         ResponseEntity<String> response = gisConnector.getRouteBetweenMeasures(milepostRoute, milepostMeasure, bufferMilepost);
         return getMilepostsFromResponse(response, milepostRoute);
     }
 
     private List<Milepost> getMilepostsFromResponse(ResponseEntity<String> response, String routeId) throws JsonProcessingException {
-        Route routeDetails =
-                objectMapper.readValue(response.getBody(), Route.class);
+        GisResponse routeDetails =
+                objectMapper.readValue(response.getBody(), GisResponse.class);
         List<List<Double>> path = routeDetails.getFeatures().get(0).getGeometry().getPaths().get(0);
 
         List<Milepost> mileposts = new ArrayList<>();
@@ -139,8 +137,8 @@ public class GISMilepostImpl implements MilepostService {
         return mileposts;
     }
 
-    private double getBufferedMeasure(String route, Measure measureDetails, double bufferMiles) throws RestClientException {
-        var attributes = measureDetails.getFeatures().get(0).getAttributes();
+    private double getBufferedMeasure(String route, GisResponse gisResponseDetails, double bufferMiles) throws RestClientException {
+        var attributes = gisResponseDetails.getFeatures().get(0).getAttributes();
         double measure = attributes.getMeasure();
         double bufferMeasure;
         if (route.toLowerCase().endsWith("_dec")) {

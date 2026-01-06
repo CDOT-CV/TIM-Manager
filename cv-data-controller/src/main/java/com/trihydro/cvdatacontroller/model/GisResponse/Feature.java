@@ -1,4 +1,4 @@
-package com.trihydro.cvdatacontroller.model.Route;
+package com.trihydro.cvdatacontroller.model.GisResponse;
 
 import lombok.Getter;
 import lombok.Setter;

@@ -1,4 +1,4 @@
-package com.trihydro.cvdatacontroller.model.Measure;
+package com.trihydro.cvdatacontroller.model.GisResponse;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.Getter;
@@ -9,6 +9,6 @@ import java.util.List;
 @Getter
 @Setter
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class Measure {
+public class GisResponse {
     private List<Feature> features;
 }
