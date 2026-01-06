@@ -17,7 +17,6 @@ import java.net.URI;
 @Component
 @Slf4j
 public class GISConnector {
-    // pull this into a configuration value (spring)
     @lombok.Getter
     private final String baseUrl = "https://dtdapps.codot.gov/server/rest/services/LRS/Routes_withDEC/MapServer/exts/LrsServerRounded";
     private final int tolerance = 10000;

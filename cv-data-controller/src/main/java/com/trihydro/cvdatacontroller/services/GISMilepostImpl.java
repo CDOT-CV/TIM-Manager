@@ -68,7 +68,6 @@ public class GISMilepostImpl implements MilepostService {
         String startRoute = startGisResponseDetails.getFeatures().get(0).getAttributes().getRoute();
         double startMeasure = startGisResponseDetails.getFeatures().get(0).getAttributes().getMeasure();
 
-        // Measure endMeasureDetails = milepostService.getMeasureAtPoint(endLong, endLat);
         ResponseEntity<String> endMeasureDetailsJson = gisConnector.getMeasureAtPoint(endLong, endLat);
         GisResponse endGisResponseDetails =
                 objectMapper.readValue(endMeasureDetailsJson.getBody(), GisResponse.class);
