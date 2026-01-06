@@ -52,23 +52,10 @@ public class MilepostDbImplTest {
         startPoint = new Coordinate(BigDecimal.valueOf(-1), BigDecimal.valueOf(-2));
         endPoint = new Coordinate(BigDecimal.valueOf(-3), BigDecimal.valueOf(-4));
 
-        // primary connection
-        lenient().when(mockConnection.createStatement()).thenReturn(mockStatement);
-        lenient().when(mockConnection.prepareStatement(isA(String.class))).thenReturn(mockPreparedStatement);
-        lenient().when(mockConnection.prepareStatement(isA(String.class), isA(String[].class)))
-                .thenReturn(mockPreparedStatement);
-        lenient().doReturn(mockConnection).when(mockDbInteractions).getConnectionPool();
-        lenient().doReturn(-1L).when(mockDbInteractions).executeAndLog(isA(PreparedStatement.class),
-                isA(String.class));
-        lenient().doReturn(true).when(mockDbInteractions).updateOrDelete(mockPreparedStatement);
-        lenient().doReturn(true).when(mockDbInteractions).deleteWithPossibleZero(mockPreparedStatement);
-        lenient().when(mockStatement.executeQuery(isA(String.class))).thenReturn(mockRs);
-        lenient().when(mockPreparedStatement.executeQuery()).thenReturn(mockRs);
-        lenient().when(mockRs.next()).thenReturn(true).thenReturn(false);
-
         uut = new MilepostDbImpl();
         uut.InjectDependencies(mockMilepostDbService, mockDbInteractions);
     }
+
     private void setupWydotTim() {
         wydotTim = new WydotTim();
         wydotTim.setDirection("direction");
@@ -180,6 +167,19 @@ public class MilepostDbImplTest {
     @Test
     public void getRoutes_SUCCESS() throws SQLException {
         // Arrange
+        // primary connection
+        lenient().when(mockConnection.createStatement()).thenReturn(mockStatement);
+        lenient().when(mockConnection.prepareStatement(isA(String.class))).thenReturn(mockPreparedStatement);
+        lenient().when(mockConnection.prepareStatement(isA(String.class), isA(String[].class)))
+                .thenReturn(mockPreparedStatement);
+        lenient().doReturn(mockConnection).when(mockDbInteractions).getConnectionPool();
+        lenient().doReturn(-1L).when(mockDbInteractions).executeAndLog(isA(PreparedStatement.class),
+                isA(String.class));
+        lenient().doReturn(true).when(mockDbInteractions).updateOrDelete(mockPreparedStatement);
+        lenient().doReturn(true).when(mockDbInteractions).deleteWithPossibleZero(mockPreparedStatement);
+        lenient().when(mockStatement.executeQuery(isA(String.class))).thenReturn(mockRs);
+        lenient().when(mockPreparedStatement.executeQuery()).thenReturn(mockRs);
+        lenient().when(mockRs.next()).thenReturn(true).thenReturn(false);
         doReturn("common name").when(mockRs).getString("COMMON_NAME");
 
         // Act
@@ -192,6 +192,19 @@ public class MilepostDbImplTest {
     @Test
     public void getRoutes_FAIL() throws SQLException {
         // Arrange
+        // primary connection
+        lenient().when(mockConnection.createStatement()).thenReturn(mockStatement);
+        lenient().when(mockConnection.prepareStatement(isA(String.class))).thenReturn(mockPreparedStatement);
+        lenient().when(mockConnection.prepareStatement(isA(String.class), isA(String[].class)))
+                .thenReturn(mockPreparedStatement);
+        lenient().doReturn(mockConnection).when(mockDbInteractions).getConnectionPool();
+        lenient().doReturn(-1L).when(mockDbInteractions).executeAndLog(isA(PreparedStatement.class),
+                isA(String.class));
+        lenient().doReturn(true).when(mockDbInteractions).updateOrDelete(mockPreparedStatement);
+        lenient().doReturn(true).when(mockDbInteractions).deleteWithPossibleZero(mockPreparedStatement);
+        lenient().when(mockStatement.executeQuery(isA(String.class))).thenReturn(mockRs);
+        lenient().when(mockPreparedStatement.executeQuery()).thenReturn(mockRs);
+        lenient().when(mockRs.next()).thenReturn(true).thenReturn(false);
         doThrow(new SQLException()).when(mockRs).getString("COMMON_NAME");
 
         // Act
