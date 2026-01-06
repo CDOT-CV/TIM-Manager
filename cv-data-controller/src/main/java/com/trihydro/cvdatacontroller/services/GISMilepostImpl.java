@@ -9,6 +9,7 @@ import com.trihydro.library.helpers.GISConnector;
 import com.trihydro.library.model.Milepost;
 import com.trihydro.library.model.MilepostBuffer;
 import com.trihydro.library.model.WydotTim;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -24,16 +25,11 @@ import java.util.stream.Collectors;
 
 @Service
 @Slf4j
+@RequiredArgsConstructor
 @ConditionalOnProperty(name="config.milepostProvider", havingValue="gis")
 public class GISMilepostImpl implements MilepostService {
-    private GISConnector gisConnector;
-    private ObjectMapper objectMapper;
-
-    @Autowired
-    public void InjectDependencies(GISConnector _gisConnector, ObjectMapper _objectMapper) {
-        this.gisConnector = _gisConnector;
-        this.objectMapper = _objectMapper;
-    }
+    private final GISConnector gisConnector;
+    private final ObjectMapper objectMapper;
 
     @Override
     public List<String> getRoutes() {

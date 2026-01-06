@@ -4,6 +4,7 @@ import com.trihydro.library.helpers.DbInteractions;
 import com.trihydro.library.model.Milepost;
 import com.trihydro.library.model.MilepostBuffer;
 import com.trihydro.library.model.WydotTim;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -21,16 +22,11 @@ import java.util.List;
 
 @Service
 @Slf4j
+@RequiredArgsConstructor
 @ConditionalOnProperty(name="config.milepostProvider", havingValue="neo4j")
 public class MilepostDbImpl implements MilepostService {
-    private MilepostDbService milepostDbService;
-    protected DbInteractions dbInteractions;
-
-    @Autowired
-    public void InjectDependencies(MilepostDbService _milepostDbService, DbInteractions _dbInteractions) {
-        this.milepostDbService = _milepostDbService;
-        this.dbInteractions = _dbInteractions;
-    }
+    private final MilepostDbService milepostDbService;
+    protected final DbInteractions dbInteractions;
 
     @Override
     public List<Milepost> getMilepostsByStartEndPoint(WydotTim wydotTim) {

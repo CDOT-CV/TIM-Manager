@@ -52,8 +52,7 @@ public class MilepostDbImplTest {
         startPoint = new Coordinate(BigDecimal.valueOf(-1), BigDecimal.valueOf(-2));
         endPoint = new Coordinate(BigDecimal.valueOf(-3), BigDecimal.valueOf(-4));
 
-        uut = new MilepostDbImpl();
-        uut.InjectDependencies(mockMilepostDbService, mockDbInteractions);
+        uut = new MilepostDbImpl(mockMilepostDbService, mockDbInteractions);
     }
 
     private void setupWydotTim() {

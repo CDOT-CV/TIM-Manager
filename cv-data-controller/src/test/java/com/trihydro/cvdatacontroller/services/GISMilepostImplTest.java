@@ -71,8 +71,7 @@ public class GISMilepostImplTest {
 
     @BeforeEach
     void setUp() {
-        uut = new GISMilepostImpl();
-        uut.InjectDependencies(gisConnector, objectMapper);
+        uut = new GISMilepostImpl(gisConnector, objectMapper);
     }
 
     @Test
