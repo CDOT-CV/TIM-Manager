@@ -5,6 +5,11 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
 import lombok.Setter;
 
+/**
+ * Holds metadata attributes for a GIS feature.
+ * Used in GISMilepostImpl to retrieve route names, and if applicable, specific milepost measures
+ * and boundary constraints (MMin/MMax).
+ */
 @Getter
 @Setter
 @JsonIgnoreProperties(ignoreUnknown = true)
