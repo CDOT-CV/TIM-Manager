@@ -18,7 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Slf4j
 @Repository
 @Transactional
-@ConditionalOnProperty(name="config.milepostProvider", havingValue="db")
+@ConditionalOnProperty(name="config.milepostProvider", havingValue="neo4J")
 public class MilepostRepositoryImplementation implements MilepostRepository {
     private final Session session;
 

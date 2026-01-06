@@ -11,7 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
-@ConditionalOnProperty(name="config.milepostProvider", havingValue="db")
+@ConditionalOnProperty(name="config.milepostProvider", havingValue="neo4j")
 public class MilepostDbService {
     private final MilepostRepository milepostRepository;
 
