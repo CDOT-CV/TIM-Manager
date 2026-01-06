@@ -32,6 +32,7 @@ public class MilepostDbImpl implements MilepostService {
         this.dbInteractions = _dbInteractions;
     }
 
+    @Override
     public List<Milepost> getMilepostsByStartEndPoint(WydotTim wydotTim) {
 
         // check startPoint
@@ -57,6 +58,7 @@ public class MilepostDbImpl implements MilepostService {
         return getMilepostsFromResponse(data);
     }
 
+    @Override
     public List<Milepost> getMilepostsByPointWithBuffer(MilepostBuffer milepostBuffer) {
         // check startPoint
         if (milepostBuffer.getPoint() == null || milepostBuffer.getPoint().getLatitude() == null
@@ -76,6 +78,7 @@ public class MilepostDbImpl implements MilepostService {
         return getMilepostsFromResponse(data);
     }
 
+    @Override
     public List<String> getRoutes() {
             Connection connection = null;
             ResultSet rs = null;

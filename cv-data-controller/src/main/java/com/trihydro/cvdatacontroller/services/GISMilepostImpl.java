@@ -35,6 +35,7 @@ public class GISMilepostImpl implements MilepostService {
         this.objectMapper = _objectMapper;
     }
 
+    @Override
     public List<String> getRoutes() {
         try {
             ResponseEntity<String> routesJson = gisConnector.getAllRoutes();
@@ -53,6 +54,7 @@ public class GISMilepostImpl implements MilepostService {
         }
     }
 
+    @Override
     public List<Milepost> getMilepostsByStartEndPoint(WydotTim wydotTim) throws JsonProcessingException {
         BigDecimal startLat = wydotTim.getStartPoint().getLatitude();
         BigDecimal startLong = wydotTim.getStartPoint().getLongitude();
@@ -86,6 +88,7 @@ public class GISMilepostImpl implements MilepostService {
         return getMilepostsFromResponse(response, routeId);
     }
 
+    @Override
     public List<Milepost> getMilepostsByPointWithBuffer(MilepostBuffer milepostBuffer)
             throws JsonProcessingException, RestClientException {
 
