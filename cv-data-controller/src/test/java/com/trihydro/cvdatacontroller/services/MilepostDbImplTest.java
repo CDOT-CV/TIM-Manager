@@ -62,6 +62,14 @@ public class MilepostDbImplTest {
         wydotTim.setStartPoint(startPoint);
         wydotTim.setEndPoint(endPoint);
     }
+
+    private void mockRoutesQuery() throws SQLException {
+        when(mockConnection.prepareStatement(isA(String.class))).thenReturn(mockPreparedStatement);
+        doReturn(mockConnection).when(mockDbInteractions).getConnectionPool();
+        when(mockPreparedStatement.executeQuery()).thenReturn(mockRs);
+        when(mockRs.next()).thenReturn(true).thenReturn(false);
+    }
+
     private List<com.trihydro.cvdatacontroller.model.Milepost> getMockMilepostList() {
         com.trihydro.cvdatacontroller.model.Milepost milepost = new com.trihydro.cvdatacontroller.model.Milepost();
         List<com.trihydro.cvdatacontroller.model.Milepost> mileposts = new ArrayList<>();
@@ -167,18 +175,7 @@ public class MilepostDbImplTest {
     public void getRoutes_SUCCESS() throws SQLException {
         // Arrange
         // primary connection
-        lenient().when(mockConnection.createStatement()).thenReturn(mockStatement);
-        lenient().when(mockConnection.prepareStatement(isA(String.class))).thenReturn(mockPreparedStatement);
-        lenient().when(mockConnection.prepareStatement(isA(String.class), isA(String[].class)))
-                .thenReturn(mockPreparedStatement);
-        lenient().doReturn(mockConnection).when(mockDbInteractions).getConnectionPool();
-        lenient().doReturn(-1L).when(mockDbInteractions).executeAndLog(isA(PreparedStatement.class),
-                isA(String.class));
-        lenient().doReturn(true).when(mockDbInteractions).updateOrDelete(mockPreparedStatement);
-        lenient().doReturn(true).when(mockDbInteractions).deleteWithPossibleZero(mockPreparedStatement);
-        lenient().when(mockStatement.executeQuery(isA(String.class))).thenReturn(mockRs);
-        lenient().when(mockPreparedStatement.executeQuery()).thenReturn(mockRs);
-        lenient().when(mockRs.next()).thenReturn(true).thenReturn(false);
+        mockRoutesQuery();
         doReturn("common name").when(mockRs).getString("COMMON_NAME");
 
         // Act
@@ -192,18 +189,7 @@ public class MilepostDbImplTest {
     public void getRoutes_FAIL() throws SQLException {
         // Arrange
         // primary connection
-        lenient().when(mockConnection.createStatement()).thenReturn(mockStatement);
-        lenient().when(mockConnection.prepareStatement(isA(String.class))).thenReturn(mockPreparedStatement);
-        lenient().when(mockConnection.prepareStatement(isA(String.class), isA(String[].class)))
-                .thenReturn(mockPreparedStatement);
-        lenient().doReturn(mockConnection).when(mockDbInteractions).getConnectionPool();
-        lenient().doReturn(-1L).when(mockDbInteractions).executeAndLog(isA(PreparedStatement.class),
-                isA(String.class));
-        lenient().doReturn(true).when(mockDbInteractions).updateOrDelete(mockPreparedStatement);
-        lenient().doReturn(true).when(mockDbInteractions).deleteWithPossibleZero(mockPreparedStatement);
-        lenient().when(mockStatement.executeQuery(isA(String.class))).thenReturn(mockRs);
-        lenient().when(mockPreparedStatement.executeQuery()).thenReturn(mockRs);
-        lenient().when(mockRs.next()).thenReturn(true).thenReturn(false);
+        mockRoutesQuery();
         doThrow(new SQLException()).when(mockRs).getString("COMMON_NAME");
 
         // Act
