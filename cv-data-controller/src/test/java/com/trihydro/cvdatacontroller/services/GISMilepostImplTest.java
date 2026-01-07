@@ -228,7 +228,7 @@ public class GISMilepostImplTest {
     }
 
     @Test
-    void testGetMilepostsByPointWithBufferForDescendingRoute() throws IOException {
+    void testGetMilepostsByPointWithBuffer_DescendingRoute() throws IOException {
         // prepare
         String measureAtPointJsonString =
                 new String(Files.readAllBytes(Paths.get(PATH_TO_MEASURE_AT_POINT_DESCENDING_ROUTE_JSON_TEST_DATA)));
@@ -284,7 +284,7 @@ public class GISMilepostImplTest {
     }
 
     @Test
-    void testGetMilepostsByPointWithBufferForAscendingRoute() throws IOException {
+    void testGetMilepostsByPointWithBuffer_AscendingRoute() throws IOException {
         // prepare
         String measureAtPointJsonString =
                 new String(Files.readAllBytes(Paths.get(PATH_TO_MEASURE_AT_POINT_ASCENDING_ROUTE_JSON_TEST_DATA)));
@@ -327,6 +327,64 @@ public class GISMilepostImplTest {
                 eq(ASCENDING_ROUTE_ID),
                 doubleThat(d -> Math.abs(d - originalMeasure) < 0.0001),
                 doubleThat(d -> Math.abs(d - bufferedMeasure) < 0.0001)
+        );
+        Assertions.assertNotNull(mileposts);
+        Assertions.assertEquals(expectedMileposts.size(), mileposts.size());
+        for (int i = 0; i < expectedMileposts.size(); i++) {
+            Milepost expected = expectedMileposts.get(i);
+            Milepost actual = mileposts.get(i);
+            Assertions.assertEquals(expectedCommonName, actual.getCommonName());
+            Assertions.assertNull(actual.getMilepost());
+            Assertions.assertNull(actual.getDirection());
+            Assertions.assertEquals(expected.getLatitude(), actual.getLatitude());
+            Assertions.assertEquals(expected.getLongitude(), actual.getLongitude());
+        }
+    }
+
+    @Test
+    void testGetMilepostsByPointWithBuffer_BufferExceedsMax() throws IOException {
+        // prepare
+        String measureAtPointJsonString =
+                new String(Files.readAllBytes(Paths.get(PATH_TO_MEASURE_AT_POINT_ASCENDING_ROUTE_JSON_TEST_DATA)));
+        String routeJsonString =
+                new String(Files.readAllBytes(Paths.get(PATH_TO_ROUTE_JSON_TEST_DATA)));
+        double originalMeasure = 198.61099999999999;
+        double bufferedMeasureMax = 298.87900000000002;
+        BigDecimal latitude = new BigDecimal("39.613210472000048");
+        BigDecimal longitude = new BigDecimal("-104.89573840099996");
+        Coordinate point = new Coordinate(latitude, longitude);
+        MilepostBuffer mpb = new MilepostBuffer();
+        mpb.setBufferMiles(150.0);
+        mpb.setCommonName(ASCENDING_ROUTE_ID);
+        mpb.setDirection("I");
+        mpb.setPoint(point);
+
+        String expectedCommonName = mpb.getCommonName();
+
+        ResponseEntity<String> measureResponse =
+                new ResponseEntity<>(measureAtPointJsonString, HttpStatus.OK);
+        when(gisConnector.getMeasureAtPoint(
+                any(),
+                any()
+        )).thenReturn(measureResponse);
+        ResponseEntity<String> routeResponse =
+                new ResponseEntity<>(routeJsonString, HttpStatus.OK);
+        when(gisConnector.getRouteBetweenMeasures(
+                anyString(),
+                anyDouble(),
+                anyDouble()
+        )).thenReturn(routeResponse);
+
+        List<Milepost> expectedMileposts = getMockMileposts();
+
+        // execute
+        List<Milepost> mileposts = uut.getMilepostsByPointWithBuffer(mpb);
+
+        // verify
+        verify(gisConnector).getRouteBetweenMeasures(
+                eq(ASCENDING_ROUTE_ID),
+                doubleThat(d -> Math.abs(d - originalMeasure) < 0.0001),
+                doubleThat(d -> Math.abs(d - bufferedMeasureMax) < 0.0001)
         );
         Assertions.assertNotNull(mileposts);
         Assertions.assertEquals(expectedMileposts.size(), mileposts.size());
