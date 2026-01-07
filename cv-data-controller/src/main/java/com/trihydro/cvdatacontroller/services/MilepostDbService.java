@@ -15,8 +15,8 @@ import org.springframework.transaction.annotation.Transactional;
 public class MilepostDbService {
     private final MilepostRepository milepostRepository;
 
-    public MilepostDbService(MilepostRepository _milepostRepository) {
-        this.milepostRepository = _milepostRepository;
+    public MilepostDbService(MilepostRepository milepostRepository) {
+        this.milepostRepository = milepostRepository;
     }
 
     @Transactional(readOnly = true)

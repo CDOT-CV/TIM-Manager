@@ -1,4 +1,4 @@
-package com.trihydro.cvdatacontroller.model.GisResponse;
+package com.trihydro.cvdatacontroller.model.gisResponse;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;

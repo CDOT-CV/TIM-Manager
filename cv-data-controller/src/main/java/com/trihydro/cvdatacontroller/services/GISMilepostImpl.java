@@ -3,15 +3,14 @@ package com.trihydro.cvdatacontroller.services;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.trihydro.cvdatacontroller.model.GisResponse.GisResponse;
-import com.trihydro.cvdatacontroller.model.GisResponse.Attributes;
+import com.trihydro.cvdatacontroller.model.gisResponse.GisResponse;
+import com.trihydro.cvdatacontroller.model.gisResponse.Attributes;
 import com.trihydro.library.helpers.GISConnector;
 import com.trihydro.library.model.Milepost;
 import com.trihydro.library.model.MilepostBuffer;
 import com.trihydro.library.model.WydotTim;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -45,7 +44,7 @@ public class GISMilepostImpl implements MilepostService {
             return routes.stream().map(Attributes::getRoute).collect(Collectors.toList());
 
         } catch (Exception e) {
-            log.error("Error parsing JSON response from GIS service: {}", e.getMessage());
+            log.error("Failed to parse JSON response from GIS service: {}", e.getMessage());
             return new ArrayList<>();
         }
     }

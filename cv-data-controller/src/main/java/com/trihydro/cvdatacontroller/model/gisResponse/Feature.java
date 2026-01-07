@@ -1,4 +1,4 @@
-package com.trihydro.cvdatacontroller.model.GisResponse;
+package com.trihydro.cvdatacontroller.model.gisResponse;
 
 import lombok.Getter;
 import lombok.Setter;
