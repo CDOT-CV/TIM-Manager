@@ -60,12 +60,22 @@ public class GISMilepostImpl implements MilepostService {
         ResponseEntity<String> startMeasureDetailsJson = gisConnector.getMeasureAtPoint(startLong, startLat);
         GisResponse startGisResponseDetails =
                 objectMapper.readValue(startMeasureDetailsJson.getBody(), GisResponse.class);
+
+        if (checkGisMeasureResponse(startGisResponseDetails)) {
+            return new ArrayList<>();
+        }
+
         String startRoute = startGisResponseDetails.getFeatures().get(0).getAttributes().getRoute();
         double startMeasure = startGisResponseDetails.getFeatures().get(0).getAttributes().getMeasure();
 
         ResponseEntity<String> endMeasureDetailsJson = gisConnector.getMeasureAtPoint(endLong, endLat);
         GisResponse endGisResponseDetails =
                 objectMapper.readValue(endMeasureDetailsJson.getBody(), GisResponse.class);
+
+        if (checkGisMeasureResponse(endGisResponseDetails)) {
+            return new ArrayList<>();
+        }
+
         String endRoute = endGisResponseDetails.getFeatures().get(0).getAttributes().getRoute();
         double endMeasure = endGisResponseDetails.getFeatures().get(0).getAttributes().getMeasure();
 
@@ -102,6 +112,10 @@ public class GISMilepostImpl implements MilepostService {
         GisResponse gisResponseDetails =
                 objectMapper.readValue(measureDetailsJson.getBody(), GisResponse.class);
 
+        if (checkGisMeasureResponse(gisResponseDetails)) {
+            return new ArrayList<>();
+        }
+
         String milepostRoute = gisResponseDetails.getFeatures().get(0).getAttributes().getRoute();
         if (!milepostRoute.equals(milepostBuffer.getCommonName())) {
             log.warn("Unable to find measure on route");
@@ -115,11 +129,43 @@ public class GISMilepostImpl implements MilepostService {
         return getMilepostsFromResponse(response, milepostRoute);
     }
 
+    private boolean checkGisMeasureResponse(GisResponse gisResponseDetails) {
+        if (gisResponseDetails == null
+                || gisResponseDetails.getFeatures() == null
+                || gisResponseDetails.getFeatures().isEmpty()
+                || gisResponseDetails.getFeatures().get(0) == null
+                || gisResponseDetails.getFeatures().get(0).getAttributes() == null
+                || gisResponseDetails.getFeatures().get(0).getAttributes().getRoute() == null
+                || gisResponseDetails.getFeatures().get(0).getAttributes().getMeasure() == null) {
+            log.warn("Unable to find measure at point. The API return value may have changed.");
+            return true;
+        }
+        return false;
+    }
+
+    private boolean checkGisRouteResponse(GisResponse gisResponseDetails) {
+        if (gisResponseDetails == null
+                || gisResponseDetails.getFeatures() == null
+                || gisResponseDetails.getFeatures().isEmpty()
+                || gisResponseDetails.getFeatures().get(0) == null
+                || gisResponseDetails.getFeatures().get(0).getGeometry() == null
+                || gisResponseDetails.getFeatures().get(0).getGeometry().getPaths() == null
+                || gisResponseDetails.getFeatures().get(0).getGeometry().getPaths().get(0) == null) {
+            log.warn("Unable to find route at point. The API return value may have changed.");
+            return true;
+        }
+        return false;
+    }
+
     private List<Milepost> getMilepostsFromResponse(ResponseEntity<String> response, String routeId) throws JsonProcessingException {
         GisResponse routeDetails =
                 objectMapper.readValue(response.getBody(), GisResponse.class);
-        List<List<Double>> path = routeDetails.getFeatures().get(0).getGeometry().getPaths().get(0);
 
+        if (checkGisRouteResponse(routeDetails)) {
+            return new ArrayList<>();
+        }
+
+        List<List<Double>> path = routeDetails.getFeatures().get(0).getGeometry().getPaths().get(0);
         List<Milepost> mileposts = new ArrayList<>();
         for (List<Double> coordinate : path) {
             Milepost milepost = new Milepost();
