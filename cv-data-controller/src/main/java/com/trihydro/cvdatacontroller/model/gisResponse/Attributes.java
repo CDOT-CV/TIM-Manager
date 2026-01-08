@@ -15,14 +15,14 @@ import lombok.Setter;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class Attributes {
     @JsonProperty("Route")
-    private String Route;
+    private String route;
 
     @JsonProperty("Measure")
-    private Double Measure;
+    private Double measure;
 
     @JsonProperty("MMin")
-    private Double MMin;
+    private Double mMin;
 
     @JsonProperty("MMax")
-    private Double MMax;
+    private Double mMax;
 }
