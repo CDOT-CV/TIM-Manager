@@ -82,7 +82,7 @@ public class GISConnector {
      * @return a ResponseEntity containing the JSON response from the CDOT GIS service
      * @throws RestClientException if an error occurs while making the request
      */
-    public ResponseEntity<String> getMeasureAtPoint(BigDecimal longitude, BigDecimal latitude) throws RestClientException {
+    public ResponseEntity<GisResponse> getMeasureAtPoint(BigDecimal longitude, BigDecimal latitude) throws RestClientException {
         URI base = URI.create(baseUrl + "/MeasureAtPoint");
 
         URI targetUrl = UriComponentsBuilder
@@ -99,7 +99,7 @@ public class GISConnector {
         HttpHeaders headers = new HttpHeaders();
         headers.set("Accept", "application/json");
         HttpEntity<String> entity = new HttpEntity<>(headers);
-        return restTemplateProvider.GetRestTemplate().exchange(targetUrl, HttpMethod.GET, entity, String.class);
+        return restTemplateProvider.GetRestTemplate().exchange(targetUrl, HttpMethod.GET, entity, GisResponse.class);
     }
 
     /**
@@ -114,7 +114,7 @@ public class GISConnector {
      * @return a ResponseEntity containing the JSON response from the CDOT GIS service
      * @throws RestClientException if an error occurs while making the request
      */
-    public ResponseEntity<String> getRouteBetweenMeasures(String routeId, double fromMeasure, double toMeasure) throws RestClientException {
+    public ResponseEntity<GisResponse> getRouteBetweenMeasures(String routeId, double fromMeasure, double toMeasure) throws RestClientException {
         log.info("Getting route between measure {} to {} on route {}", fromMeasure, toMeasure, routeId);
         URI base = URI.create(baseUrl + "/RouteBetweenMeasures?");
         URI targetUrl = UriComponentsBuilder
@@ -130,6 +130,6 @@ public class GISConnector {
         HttpHeaders headers = new HttpHeaders();
         headers.set("Accept", "application/json");
         HttpEntity<String> entity = new HttpEntity<>(headers);
-        return restTemplateProvider.GetRestTemplate().exchange(targetUrl, HttpMethod.GET, entity, String.class);
+        return restTemplateProvider.GetRestTemplate().exchange(targetUrl, HttpMethod.GET, entity, GisResponse.class);
     }
 }

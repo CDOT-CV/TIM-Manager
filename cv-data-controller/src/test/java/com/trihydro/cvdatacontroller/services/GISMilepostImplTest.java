@@ -8,7 +8,6 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -72,6 +71,20 @@ public class GISMilepostImplTest {
         return mileposts;
     }
 
+    private WydotTim getMockWydotTim() {
+        WydotTim wydotTim = new WydotTim();
+        BigDecimal fromLatitude = new BigDecimal("39.613210472000048");
+        BigDecimal fromLongitude = new BigDecimal("-104.89573840099996");
+        Coordinate fromPoint = new Coordinate(fromLongitude, fromLatitude);
+        BigDecimal toLatitude = new BigDecimal("40.73654117648727");
+        BigDecimal toLongitude = new BigDecimal("-104.99349024587299");
+        Coordinate toPoint = new Coordinate(toLongitude, toLatitude);
+        wydotTim.setStartPoint(fromPoint);
+        wydotTim.setEndPoint(toPoint);
+        wydotTim.setRoute(DESCENDING_ROUTE_ID);
+        return wydotTim;
+    }
+
     @BeforeEach
     void setUp() {
         uut = new GISMilepostImpl(gisConnector, objectMapper);
@@ -94,7 +107,7 @@ public class GISMilepostImplTest {
     }
 
     @Test
-    void testGetRoutesList_Fail() throws IOException {
+    void testGetRoutesList_Fail() {
         // prepare
         when(gisConnector.getAllRoutes()).thenThrow(new RestClientException("Something went wrong"));
 
@@ -107,7 +120,7 @@ public class GISMilepostImplTest {
     }
 
     @Test
-    void testGetMilepostsByStartEndPoint() throws IOException {
+    void testGetMilepostsByStartEndPoint_Success() throws IOException {
         // prepare
         String firstMeasureAtPointJsonString =
                 new String(Files.readAllBytes(Paths.get(PATH_TO_MEASURE_AT_POINT_DESCENDING_ROUTE_JSON_TEST_DATA)));
@@ -115,27 +128,23 @@ public class GISMilepostImplTest {
                 new String(Files.readAllBytes(Paths.get(SECOND_PATH_TO_MEASURE_AT_POINT_DESCENDING_ROUTE_JSON_TEST_DATA)));
         String routeJsonString =
                 new String(Files.readAllBytes(Paths.get(PATH_TO_ROUTE_JSON_TEST_DATA)));
-        WydotTim wydotTim = new WydotTim();
-        BigDecimal fromLatitude = new BigDecimal("39.613210472000048");
-        BigDecimal fromLongitude = new BigDecimal("-104.89573840099996");
-        Coordinate fromPoint = new Coordinate(fromLongitude, fromLatitude);
-        BigDecimal toLatitude = new BigDecimal("40.73654117648727");
-        BigDecimal toLongitude = new BigDecimal("-104.99349024587299");
-        Coordinate toPoint = new Coordinate(toLongitude, toLatitude);
-        wydotTim.setStartPoint(fromPoint);
-        wydotTim.setEndPoint(toPoint);
-        wydotTim.setRoute(DESCENDING_ROUTE_ID);
 
-        ResponseEntity<String> firstMeasureResponse =
-                new ResponseEntity<>(firstMeasureAtPointJsonString, HttpStatus.OK);
-        ResponseEntity<String> secondMeasureResponse =
-                new ResponseEntity<>(secondMeasureAtPointJsonString, HttpStatus.OK);
+        GisResponse firstMeasureGisResponse = objectMapper.readValue(firstMeasureAtPointJsonString, GisResponse.class);
+        GisResponse secondMeasureGisResponse = objectMapper.readValue(secondMeasureAtPointJsonString, GisResponse.class);
+        GisResponse routeGisResponse = objectMapper.readValue(routeJsonString, GisResponse.class);
+
+        WydotTim wydotTim = getMockWydotTim();
+
+        ResponseEntity<GisResponse> firstMeasureResponse =
+                new ResponseEntity<>(firstMeasureGisResponse, HttpStatus.OK);
+        ResponseEntity<GisResponse> secondMeasureResponse =
+                new ResponseEntity<>(secondMeasureGisResponse, HttpStatus.OK);
         when(gisConnector.getMeasureAtPoint(
                 any(),
                 any()
         )).thenReturn(firstMeasureResponse).thenReturn(secondMeasureResponse);
-        ResponseEntity<String> routeResponse =
-                new ResponseEntity<>(routeJsonString, HttpStatus.OK);
+        ResponseEntity<GisResponse> routeResponse =
+                new ResponseEntity<>(routeGisResponse, HttpStatus.OK);
         when(gisConnector.getRouteBetweenMeasures(
                 anyString(),
                 anyDouble(),
@@ -163,23 +172,36 @@ public class GISMilepostImplTest {
     }
 
     @Test
+    void testGetMilepostsByStartEndPoint_Fail() throws IOException {
+        // prepare
+        WydotTim wydotTim = getMockWydotTim();
+
+        when(gisConnector.getMeasureAtPoint(
+                any(),
+                any()
+        )).thenThrow(new RestClientException("Something went wrong"));
+
+        // execute
+        List<Milepost> mileposts = uut.getMilepostsByStartEndPoint(wydotTim);
+
+        // verify
+        Assertions.assertNotNull(mileposts);
+        Assertions.assertEquals(0, mileposts.size());
+    }
+
+
+
+    @Test
     void testGetMilepostsByStartEndPoint_MismatchingRoutes() throws IOException {
         // prepare
         String measureAtPointJsonString =
                 new String(Files.readAllBytes(Paths.get(PATH_TO_MEASURE_AT_POINT_DESCENDING_ROUTE_JSON_TEST_DATA)));
-        WydotTim wydotTim = new WydotTim();
-        BigDecimal fromLatitude = new BigDecimal("39.613210472000048");
-        BigDecimal fromLongitude = new BigDecimal("-104.89573840099996");
-        Coordinate fromPoint = new Coordinate(fromLongitude, fromLatitude);
-        BigDecimal toLatitude = new BigDecimal("40.73654117648727");
-        BigDecimal toLongitude = new BigDecimal("-104.99349024587299");
-        Coordinate toPoint = new Coordinate(toLongitude, toLatitude);
-        wydotTim.setStartPoint(fromPoint);
-        wydotTim.setEndPoint(toPoint);
+        GisResponse measureGisResponse = objectMapper.readValue(measureAtPointJsonString, GisResponse.class);
+        WydotTim wydotTim = getMockWydotTim();
         wydotTim.setRoute(ASCENDING_ROUTE_ID);
 
-        ResponseEntity<String> measureResponse =
-                new ResponseEntity<>(measureAtPointJsonString, HttpStatus.OK);
+        ResponseEntity<GisResponse> measureResponse =
+                new ResponseEntity<>(measureGisResponse, HttpStatus.OK);
         when(gisConnector.getMeasureAtPoint(
                 any(),
                 any()
@@ -191,6 +213,7 @@ public class GISMilepostImplTest {
         // verify
         Assertions.assertEquals(0, mileposts.size());
     }
+
     @Test
     void testGetMilepostsByStartEndPoint_SameMeasure() throws IOException {
         // prepare
@@ -198,25 +221,21 @@ public class GISMilepostImplTest {
                 new String(Files.readAllBytes(Paths.get(PATH_TO_MEASURE_AT_POINT_DESCENDING_ROUTE_JSON_TEST_DATA)));
         String routeJsonString =
                 new String(Files.readAllBytes(Paths.get(PATH_TO_ROUTE_JSON_TEST_DATA)));
-        WydotTim wydotTim = new WydotTim();
-        BigDecimal fromLatitude = new BigDecimal("39.613210472000048");
-        BigDecimal fromLongitude = new BigDecimal("-104.89573840099996");
-        Coordinate fromPoint = new Coordinate(fromLongitude, fromLatitude);
-        BigDecimal toLatitude = new BigDecimal("40.73654117648727");
-        BigDecimal toLongitude = new BigDecimal("-104.99349024587299");
-        Coordinate toPoint = new Coordinate(toLongitude, toLatitude);
-        wydotTim.setStartPoint(fromPoint);
-        wydotTim.setEndPoint(toPoint);
-        wydotTim.setRoute(DESCENDING_ROUTE_ID);
 
-        ResponseEntity<String> measureResponse =
-                new ResponseEntity<>(measureAtPointJsonString, HttpStatus.OK);
+        GisResponse measureGisResponse = objectMapper.readValue(measureAtPointJsonString, GisResponse.class);
+        GisResponse routeGisResponse = objectMapper.readValue(routeJsonString, GisResponse.class);
+
+        WydotTim wydotTim = getMockWydotTim();
+
+        ResponseEntity<GisResponse> measureResponse =
+                new ResponseEntity<>(measureGisResponse, HttpStatus.OK);
         when(gisConnector.getMeasureAtPoint(
                 any(),
                 any()
         )).thenReturn(measureResponse);
-        ResponseEntity<String> routeResponse =
-                new ResponseEntity<>(routeJsonString, HttpStatus.OK);
+
+        ResponseEntity<GisResponse> routeResponse =
+                new ResponseEntity<>(routeGisResponse, HttpStatus.OK);
         when(gisConnector.getRouteBetweenMeasures(
                 anyString(),
                 anyDouble(),
@@ -249,6 +268,9 @@ public class GISMilepostImplTest {
                 new String(Files.readAllBytes(Paths.get(PATH_TO_MEASURE_AT_POINT_DESCENDING_ROUTE_JSON_TEST_DATA)));
         String routeJsonString =
                 new String(Files.readAllBytes(Paths.get(PATH_TO_ROUTE_JSON_TEST_DATA)));
+        GisResponse measureGisResponse = objectMapper.readValue(measureAtPointJsonString, GisResponse.class);
+        GisResponse routeGisResponse = objectMapper.readValue(routeJsonString, GisResponse.class);
+
         double originalMeasure = 198.61099999999999;
         double bufferedMeasure = 198.61099999999999 - 1.0;
         BigDecimal latitude = new BigDecimal("39.613210472000048");
@@ -260,14 +282,15 @@ public class GISMilepostImplTest {
         mpb.setDirection("D");
         mpb.setPoint(point);
 
-        ResponseEntity<String> measureResponse =
-                new ResponseEntity<>(measureAtPointJsonString, HttpStatus.OK);
+        ResponseEntity<GisResponse> measureResponse =
+                new ResponseEntity<>(measureGisResponse, HttpStatus.OK);
         when(gisConnector.getMeasureAtPoint(
                 any(),
                 any()
         )).thenReturn(measureResponse);
-        ResponseEntity<String> routeResponse =
-                new ResponseEntity<>(routeJsonString, HttpStatus.OK);
+
+        ResponseEntity<GisResponse> routeResponse =
+                new ResponseEntity<>(routeGisResponse, HttpStatus.OK);
         when(gisConnector.getRouteBetweenMeasures(
                 anyString(),
                 anyDouble(),
@@ -305,6 +328,9 @@ public class GISMilepostImplTest {
                 new String(Files.readAllBytes(Paths.get(PATH_TO_MEASURE_AT_POINT_ASCENDING_ROUTE_JSON_TEST_DATA)));
         String routeJsonString =
                 new String(Files.readAllBytes(Paths.get(PATH_TO_ROUTE_JSON_TEST_DATA)));
+
+        GisResponse measureGisResponse = objectMapper.readValue(measureAtPointJsonString, GisResponse.class);
+        GisResponse routeGisResponse = objectMapper.readValue(routeJsonString, GisResponse.class);
         double originalMeasure = 198.61099999999999;
         double bufferedMeasure = 198.61099999999999 + 1.0;
         BigDecimal latitude = new BigDecimal("39.613210472000048");
@@ -318,14 +344,15 @@ public class GISMilepostImplTest {
 
         String expectedCommonName = mpb.getCommonName();
 
-        ResponseEntity<String> measureResponse =
-                new ResponseEntity<>(measureAtPointJsonString, HttpStatus.OK);
+        ResponseEntity<GisResponse> measureResponse =
+                new ResponseEntity<>(measureGisResponse, HttpStatus.OK);
         when(gisConnector.getMeasureAtPoint(
                 any(),
                 any()
         )).thenReturn(measureResponse);
-        ResponseEntity<String> routeResponse =
-                new ResponseEntity<>(routeJsonString, HttpStatus.OK);
+
+        ResponseEntity<GisResponse> routeResponse =
+                new ResponseEntity<>(routeGisResponse, HttpStatus.OK);
         when(gisConnector.getRouteBetweenMeasures(
                 anyString(),
                 anyDouble(),
@@ -363,6 +390,10 @@ public class GISMilepostImplTest {
                 new String(Files.readAllBytes(Paths.get(PATH_TO_MEASURE_AT_POINT_ASCENDING_ROUTE_JSON_TEST_DATA)));
         String routeJsonString =
                 new String(Files.readAllBytes(Paths.get(PATH_TO_ROUTE_JSON_TEST_DATA)));
+
+        GisResponse measureGisResponse = objectMapper.readValue(measureAtPointJsonString, GisResponse.class);
+        GisResponse routeGisResponse = objectMapper.readValue(routeJsonString, GisResponse.class);
+
         double originalMeasure = 198.61099999999999;
         double bufferedMeasureMax = 298.87900000000002;
         BigDecimal latitude = new BigDecimal("39.613210472000048");
@@ -376,14 +407,15 @@ public class GISMilepostImplTest {
 
         String expectedCommonName = mpb.getCommonName();
 
-        ResponseEntity<String> measureResponse =
-                new ResponseEntity<>(measureAtPointJsonString, HttpStatus.OK);
+        ResponseEntity<GisResponse> measureResponse =
+                new ResponseEntity<>(measureGisResponse, HttpStatus.OK);
         when(gisConnector.getMeasureAtPoint(
                 any(),
                 any()
         )).thenReturn(measureResponse);
-        ResponseEntity<String> routeResponse =
-                new ResponseEntity<>(routeJsonString, HttpStatus.OK);
+
+        ResponseEntity<GisResponse> routeResponse =
+                new ResponseEntity<>(routeGisResponse, HttpStatus.OK);
         when(gisConnector.getRouteBetweenMeasures(
                 anyString(),
                 anyDouble(),

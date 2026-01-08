@@ -1,5 +1,7 @@
 package com.trihydro.cvdatacontroller.helpers;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.trihydro.cvdatacontroller.model.gisResponse.GisResponse;
 import com.trihydro.library.service.RestTemplateProvider;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -15,17 +17,26 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.net.URI;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 
 import static org.mockito.Mockito.*;
 
 class GisConnectorTest {
     private final String baseUrl = "https://dtdapps.codot.gov/server/rest/services/LRS/Routes_withDEC/MapServer/exts/LrsServerRounded";
+    private final String PATH_TO_MEASURE_AT_POINT_Data =
+            "src/test/resources/com/trihydro/cvdatacontroller/controller/cdotMeasureAtPointResponse_DescendingRoute.json";
+    private final String PATH_TO_ROUTE_JSON_TEST_DATA =
+            "src/test/resources/com/trihydro/cvdatacontroller/controller/cdotRouteResponseForI25_First30Mileposts.json";
 
     private final String f = "json";
     private final int sr = 4326;
     private final String routeId = "025A";
+
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Mock
     RestTemplate mockRestTemplate = Mockito.mock(RestTemplate.class);
@@ -64,7 +75,7 @@ class GisConnectorTest {
   }
 
     @Test
-    void testGetRouteDetails() {
+    void testGetRouteDetails() throws IOException {
         // prepare
         URI expectedTargetUrl = URI.create(baseUrl + "/MeasureAtPoint?");
         BigDecimal latitude = new BigDecimal("123.456");
@@ -83,21 +94,24 @@ class GisConnectorTest {
         HttpHeaders mockHeaders = new HttpHeaders();
         mockHeaders.set("Accept", "application/json");
         HttpEntity<String> mockEntity = new HttpEntity<>(mockHeaders);
-        String mockResponseString = "mockResponseString";
-        ResponseEntity<String> mockResponse = ResponseEntity.ok(mockResponseString);
-        when(mockRestTemplate.exchange(expectedUri, HttpMethod.GET, mockEntity, String.class)).thenReturn(mockResponse);
+
+        String mockResponseString =
+                new String(Files.readAllBytes(Paths.get(PATH_TO_MEASURE_AT_POINT_Data)));
+        GisResponse mockGisResponse = objectMapper.readValue(mockResponseString, GisResponse.class);
+        ResponseEntity<GisResponse> mockResponse = ResponseEntity.ok(mockGisResponse);
+        when(mockRestTemplate.exchange(expectedUri, HttpMethod.GET, mockEntity, GisResponse.class)).thenReturn(mockResponse);
 
         // execute
-        ResponseEntity<String> response = uut.getMeasureAtPoint(longitude, latitude);
+        ResponseEntity<GisResponse> response = uut.getMeasureAtPoint(longitude, latitude);
 
         // verify
         Assertions.assertEquals(mockResponse.getStatusCode(), response.getStatusCode());
-        Assertions.assertEquals(mockResponseString, response.getBody());
-        verify(mockRestTemplate).exchange(expectedUri, HttpMethod.GET, mockEntity, String.class);
+        Assertions.assertEquals(mockGisResponse, response.getBody());
+        verify(mockRestTemplate).exchange(expectedUri, HttpMethod.GET, mockEntity, GisResponse.class);
     }
 
     @Test
-    void testGetRouteBetweenMeasures() {
+    void testGetRouteBetweenMeasures() throws IOException{
         // prepare
         URI expectedTargetUrl = URI.create(baseUrl + "/RouteBetweenMeasures?");
         double startMeasure = 123.456;
@@ -115,16 +129,18 @@ class GisConnectorTest {
         HttpHeaders mockHeaders = new HttpHeaders();
         mockHeaders.set("Accept", "application/json");
         HttpEntity<String> mockEntity = new HttpEntity<>(mockHeaders);
-        String mockResponseString = "mockResponseString";
-        ResponseEntity<String> mockResponse = ResponseEntity.ok(mockResponseString);
-        when(mockRestTemplate.exchange(expectedUri, HttpMethod.GET, mockEntity, String.class)).thenReturn(mockResponse);
+
+        String mockResponseString = new String(Files.readAllBytes(Paths.get(PATH_TO_ROUTE_JSON_TEST_DATA)));
+        GisResponse mockGisResponse = objectMapper.readValue(mockResponseString, GisResponse.class);
+        ResponseEntity<GisResponse> mockResponse = ResponseEntity.ok(mockGisResponse);
+        when(mockRestTemplate.exchange(expectedUri, HttpMethod.GET, mockEntity, GisResponse.class)).thenReturn(mockResponse);
 
         // execute
-        ResponseEntity<String> response = uut.getRouteBetweenMeasures(routeId, startMeasure, endMeasure);
+        ResponseEntity<GisResponse> response = uut.getRouteBetweenMeasures(routeId, startMeasure, endMeasure);
 
         // verify
         Assertions.assertEquals(mockResponse.getStatusCode(), response.getStatusCode());
-        Assertions.assertEquals(mockResponseString, response.getBody());
-        verify(mockRestTemplate).exchange(expectedUri, HttpMethod.GET, mockEntity, String.class);
+        Assertions.assertEquals(mockGisResponse, response.getBody());
+        verify(mockRestTemplate).exchange(expectedUri, HttpMethod.GET, mockEntity, GisResponse.class);
     }
 }
