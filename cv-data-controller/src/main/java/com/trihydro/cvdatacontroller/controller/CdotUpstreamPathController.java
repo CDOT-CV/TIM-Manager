@@ -5,7 +5,7 @@ import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.trihydro.library.helpers.GISConnector;
+import com.trihydro.cvdatacontroller.helpers.GISConnector;
 import com.trihydro.library.model.Milepost;
 
 import lombok.extern.slf4j.Slf4j;

@@ -13,7 +13,7 @@ import java.util.ArrayList;
 import java.util.List;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.trihydro.library.helpers.GISConnector;
+import com.trihydro.cvdatacontroller.helpers.GISConnector;
 import com.trihydro.library.model.Coordinate;
 import com.trihydro.library.model.Milepost;
 

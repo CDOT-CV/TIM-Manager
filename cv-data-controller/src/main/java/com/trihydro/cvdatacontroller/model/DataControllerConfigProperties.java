@@ -1,6 +1,6 @@
 package com.trihydro.cvdatacontroller.model;
 
-import com.trihydro.library.helpers.GISConnector;
+import com.trihydro.cvdatacontroller.helpers.GISConnector;
 import com.trihydro.library.helpers.DbInteractions;
 import com.trihydro.library.helpers.EmailHelper;
 import com.trihydro.library.helpers.JavaMailSenderImplProvider;

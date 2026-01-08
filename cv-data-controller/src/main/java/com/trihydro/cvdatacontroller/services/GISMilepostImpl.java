@@ -5,7 +5,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.trihydro.cvdatacontroller.model.gisResponse.GisResponse;
 import com.trihydro.cvdatacontroller.model.gisResponse.Attributes;
-import com.trihydro.library.helpers.GISConnector;
+import com.trihydro.cvdatacontroller.helpers.GISConnector;
 import com.trihydro.library.model.Milepost;
 import com.trihydro.library.model.MilepostBuffer;
 import com.trihydro.library.model.WydotTim;

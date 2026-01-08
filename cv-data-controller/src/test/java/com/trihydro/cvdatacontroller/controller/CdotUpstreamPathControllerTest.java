@@ -16,8 +16,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.trihydro.cvdatacontroller.controller.CdotUpstreamPathController.DistanceCalculator;
 import com.trihydro.cvdatacontroller.controller.CdotUpstreamPathController.PathDirection;
-import com.trihydro.cvdatacontroller.controller.CdotUpstreamPathController.PathDirection;
-import com.trihydro.library.helpers.GISConnector;
+import com.trihydro.cvdatacontroller.helpers.GISConnector;
 import com.trihydro.library.model.Milepost;
 
 import org.junit.jupiter.api.Assertions;

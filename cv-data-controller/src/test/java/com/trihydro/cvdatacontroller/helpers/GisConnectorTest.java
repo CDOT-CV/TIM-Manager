@@ -1,41 +1,50 @@
-package com.trihydro.library.helpers;
+package com.trihydro.cvdatacontroller.helpers;
 
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
+import com.trihydro.library.service.RestTemplateProvider;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 
-import com.trihydro.library.service.BaseServiceTest;
+import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.math.BigDecimal;
 import java.net.URI;
 
-class CdotGisConnectorTest extends BaseServiceTest {
+import static org.mockito.Mockito.*;
 
-    @InjectMocks
-    private GISConnector uut;
-
-    private final String expectedBaseUrl = "https://dtdapps.codot.gov/server/rest/services/LRS/Routes_withDEC/MapServer/exts/LrsServerRounded";
+class GisConnectorTest {
+    private final String baseUrl = "https://dtdapps.codot.gov/server/rest/services/LRS/Routes_withDEC/MapServer/exts/LrsServerRounded";
 
     private final String f = "json";
     private final int sr = 4326;
     private final String routeId = "025A";
-    @Test
-    void testGetBaseUrl() {
-        Assertions.assertEquals(expectedBaseUrl, uut.getBaseUrl());
+
+    @Mock
+    RestTemplate mockRestTemplate = Mockito.mock(RestTemplate.class);
+    @Mock
+    RestTemplateProvider mockRestTemplateProvider = Mockito.mock(RestTemplateProvider.class);;
+
+    @InjectMocks
+    GISConnector uut;
+
+    @BeforeEach
+    void setUp() {
+        when(mockRestTemplateProvider.GetRestTemplate()).thenReturn(mockRestTemplate);
+        uut = new GISConnector(mockRestTemplateProvider);
     }
 
   @Test
   void testGetRouteById() {
     // prepare
-    String expectedTargetUrl = expectedBaseUrl + "/Route";
+    String expectedTargetUrl = baseUrl + "/Route";
     int outSR = 4326;
     String expectedParams = "?routeId=" + routeId + "&outSR=" + outSR + "&f=" + f;
     HttpHeaders mockHeaders = new HttpHeaders();
@@ -57,7 +66,7 @@ class CdotGisConnectorTest extends BaseServiceTest {
     @Test
     void testGetRouteDetails() {
         // prepare
-        URI expectedTargetUrl = URI.create(expectedBaseUrl + "/MeasureAtPoint?");
+        URI expectedTargetUrl = URI.create(baseUrl + "/MeasureAtPoint?");
         BigDecimal latitude = new BigDecimal("123.456");
         BigDecimal longitude = new BigDecimal("234.567");
         int tolerance = 10000;
@@ -90,7 +99,7 @@ class CdotGisConnectorTest extends BaseServiceTest {
     @Test
     void testGetRouteBetweenMeasures() {
         // prepare
-        URI expectedTargetUrl = URI.create(expectedBaseUrl + "/RouteBetweenMeasures?");
+        URI expectedTargetUrl = URI.create(baseUrl + "/RouteBetweenMeasures?");
         double startMeasure = 123.456;
         double endMeasure = 123.456;
 

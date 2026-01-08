@@ -1,5 +1,6 @@
-package com.trihydro.library.helpers;
+package com.trihydro.cvdatacontroller.helpers;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -15,19 +16,15 @@ import java.math.BigDecimal;
 import java.net.URI;
 
 @Component
+@RequiredArgsConstructor
 @Slf4j
 public class GISConnector {
-    @lombok.Getter
     private final String baseUrl = "https://dtdapps.codot.gov/server/rest/services/LRS/Routes_withDEC/MapServer/exts/LrsServerRounded";
     private final int tolerance = 10000;
     private final int sr = 4326;
     private final String format = "json";
 
     private final RestTemplateProvider restTemplateProvider;
-
-    public GISConnector(RestTemplateProvider _restTemplateProvider) {
-        this.restTemplateProvider = _restTemplateProvider;
-    }
 
     /**
      * Retrieves the route information from the CDOT GIS service by route ID.
