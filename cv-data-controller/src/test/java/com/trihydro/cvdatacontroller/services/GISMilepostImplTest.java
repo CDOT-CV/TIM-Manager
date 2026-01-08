@@ -14,6 +14,8 @@ import java.util.List;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.trihydro.cvdatacontroller.helpers.GISConnector;
+import com.trihydro.cvdatacontroller.model.gisResponse.GisResponse;
+import com.trihydro.cvdatacontroller.model.gisResponse.GisRoutesResponse;
 import com.trihydro.library.model.Coordinate;
 import com.trihydro.library.model.Milepost;
 
@@ -75,13 +77,12 @@ public class GISMilepostImplTest {
     }
 
     @Test
-    void testGetRoutesList() throws IOException {
+    void testGetRoutesList_Success() throws IOException {
         // prepare
         String routesJsonString =
                 new String(Files.readAllBytes(Paths.get(ROUTES_LIST)));
-        ResponseEntity<String> routesResponse =
-                new ResponseEntity<>(routesJsonString, HttpStatus.OK);
-        when(gisConnector.getAllRoutes()).thenReturn(routesResponse);
+        GisRoutesResponse routesResponse = objectMapper.readValue(routesJsonString, GisRoutesResponse.class);
+        when(gisConnector.getAllRoutes()).thenReturn(new ResponseEntity<>(routesResponse, HttpStatus.OK));
 
         // execute
         List<String> routes = uut.getRoutes();

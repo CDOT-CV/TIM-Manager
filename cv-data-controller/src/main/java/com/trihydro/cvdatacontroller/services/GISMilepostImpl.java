@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.trihydro.cvdatacontroller.model.gisResponse.GisResponse;
 import com.trihydro.cvdatacontroller.model.gisResponse.Attributes;
 import com.trihydro.cvdatacontroller.helpers.GISConnector;
+import com.trihydro.cvdatacontroller.model.gisResponse.GisRoutesResponse;
 import com.trihydro.library.model.Milepost;
 import com.trihydro.library.model.MilepostBuffer;
 import com.trihydro.library.model.WydotTim;
@@ -32,21 +33,14 @@ public class GISMilepostImpl implements MilepostService {
 
     @Override
     public List<String> getRoutes() {
-        try {
-            ResponseEntity<String> routesJson = gisConnector.getAllRoutes();
+        GisRoutesResponse routes = gisConnector.getAllRoutes().getBody();
 
-            List<Attributes> routes = objectMapper
-                    .readerFor(new TypeReference<List<Attributes>>() {})
-                    .readValue(
-                            objectMapper.readTree(routesJson.getBody()).at("/routes")
-                    );
-
-            return routes.stream().map(Attributes::getRoute).collect(Collectors.toList());
-
-        } catch (Exception e) {
-            log.error("Failed to parse JSON response from GIS service: {}", e.getMessage());
+        if (routes == null || routes.getRoutes() == null) {
+            log.error("Failed to get Routes from GIS service.");
             return new ArrayList<>();
         }
+
+        return routes.getRoutes().stream().map(Attributes::getRoute).collect(Collectors.toList());
     }
 
     @Override

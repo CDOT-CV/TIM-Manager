@@ -1,5 +1,7 @@
 package com.trihydro.cvdatacontroller.helpers;
 
+import com.trihydro.cvdatacontroller.model.gisResponse.GisResponse;
+import com.trihydro.cvdatacontroller.model.gisResponse.GisRoutesResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpEntity;
@@ -47,7 +49,7 @@ public class GISConnector {
         return restTemplateProvider.GetRestTemplate().exchange(targetUrl + params, HttpMethod.GET, entity, String.class);
     }
 
-    public ResponseEntity<String> getAllRoutes() throws RestClientException {
+    public ResponseEntity<GisRoutesResponse> getAllRoutes() throws RestClientException {
         URI base = URI.create(
                 baseUrl +
                         "/Routes/query"
@@ -64,9 +66,7 @@ public class GISConnector {
 
         HttpEntity<Void> entity = new HttpEntity<>(headers);
 
-        return restTemplateProvider
-                .GetRestTemplate()
-                .exchange(targetUrl, HttpMethod.GET, entity, String.class);
+        return restTemplateProvider.GetRestTemplate().exchange(targetUrl, HttpMethod.GET, entity, GisRoutesResponse.class);
     }
 
 
