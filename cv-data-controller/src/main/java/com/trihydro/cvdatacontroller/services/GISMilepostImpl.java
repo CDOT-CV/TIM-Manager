@@ -33,14 +33,19 @@ public class GISMilepostImpl implements MilepostService {
 
     @Override
     public List<String> getRoutes() {
-        GisRoutesResponse routes = gisConnector.getAllRoutes().getBody();
+        try {
+            GisRoutesResponse routes = gisConnector.getAllRoutes().getBody();
 
-        if (routes == null || routes.getRoutes() == null) {
-            log.error("Failed to get Routes from GIS service.");
+            if (routes == null || routes.getRoutes() == null) {
+                log.error("GIS Service returned null response.");
+                return new ArrayList<>();
+            }
+
+            return routes.getRoutes().stream().map(Attributes::getRoute).collect(Collectors.toList());
+        } catch (RestClientException e) {
+            log.error("Failed to get Routes from GIS service.", e);
             return new ArrayList<>();
         }
-
-        return routes.getRoutes().stream().map(Attributes::getRoute).collect(Collectors.toList());
     }
 
     @Override

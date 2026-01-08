@@ -1,14 +1,14 @@
 package com.trihydro.cvdatacontroller.services;
 
 import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -29,6 +29,7 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.client.RestClientException;
 
 public class GISMilepostImplTest {
     private final String DESCENDING_ROUTE_ID = "025A_DEC"; // I-25
@@ -90,6 +91,19 @@ public class GISMilepostImplTest {
         // Verify
         Assertions.assertNotNull(routes);
         Assertions.assertEquals(576, routes.size());
+    }
+
+    @Test
+    void testGetRoutesList_Fail() throws IOException {
+        // prepare
+        when(gisConnector.getAllRoutes()).thenThrow(new RestClientException("Something went wrong"));
+
+        // execute
+        List<String> routes = uut.getRoutes();
+
+        // Verify
+        Assertions.assertNotNull(routes);
+        Assertions.assertEquals(0, routes.size());
     }
 
     @Test
