@@ -1,10 +1,8 @@
 package com.trihydro.loggerkafkaconsumer.app.services;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
+import java.sql.*;
+
+import java.time.Instant;
 
 import com.trihydro.library.model.ActiveTimHolding;
 import com.trihydro.library.model.Coordinate;
@@ -141,7 +139,7 @@ public class ActiveTimHoldingService extends BaseService {
         }
     }
 
-    public boolean updateTimExpiration(String packetID, String expDate) {
+    public boolean updateTimExpiration(String packetID, Instant expDate) {
         boolean success;
 
         String updateStatement = "UPDATE ACTIVE_TIM_HOLDING SET EXPIRATION_DATE = ? WHERE PACKET_ID = ?";
@@ -150,7 +148,7 @@ public class ActiveTimHoldingService extends BaseService {
             Connection connection = dbInteractions.getConnectionPool();
             PreparedStatement preparedStatement = connection.prepareStatement(updateStatement);
         ) {
-            preparedStatement.setObject(1, expDate);// expDate comes in as MST from previously called function
+            preparedStatement.setTimestamp(1, Timestamp.from(expDate));
             // (GetMinExpiration)
             preparedStatement.setObject(2, packetID);
 
@@ -164,5 +162,4 @@ public class ActiveTimHoldingService extends BaseService {
             expDate, success);
         return success;
     }
-
 }

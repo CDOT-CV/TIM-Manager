@@ -2,6 +2,8 @@ package com.trihydro.loggerkafkaconsumer.app;
 
 import com.trihydro.library.helpers.DateTimeHelper;
 import com.trihydro.library.helpers.DateTimeHelperImpl;
+
+import java.time.Instant;
 import java.util.Date;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
@@ -215,7 +217,7 @@ public class LoggerKafkaConsumer {
 
                 if (ath != null) {
                     log.debug("Found record in holding table, updating expiration");
-                    success = activeTimHoldingService.updateTimExpiration(certExpirationModel.getPacketID(), certExpirationModel.getExpirationDate());
+                    success = activeTimHoldingService.updateTimExpiration(certExpirationModel.getPacketID(), Instant.parse(certExpirationModel.getExpirationDate()));
 
                     if (success) {
                         log.info("Successfully updated expiration date in holding table for packet ID: {}", certExpirationModel.getPacketID());
