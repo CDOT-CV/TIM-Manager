@@ -448,7 +448,7 @@ public class JsonToJavaConverter {
             List<OdeTravelerInformationMessage.DataFrame.Region> regions = new ArrayList<>();
 
             OdeTravelerInformationMessage tim = new OdeTravelerInformationMessage();
-            JsonNode timNode = JsonUtils.getJsonNode(value, "payload").findValue("data");
+            JsonNode timNode = JsonUtils.getJsonNode(value, "payload").findValue("data").findValue("value").findValue("TravelerInformation");
             tim.setMsgCnt(timNode.get("msgCnt").asInt());
             JsonNode packetIDNode = timNode.get("packetID");
             if (packetIDNode != null) {
