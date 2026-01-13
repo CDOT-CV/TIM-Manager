@@ -114,35 +114,13 @@ public class CdotUpstreamPathController extends BaseController {
     /**
      * Retrieves all mileposts for a given route from the CDOT GIS service.
      *
-     * <p>This method uses `CdotGisService.getRouteById()` to retrieve the route information
-     * in JSON format. The JSON response contains all the latitude and longitude points
-     * in the route. This information is then extracted into the `Milepost` model and
-     * returned as a list of mileposts.</p>
+     * <p>This method uses `CdotGisService.getRouteById()` to retrieve all the mileposts in the given route</p>
      *
      * @param routeId the ID of the route to retrieve mileposts for
      * @return a list of `Milepost` objects representing the mileposts in the route
-     * @throws JsonProcessingException if there is an error processing the JSON response
-     * @throws RestClientException if an error occurs while making the request
      */
-    public List<Milepost> getMilepostsForRoute(String routeId) throws JsonProcessingException,
-            RestClientException {
-        ResponseEntity<String> response = gisConnector.getRouteById(routeId);
-        String routeJsonString = response.getBody();
-        ObjectMapper objectMapper = new ObjectMapper();
-        JsonNode rootNode = objectMapper.readTree(routeJsonString);
-        JsonNode pathNode = rootNode.path("features").get(0).path("geometry").path("paths").get(0);
-        List<Milepost> mileposts = new ArrayList<>();
-        for (JsonNode node : pathNode) {
-            Milepost milepost = new Milepost();
-            milepost.setCommonName(routeId);
-            BigDecimal latitude = new BigDecimal(node.get(1).asText()).setScale(14, RoundingMode.HALF_UP);
-            BigDecimal longitude =
-                    new BigDecimal(node.get(0).asText()).setScale(14, RoundingMode.HALF_UP);
-            milepost.setLatitude(latitude);
-            milepost.setLongitude(longitude);
-            mileposts.add(milepost);
-        }
-        return mileposts;
+    public List<Milepost> getMilepostsForRoute(String routeId) {
+        return gisConnector.getRouteById(routeId);
     }
 
     public PathDirection getPathDirection(List<Milepost> pathMileposts, List<Milepost> allMileposts)

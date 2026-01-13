@@ -2,9 +2,7 @@ package com.trihydro.cvdatacontroller.services;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.trihydro.cvdatacontroller.model.gisResponse.GisResponse;
-import com.trihydro.cvdatacontroller.model.gisResponse.Attributes;
 import com.trihydro.cvdatacontroller.helpers.GISConnector;
-import com.trihydro.cvdatacontroller.model.gisResponse.GisRoutesResponse;
 import com.trihydro.library.model.Milepost;
 import com.trihydro.library.model.MilepostBuffer;
 import com.trihydro.library.model.WydotTim;
@@ -15,10 +13,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClientException;
 
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -26,23 +22,10 @@ import java.util.stream.Collectors;
 @ConditionalOnProperty(name="config.milepostProvider", havingValue="gis")
 public class GISMilepostImpl implements MilepostService {
     private final GISConnector gisConnector;
-    private final ObjectMapper objectMapper;
 
     @Override
     public List<String> getRoutes() {
-        try {
-            GisRoutesResponse routes = gisConnector.getAllRoutes().getBody();
-
-            if (routes == null || routes.getRoutes() == null) {
-                log.error("GIS Service returned null response.");
-                return new ArrayList<>();
-            }
-
-            return routes.getRoutes().stream().map(Attributes::getRoute).collect(Collectors.toList());
-        } catch (RestClientException e) {
-            log.error("Failed to get Routes from GIS service.", e);
-            return new ArrayList<>();
-        }
+        return gisConnector.getAllRoutes();
     }
 
     @Override
@@ -53,127 +36,65 @@ public class GISMilepostImpl implements MilepostService {
         BigDecimal endLong = wydotTim.getEndPoint().getLongitude();
         String routeId = wydotTim.getRoute().replace('-', '_');
 
-        try {
-            GisResponse startGisResponseDetails = gisConnector.getMeasureAtPoint(startLong, startLat).getBody();
+        GisResponse startGisResponseDetails = gisConnector.getMeasureAtPoint(startLong, startLat);
 
-            if (checkGisMeasureResponse(startGisResponseDetails)) {
-                return new ArrayList<>();
-            }
-
-            GisResponse endGisResponseDetails = gisConnector.getMeasureAtPoint(endLong, endLat).getBody();
-
-            if (checkGisMeasureResponse(endGisResponseDetails)) {
-                return new ArrayList<>();
-            }
-
-            String startRoute = startGisResponseDetails.getFeatures().get(0).getAttributes().getRoute();
-            double startMeasure = startGisResponseDetails.getFeatures().get(0).getAttributes().getMeasure();
-            String endRoute = endGisResponseDetails.getFeatures().get(0).getAttributes().getRoute();
-            double endMeasure = endGisResponseDetails.getFeatures().get(0).getAttributes().getMeasure();
-
-            if (!startRoute.equals(endRoute) || !startRoute.equals(routeId)) {
-                log.warn("Unable to find route. Generated route does not match.");
-                return new ArrayList<>();
-            }
-
-            if (startMeasure == endMeasure) {
-                endMeasure = getBufferedMeasure(routeId, startGisResponseDetails, 1.0);
-            }
-
-            GisResponse response = gisConnector.getRouteBetweenMeasures(startRoute, startMeasure, endMeasure).getBody();
-
-            return getMilepostsFromResponse(response, routeId);
-
-        } catch (RestClientException e) {
-            log.error("Failed to get route from GIS service.", e);
+        if (startGisResponseDetails == null) {
             return new ArrayList<>();
         }
+
+        GisResponse endGisResponseDetails = gisConnector.getMeasureAtPoint(endLong, endLat);
+
+        if (endGisResponseDetails == null) {
+            return new ArrayList<>();
+        }
+
+        String startRoute = startGisResponseDetails.getFeatures().get(0).getAttributes().getRoute();
+        double startMeasure = startGisResponseDetails.getFeatures().get(0).getAttributes().getMeasure();
+        String endRoute = endGisResponseDetails.getFeatures().get(0).getAttributes().getRoute();
+        double endMeasure = endGisResponseDetails.getFeatures().get(0).getAttributes().getMeasure();
+
+        if (!startRoute.equals(endRoute) || !startRoute.equals(routeId)) {
+            log.warn("Unable to find route. Generated route does not match.");
+            return new ArrayList<>();
+        }
+
+        if (startMeasure == endMeasure) {
+            endMeasure = getBufferedMeasure(routeId, startGisResponseDetails, 1.0);
+        }
+
+        return gisConnector.getRouteBetweenMeasures(startRoute, startMeasure, endMeasure);
     }
 
     @Override
     public List<Milepost> getMilepostsByPointWithBuffer(MilepostBuffer milepostBuffer) {
-        try {
-            // check startPoint
-            if (milepostBuffer.getPoint() == null || milepostBuffer.getPoint().getLatitude() == null
-                    || milepostBuffer.getPoint().getLongitude() == null) {
-                return new ArrayList<>();
-            }
-
-            // check direction, route
-            if (milepostBuffer.getDirection() == null || milepostBuffer.getCommonName() == null) {
-                return new ArrayList<>();
-            }
-
-            var milepost = milepostBuffer.getPoint();
-            GisResponse measureDetails = gisConnector.getMeasureAtPoint(milepost.getLongitude(), milepost.getLatitude()).getBody();
-
-            if (checkGisMeasureResponse(measureDetails)) {
-                return new ArrayList<>();
-            }
-
-            String milepostRoute = measureDetails.getFeatures().get(0).getAttributes().getRoute();
-            if (!milepostRoute.equals(milepostBuffer.getCommonName())) {
-                log.warn("Unable to find measure on route");
-                return new ArrayList<>();
-            }
-
-            double milepostMeasure = measureDetails.getFeatures().get(0).getAttributes().getMeasure();
-            double bufferMilepost = getBufferedMeasure(milepostRoute, measureDetails, milepostBuffer.getBufferMiles());
-
-            GisResponse response = gisConnector.getRouteBetweenMeasures(milepostRoute, milepostMeasure, bufferMilepost).getBody();
-            return getMilepostsFromResponse(response, milepostRoute);
-        } catch (RestClientException e) {
-            log.error("Failed to get route from GIS service.", e);
-            return new ArrayList<>();
-        }
-    }
-
-    private boolean checkGisMeasureResponse(GisResponse gisResponseDetails) {
-        if (gisResponseDetails == null
-                || gisResponseDetails.getFeatures() == null
-                || gisResponseDetails.getFeatures().isEmpty()
-                || gisResponseDetails.getFeatures().get(0) == null
-                || gisResponseDetails.getFeatures().get(0).getAttributes() == null
-                || gisResponseDetails.getFeatures().get(0).getAttributes().getRoute() == null
-                || gisResponseDetails.getFeatures().get(0).getAttributes().getMeasure() == null) {
-            log.warn("Unable to find measure at point. The API return value may have changed.");
-            return true;
-        }
-        return false;
-    }
-
-    private boolean checkGisRouteResponse(GisResponse gisResponseDetails) {
-        if (gisResponseDetails == null
-                || gisResponseDetails.getFeatures() == null
-                || gisResponseDetails.getFeatures().isEmpty()
-                || gisResponseDetails.getFeatures().get(0) == null
-                || gisResponseDetails.getFeatures().get(0).getGeometry() == null
-                || gisResponseDetails.getFeatures().get(0).getGeometry().getPaths() == null
-                || gisResponseDetails.getFeatures().get(0).getGeometry().getPaths().get(0) == null) {
-            log.warn("Unable to find route at point. The API return value may have changed.");
-            return true;
-        }
-        return false;
-    }
-
-    private List<Milepost> getMilepostsFromResponse(GisResponse response, String routeId) {
-        if (checkGisRouteResponse(response)) {
+        // check startPoint
+        if (milepostBuffer.getPoint() == null || milepostBuffer.getPoint().getLatitude() == null
+                || milepostBuffer.getPoint().getLongitude() == null) {
             return new ArrayList<>();
         }
 
-        List<List<Double>> path = response.getFeatures().get(0).getGeometry().getPaths().get(0);
-        List<Milepost> mileposts = new ArrayList<>();
-        for (List<Double> coordinate : path) {
-            Milepost milepost = new Milepost();
-            milepost.setCommonName(routeId);
-            BigDecimal latitude = new BigDecimal(coordinate.get(1).toString()).setScale(14, RoundingMode.HALF_UP);
-            BigDecimal longitude =
-                    new BigDecimal(coordinate.get(0).toString()).setScale(14, RoundingMode.HALF_UP);
-            milepost.setLatitude(latitude);
-            milepost.setLongitude(longitude);
-            mileposts.add(milepost);
+        // check direction, route
+        if (milepostBuffer.getDirection() == null || milepostBuffer.getCommonName() == null) {
+            return new ArrayList<>();
         }
-        return mileposts;
+
+        var milepost = milepostBuffer.getPoint();
+        GisResponse measureDetails = gisConnector.getMeasureAtPoint(milepost.getLongitude(), milepost.getLatitude());
+
+        if (measureDetails == null) {
+            return new ArrayList<>();
+        }
+
+        String milepostRoute = measureDetails.getFeatures().get(0).getAttributes().getRoute();
+        if (!milepostRoute.equals(milepostBuffer.getCommonName())) {
+            log.warn("Unable to find measure on route");
+            return new ArrayList<>();
+        }
+
+        double milepostMeasure = measureDetails.getFeatures().get(0).getAttributes().getMeasure();
+        double bufferMilepost = getBufferedMeasure(milepostRoute, measureDetails, milepostBuffer.getBufferMiles());
+
+        return gisConnector.getRouteBetweenMeasures(milepostRoute, milepostMeasure, bufferMilepost);
     }
 
     private double getBufferedMeasure(String route, GisResponse gisResponseDetails, double bufferMiles) throws RestClientException {
