@@ -66,6 +66,7 @@ public class GISConnector {
             return getMilepostsFromResponse(route, routeId);
 
         } catch (RestClientException e) {
+            log.error("Failed to get route from GIS service.", e);
             return new ArrayList<>();
         }
     }
@@ -96,13 +97,16 @@ public class GISConnector {
 
         try {
             ResponseEntity<GisRoutesResponse> routesResponseEntity = restTemplateProvider.GetRestTemplate().exchange(targetUrl, HttpMethod.GET, entity, GisRoutesResponse.class);
+
             GisRoutesResponse routes = routesResponseEntity.getBody();
             if (routes != null && routes.getRoutes() != null) {
                 return routes.getRoutes().stream().map(Attributes::getRoute).collect(Collectors.toList());
             }
+
             return new ArrayList<>();
+
         } catch (RestClientException e) {
-            log.error("Failed to get Routes from GIS service.");
+            log.error("Failed to get routes from GIS service.");
             return new ArrayList<>();
         }
     }
@@ -112,7 +116,7 @@ public class GISConnector {
      *
      * <p>This method sends a GET request to the CDOT GIS service to retrieve the route details
      * in JSON format. This is converted into a GisResponse. The response includes the measure
-     * of the point which is used in getting the mileposts of a route from one point to another</p>
+     * of the point which is used in getting the mileposts of a route from one point to another.</p>
      *
      * @param longitude longitude of a point
      * @param latitude  latitude of a point
@@ -137,10 +141,12 @@ public class GISConnector {
         HttpEntity<String> entity = new HttpEntity<>(headers);
         try {
             ResponseEntity<GisResponse> responseEntity = restTemplateProvider.GetRestTemplate().exchange(targetUrl, HttpMethod.GET, entity, GisResponse.class);
+
             GisResponse gisResponseDetails = responseEntity.getBody();
             if (checkGisMeasureResponse(gisResponseDetails)) {
                 return null;
             }
+
             return gisResponseDetails;
         } catch (RestClientException e) {
             log.error("Failed to get measure at point from GIS service.");
@@ -159,7 +165,7 @@ public class GISConnector {
      * @param routeId      GIS server route ID
      * @param fromMeasure Start measure on route (miles)
      * @param toMeasure   End measure on route (miles)
-     * @return a list of mileposts from the CDOT GIS service and null if an error occurs
+     * @return a list of mileposts from the CDOT GIS service
      */
     public List<Milepost> getRouteBetweenMeasures(String routeId, double fromMeasure, double toMeasure) {
         log.info("Getting route between measure {} to {} on route {}", fromMeasure, toMeasure, routeId);
