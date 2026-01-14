@@ -1,5 +1,6 @@
 package com.trihydro.cvdatacontroller.services;
 
+import com.trihydro.cvdatacontroller.repositories.MilepostRepository;
 import com.trihydro.library.helpers.DbInteractions;
 import com.trihydro.library.model.Milepost;
 import com.trihydro.library.model.MilepostBuffer;
@@ -23,7 +24,7 @@ import java.util.List;
 @RequiredArgsConstructor
 @ConditionalOnProperty(name="config.milepostProvider", havingValue="neo4j")
 public class MilepostDbImpl implements MilepostService {
-    private final MilepostDbService milepostDbService;
+    private final MilepostRepository milepostDbService;
     protected final DbInteractions dbInteractions;
 
     @Override
