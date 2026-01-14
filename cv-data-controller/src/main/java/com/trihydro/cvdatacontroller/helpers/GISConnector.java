@@ -103,12 +103,13 @@ public class GISConnector {
     try {
       ResponseEntity<GisResponse> responseEntity = executeGet(targetUrl, GisResponse.class);
 
-      GisResponse gisResponseDetails = responseEntity.getBody();
-      if (checkGisMeasureResponse(gisResponseDetails)) {
+      GisResponse gisResponse = responseEntity.getBody();
+      if (isGisMeasureValid(gisResponse)) {
+        log.warn("Unable to find measure at point. The API return value may have changed.");
         return null;
       }
 
-      return gisResponseDetails;
+      return gisResponse;
     } catch (RestClientException e) {
       log.error("Failed to get measure at point from GIS service.");
       return null;
@@ -164,7 +165,8 @@ public class GISConnector {
       ResponseEntity<GisResponse> responseEntity = executeGet(targetUrl, GisResponse.class);
 
       GisResponse route = responseEntity.getBody();
-      if (route == null || checkGisRouteResponse(route)) {
+      if (route == null || isGisRouteValid(route)) {
+        log.warn("Unable to find route at point. The API return value may have changed.");
         return Collections.emptyList();
       }
 
@@ -176,32 +178,32 @@ public class GISConnector {
     }
   }
 
-  private boolean checkGisMeasureResponse(GisResponse gisResponseDetails) {
-    if (gisResponseDetails == null
-      || gisResponseDetails.getFeatures() == null
-      || gisResponseDetails.getFeatures().isEmpty()
-      || gisResponseDetails.getFeatures().get(0) == null
-      || gisResponseDetails.getFeatures().get(0).getAttributes() == null
-      || gisResponseDetails.getFeatures().get(0).getAttributes().getRoute() == null
-      || gisResponseDetails.getFeatures().get(0).getAttributes().getMeasure() == null) {
-      log.warn("Unable to find measure at point. The API return value may have changed.");
-      return true;
-    }
-    return false;
+  /*
+    * Validates the GIS response for measure at point requests.
+    * @return true if the response is invalid; false otherwise.
+   */
+  private boolean isGisMeasureValid(GisResponse gisResponse) {
+    return gisResponse == null
+      || gisResponse.getFeatures() == null
+      || gisResponse.getFeatures().isEmpty()
+      || gisResponse.getFeatures().get(0) == null
+      || gisResponse.getFeatures().get(0).getAttributes() == null
+      || gisResponse.getFeatures().get(0).getAttributes().getRoute() == null
+      || gisResponse.getFeatures().get(0).getAttributes().getMeasure() == null;
   }
 
-  private boolean checkGisRouteResponse(GisResponse gisResponseDetails) {
-    if (gisResponseDetails == null
-      || gisResponseDetails.getFeatures() == null
-      || gisResponseDetails.getFeatures().isEmpty()
-      || gisResponseDetails.getFeatures().get(0) == null
-      || gisResponseDetails.getFeatures().get(0).getGeometry() == null
-      || gisResponseDetails.getFeatures().get(0).getGeometry().getPaths() == null
-      || gisResponseDetails.getFeatures().get(0).getGeometry().getPaths().get(0) == null) {
-      log.warn("Unable to find route at point. The API return value may have changed.");
-      return true;
-    }
-    return false;
+  /*
+    * Validates the GIS response for route requests.
+    * @return true if the response is invalid; false otherwise.
+   */
+  private boolean isGisRouteValid(GisResponse gisResponse) {
+    return gisResponse == null
+      || gisResponse.getFeatures() == null
+      || gisResponse.getFeatures().isEmpty()
+      || gisResponse.getFeatures().get(0) == null
+      || gisResponse.getFeatures().get(0).getGeometry() == null
+      || gisResponse.getFeatures().get(0).getGeometry().getPaths() == null
+      || gisResponse.getFeatures().get(0).getGeometry().getPaths().get(0) == null;
   }
 
   private List<Milepost> getMilepostsFromResponse(GisResponse response, String routeId) {
