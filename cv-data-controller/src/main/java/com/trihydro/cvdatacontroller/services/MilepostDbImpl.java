@@ -55,14 +55,11 @@ public class MilepostDbImpl implements MilepostService {
 
     @Override
     public List<Milepost> getMilepostsByPointWithBuffer(MilepostBuffer milepostBuffer) {
-        // check startPoint
-        if (milepostBuffer.getPoint() == null || milepostBuffer.getPoint().getLatitude() == null
-                || milepostBuffer.getPoint().getLongitude() == null) {
-            return Collections.emptyList();
-        }
-
-        // check direction, route
-        if (milepostBuffer.getDirection() == null || milepostBuffer.getCommonName() == null) {
+        if (milepostBuffer.getPoint() == null
+            || milepostBuffer.getPoint().getLatitude() == null
+            || milepostBuffer.getPoint().getLongitude() == null
+            || milepostBuffer.getDirection() == null
+            || milepostBuffer.getCommonName() == null) {
             return Collections.emptyList();
         }
 
