@@ -118,8 +118,8 @@ public class MilepostDbImpl implements MilepostService {
             newMilepost.setCommonName(milepost.getCommonName());
             newMilepost.setMilepost(milepost.getMilepost());
             newMilepost.setDirection(milepost.getDirection());
-            newMilepost.setLatitude(new BigDecimal(milepost.getLatitude().toString()).setScale(14, RoundingMode.HALF_UP));
-            newMilepost.setLongitude(new BigDecimal(milepost.getLongitude().toString()).setScale(14, RoundingMode.HALF_UP));
+            newMilepost.setLatitude(milepost.getLatitude());
+            newMilepost.setLongitude(milepost.getLongitude());
             mileposts.add(newMilepost);
         }
         return mileposts;

@@ -212,11 +212,8 @@ public class GISConnector {
     for (List<Double> coordinate : path) {
       Milepost milepost = new Milepost();
       milepost.setCommonName(routeId);
-      BigDecimal latitude = new BigDecimal(coordinate.get(1).toString()).setScale(14, RoundingMode.HALF_UP);
-      BigDecimal longitude =
-        new BigDecimal(coordinate.get(0).toString()).setScale(14, RoundingMode.HALF_UP);
-      milepost.setLatitude(latitude);
-      milepost.setLongitude(longitude);
+      milepost.setLatitude(coordinate.get(1));
+      milepost.setLongitude(coordinate.get(0));
       mileposts.add(milepost);
     }
     return mileposts;
