@@ -48,7 +48,7 @@ class CdotUpstreamPathControllerTest {
         List<Milepost> mileposts = new ArrayList<>();
         for (List<Double> coordinate : path) {
             Milepost milepost = new Milepost();
-            milepost.setCommonName(DESCENDING_ROUTE_ID);
+            milepost.setCommonName(ROUTE_ID);
             milepost.setLatitude(coordinate.get(1));
             milepost.setLongitude(coordinate.get(0));
             mileposts.add(milepost);
