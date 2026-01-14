@@ -73,42 +73,22 @@ public class MilepostDbImpl implements MilepostService {
         return getMilepostsFromResponse(data);
     }
 
-    @Override
     public List<String> getRoutes() {
-            Connection connection = null;
-            ResultSet rs = null;
-            PreparedStatement preparedStatement = null;
-            try {
-                List<String> routes = new ArrayList<>();
-                connection = dbInteractions.getConnectionPool();
+        String statementStr = "select distinct common_name from MILEPOST_VW_NEW";
+        try (Connection connection = dbInteractions.getConnectionPool();
+             PreparedStatement preparedStatement = connection.prepareStatement(statementStr);
+             ResultSet rs = preparedStatement.executeQuery()
+        ) {
+            List<String> routes = new ArrayList<>();
 
-                // build SQL query
-                String statementStr = "select distinct common_name from MILEPOST_VW_NEW";
-                preparedStatement = connection.prepareStatement(statementStr);
-                rs = preparedStatement.executeQuery();
-
-                while (rs.next()) {
-                    routes.add(rs.getString("COMMON_NAME"));
-                }
-                return routes;
-            } catch (SQLException e) {
-                log.error("Exception", e);
-                return Collections.emptyList();
-            } finally {
-                try {
-                    // close prepared statement
-                    if (preparedStatement != null)
-                        preparedStatement.close();
-                    // return connection back to pool
-                    if (connection != null)
-                        connection.close();
-                    // close result set
-                    if (rs != null)
-                        rs.close();
-                } catch (SQLException e) {
-                    log.error("Exception", e);
-                }
+            while (rs.next()) {
+                routes.add(rs.getString("COMMON_NAME"));
             }
+            return routes;
+        } catch (SQLException e) {
+            log.error("Exception", e);
+            return new ArrayList<>();
+        }
     }
 
     private List<Milepost> getMilepostsFromResponse(Collection<com.trihydro.cvdatacontroller.model.Milepost> response) {
