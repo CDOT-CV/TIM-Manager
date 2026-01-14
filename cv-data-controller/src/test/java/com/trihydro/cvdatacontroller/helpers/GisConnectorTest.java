@@ -25,6 +25,7 @@ import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import static org.mockito.Mockito.*;
@@ -83,58 +84,71 @@ class GisConnectorTest {
     void testGetRouteById_Success() throws IOException {
         // prepare
         String expectedTargetUrl = baseUrl + "/Route";
-        int outSR = 4326;
-        String expectedParams = "?routeId=" + routeId + "&outSR=" + outSR + "&f=" + f;
+        var expectedUri = UriComponentsBuilder.fromUriString(expectedTargetUrl)
+          .queryParam("routeId", routeId)
+          .queryParam("outSR", 4326)
+          .queryParam("f", f)
+          .build(true)
+          .toUri();
         HttpHeaders mockHeaders = new HttpHeaders();
-        mockHeaders.set("Accept", "application/json");
+        mockHeaders.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
         HttpEntity<String> mockEntity = new HttpEntity<>(mockHeaders);
 
         String mockResponseString =
                 new String(Files.readAllBytes(Paths.get(PATH_TO_MEASURE_AT_POINT_Data)));
         GisResponse mockGisResponse = objectMapper.readValue(mockResponseString, GisResponse.class);
         ResponseEntity<GisResponse> mockResponse = ResponseEntity.ok(mockGisResponse);
-        when(mockRestTemplate.exchange(expectedTargetUrl + expectedParams, HttpMethod.GET, mockEntity, GisResponse.class)).thenReturn(mockResponse);
+        when(mockRestTemplate.exchange(expectedUri, HttpMethod.GET, mockEntity, GisResponse.class)).thenReturn(mockResponse);
 
         // execute
         List<Milepost> response = uut.getRouteById(routeId);
 
         // verify
         Assertions.assertEquals(0, response.size());
-        verify(mockRestTemplate).exchange(expectedTargetUrl + expectedParams, HttpMethod.GET, mockEntity, GisResponse.class);
+        verify(mockRestTemplate).exchange(expectedUri, HttpMethod.GET, mockEntity, GisResponse.class);
     }
 
     @Test
     void testGetRouteById_Fail_NullValueResponse() {
         // prepare
         String expectedTargetUrl = baseUrl + "/Route";
-        int outSR = 4326;
-        String expectedParams = "?routeId=" + routeId + "&outSR=" + outSR + "&f=" + f;
+        var expectedUri = UriComponentsBuilder.fromUriString(expectedTargetUrl)
+          .queryParam("routeId", routeId)
+          .queryParam("outSR", 4326)
+          .queryParam("f", f)
+          .build(true)
+          .toUri();
         HttpHeaders mockHeaders = new HttpHeaders();
-        mockHeaders.set("Accept", "application/json");
+        mockHeaders.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
         HttpEntity<String> mockEntity = new HttpEntity<>(mockHeaders);
 
         ResponseEntity<GisResponse> mockResponse = ResponseEntity.ok(new GisResponse());
-        when(mockRestTemplate.exchange(expectedTargetUrl + expectedParams, HttpMethod.GET, mockEntity, GisResponse.class)).thenReturn(mockResponse);
+        when(mockRestTemplate.exchange(expectedUri, HttpMethod.GET, mockEntity, GisResponse.class)).thenReturn(mockResponse);
 
         // execute
         List<Milepost> response = uut.getRouteById(routeId);
 
         // verify
         Assertions.assertEquals(0, response.size());
-        verify(mockRestTemplate).exchange(expectedTargetUrl + expectedParams, HttpMethod.GET, mockEntity, GisResponse.class);
+        verify(mockRestTemplate).exchange(expectedUri, HttpMethod.GET, mockEntity, GisResponse.class);
     }
 
     @Test
     void testGetRouteById_Fail_BadRequest() {
         // prepare
         String expectedTargetUrl = baseUrl + "/Route";
-        int outSR = 4326;
-        String expectedParams = "?routeId=" + routeId + "&outSR=" + outSR + "&f=" + f;
+
+        var expectedTargetUri = UriComponentsBuilder.fromUriString(expectedTargetUrl)
+          .queryParam("routeId", routeId)
+          .queryParam("outSR", 4326)
+          .queryParam("f", f)
+          .build(true)
+          .toUri();
         HttpHeaders mockHeaders = new HttpHeaders();
-        mockHeaders.set("Accept", "application/json");
+        mockHeaders.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
         HttpEntity<String> mockEntity = new HttpEntity<>(mockHeaders);
 
-        when(mockRestTemplate.exchange(expectedTargetUrl + expectedParams, HttpMethod.GET, mockEntity, GisResponse.class)).thenThrow(
+        when(mockRestTemplate.exchange(expectedTargetUri, HttpMethod.GET, mockEntity, GisResponse.class)).thenThrow(
                 HttpClientErrorException.BadRequest.create(
                         HttpStatus.BAD_REQUEST,
                         "Bad Request",
@@ -149,7 +163,7 @@ class GisConnectorTest {
 
         // verify
         Assertions.assertEquals(0, response.size());
-        verify(mockRestTemplate).exchange(expectedTargetUrl + expectedParams, HttpMethod.GET, mockEntity, GisResponse.class);
+        verify(mockRestTemplate).exchange(expectedTargetUri, HttpMethod.GET, mockEntity, GisResponse.class);
     }
 
     @Test
