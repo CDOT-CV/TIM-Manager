@@ -12,11 +12,11 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.trihydro.cvdatacontroller.controller.CdotUpstreamPathController.DistanceCalculator;
 import com.trihydro.cvdatacontroller.controller.CdotUpstreamPathController.PathDirection;
 import com.trihydro.cvdatacontroller.helpers.GISConnector;
+import com.trihydro.cvdatacontroller.model.gisResponse.GisResponse;
 import com.trihydro.library.model.Milepost;
 
 import org.junit.jupiter.api.Assertions;
@@ -43,17 +43,14 @@ class CdotUpstreamPathControllerTest {
         String routeJsonString =
                 new String(Files.readAllBytes(Paths.get(PATH_TO_ROUTE_JSON_TEST_DATA)));
         ObjectMapper objectMapper = new ObjectMapper();
-        JsonNode rootNode = objectMapper.readTree(routeJsonString);
-        JsonNode pathNode = rootNode.path("features").get(0).path("geometry").path("paths").get(0);
+        GisResponse gisResponse = objectMapper.readValue(routeJsonString, GisResponse.class);
+        List<List<Double>> path = gisResponse.getFeatures().get(0).getGeometry().getPaths().get(0);
         List<Milepost> mileposts = new ArrayList<>();
-        for (JsonNode node : pathNode) {
+        for (List<Double> coordinate : path) {
             Milepost milepost = new Milepost();
-            milepost.setCommonName(ROUTE_ID);
-            BigDecimal latitude = new BigDecimal(node.get(1).asText()).setScale(14, RoundingMode.HALF_UP);
-            BigDecimal longitude =
-                    new BigDecimal(node.get(0).asText()).setScale(14, RoundingMode.HALF_UP);
-            milepost.setLatitude(latitude);
-            milepost.setLongitude(longitude);
+            milepost.setCommonName(DESCENDING_ROUTE_ID);
+            milepost.setLatitude(coordinate.get(1));
+            milepost.setLongitude(coordinate.get(0));
             mileposts.add(milepost);
         }
         return mileposts;
