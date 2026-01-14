@@ -9,14 +9,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 
-import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 
 @Service
@@ -33,18 +32,18 @@ public class MilepostDbImpl implements MilepostService {
         // check startPoint
         if (wydotTim.getStartPoint() == null || wydotTim.getStartPoint().getLatitude() == null
                 || wydotTim.getStartPoint().getLongitude() == null) {
-            return new ArrayList<>();
+            return Collections.emptyList();
         }
 
         // check endpoint
         if (wydotTim.getEndPoint() == null || wydotTim.getEndPoint().getLatitude() == null
                 || wydotTim.getEndPoint().getLongitude() == null) {
-            return new ArrayList<>();
+            return Collections.emptyList();
         }
 
         // check direction, route
         if (wydotTim.getDirection() == null || wydotTim.getRoute() == null) {
-            return new ArrayList<>();
+            return Collections.emptyList();
         }
 
         Collection<com.trihydro.cvdatacontroller.model.Milepost> data = milepostDbService.getPathWithBuffer(
@@ -58,12 +57,12 @@ public class MilepostDbImpl implements MilepostService {
         // check startPoint
         if (milepostBuffer.getPoint() == null || milepostBuffer.getPoint().getLatitude() == null
                 || milepostBuffer.getPoint().getLongitude() == null) {
-            return new ArrayList<>();
+            return Collections.emptyList();
         }
 
         // check direction, route
         if (milepostBuffer.getDirection() == null || milepostBuffer.getCommonName() == null) {
-            return new ArrayList<>();
+            return Collections.emptyList();
         }
 
         Collection<com.trihydro.cvdatacontroller.model.Milepost> data = milepostDbService.getPathWithSpecifiedBuffer(
@@ -93,7 +92,7 @@ public class MilepostDbImpl implements MilepostService {
                 return routes;
             } catch (SQLException e) {
                 log.error("Exception", e);
-                return new ArrayList<>();
+                return Collections.emptyList();
             } finally {
                 try {
                     // close prepared statement

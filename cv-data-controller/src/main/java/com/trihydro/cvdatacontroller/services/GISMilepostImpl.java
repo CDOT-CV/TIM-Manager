@@ -1,6 +1,5 @@
 package com.trihydro.cvdatacontroller.services;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.trihydro.cvdatacontroller.model.gisResponse.GisResponse;
 import com.trihydro.cvdatacontroller.helpers.GISConnector;
 import com.trihydro.library.model.Milepost;
@@ -13,7 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClientException;
 
 import java.math.BigDecimal;
-import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 @Service
@@ -39,13 +38,13 @@ public class GISMilepostImpl implements MilepostService {
         GisResponse startGisResponseDetails = gisConnector.getMeasureAtPoint(startLong, startLat);
 
         if (startGisResponseDetails == null) {
-            return new ArrayList<>();
+            return Collections.emptyList();
         }
 
         GisResponse endGisResponseDetails = gisConnector.getMeasureAtPoint(endLong, endLat);
 
         if (endGisResponseDetails == null) {
-            return new ArrayList<>();
+            return Collections.emptyList();
         }
 
         String startRoute = startGisResponseDetails.getFeatures().get(0).getAttributes().getRoute();
@@ -55,7 +54,7 @@ public class GISMilepostImpl implements MilepostService {
 
         if (!startRoute.equals(endRoute) || !startRoute.equals(routeId)) {
             log.warn("Unable to find route. Generated route does not match.");
-            return new ArrayList<>();
+            return Collections.emptyList();
         }
 
         if (startMeasure == endMeasure) {
@@ -70,25 +69,25 @@ public class GISMilepostImpl implements MilepostService {
         // check startPoint
         if (milepostBuffer.getPoint() == null || milepostBuffer.getPoint().getLatitude() == null
                 || milepostBuffer.getPoint().getLongitude() == null) {
-            return new ArrayList<>();
+            return Collections.emptyList();
         }
 
         // check direction, route
         if (milepostBuffer.getDirection() == null || milepostBuffer.getCommonName() == null) {
-            return new ArrayList<>();
+            return Collections.emptyList();
         }
 
         var milepost = milepostBuffer.getPoint();
         GisResponse measureDetails = gisConnector.getMeasureAtPoint(milepost.getLongitude(), milepost.getLatitude());
 
         if (measureDetails == null) {
-            return new ArrayList<>();
+            return Collections.emptyList();
         }
 
         String milepostRoute = measureDetails.getFeatures().get(0).getAttributes().getRoute();
         if (!milepostRoute.equals(milepostBuffer.getCommonName())) {
             log.warn("Unable to find measure on route");
-            return new ArrayList<>();
+            return Collections.emptyList();
         }
 
         double milepostMeasure = measureDetails.getFeatures().get(0).getAttributes().getMeasure();
