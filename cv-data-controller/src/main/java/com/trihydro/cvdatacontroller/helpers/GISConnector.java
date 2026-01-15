@@ -103,7 +103,7 @@ public class GISConnector {
       ResponseEntity<GisResponse> responseEntity = executeGet(targetUrl, GisResponse.class);
 
       GisResponse gisResponse = responseEntity.getBody();
-      if (isGisMeasureValid(gisResponse)) {
+      if (!isGisMeasureValid(gisResponse)) {
         log.warn("Unable to find measure at point. The API return value may have changed.");
         return null;
       }
@@ -164,7 +164,7 @@ public class GISConnector {
       ResponseEntity<GisResponse> responseEntity = executeGet(targetUrl, GisResponse.class);
 
       GisResponse route = responseEntity.getBody();
-      if (route == null || isGisRouteValid(route)) {
+      if (route == null || !isGisRouteValid(route)) {
         log.warn("Unable to find route at point. The API return value may have changed.");
         return Collections.emptyList();
       }
