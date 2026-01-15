@@ -129,7 +129,7 @@ public class GISMilepostImplTest {
     }
 
     @Test
-    void testGetMilepostsByStartEndPoint_Fail() throws IOException {
+    void testGetMilepostsByStartEndPoint_Fail() {
         // prepare
         WydotTim wydotTim = getMockWydotTim();
 
@@ -184,8 +184,6 @@ public class GISMilepostImplTest {
                 any()
         )).thenReturn(measureResponse);
 
-        ResponseEntity<GisResponse> routeResponse =
-                new ResponseEntity<>(routeGisResponse, HttpStatus.OK);
         when(gisConnector.getRouteBetweenMeasures(
                 anyString(),
                 anyDouble(),
@@ -297,7 +295,6 @@ public class GISMilepostImplTest {
                 new String(Files.readAllBytes(Paths.get(PATH_TO_ROUTE_JSON_TEST_DATA)));
 
         GisResponse measureResponse = objectMapper.readValue(measureAtPointJsonString, GisResponse.class);
-        GisResponse routeGisResponse = objectMapper.readValue(routeJsonString, GisResponse.class);
 
         double originalMeasure = 198.61099999999999;
         double bufferedMeasureMax = 298.87900000000002;
@@ -310,15 +307,11 @@ public class GISMilepostImplTest {
         mpb.setDirection("I");
         mpb.setPoint(point);
 
-        String expectedCommonName = mpb.getCommonName();
-
         when(gisConnector.getMeasureAtPoint(
                 any(),
                 any()
         )).thenReturn(measureResponse);
 
-        ResponseEntity<GisResponse> routeResponse =
-                new ResponseEntity<>(routeGisResponse, HttpStatus.OK);
         when(gisConnector.getRouteBetweenMeasures(
                 anyString(),
                 anyDouble(),
