@@ -471,7 +471,6 @@ class GisConnectorTest {
         mockHeaders.set("Accept", "application/json");
         HttpEntity<String> mockEntity = new HttpEntity<>(mockHeaders);
 
-        ResponseEntity<GisResponse> mockResponse = ResponseEntity.ok(new GisResponse());
         when(mockRestTemplate.exchange(expectedUri, HttpMethod.GET, mockEntity, GisResponse.class)).thenThrow(
                 HttpClientErrorException.BadRequest.create(
                         HttpStatus.BAD_REQUEST,
