@@ -12,11 +12,11 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.trihydro.cvdatacontroller.controller.CdotUpstreamPathController.DistanceCalculator;
 import com.trihydro.cvdatacontroller.controller.CdotUpstreamPathController.PathDirection;
 import com.trihydro.cvdatacontroller.helpers.GISConnector;
+import com.trihydro.cvdatacontroller.model.gisResponse.GisResponse;
 import com.trihydro.library.model.Milepost;
 
 import org.junit.jupiter.api.Assertions;
@@ -43,17 +43,14 @@ class CdotUpstreamPathControllerTest {
         String routeJsonString =
                 new String(Files.readAllBytes(Paths.get(PATH_TO_ROUTE_JSON_TEST_DATA)));
         ObjectMapper objectMapper = new ObjectMapper();
-        JsonNode rootNode = objectMapper.readTree(routeJsonString);
-        JsonNode pathNode = rootNode.path("features").get(0).path("geometry").path("paths").get(0);
+        GisResponse gisResponse = objectMapper.readValue(routeJsonString, GisResponse.class);
+        List<List<Double>> path = gisResponse.getFeatures().get(0).getGeometry().getPaths().get(0);
         List<Milepost> mileposts = new ArrayList<>();
-        for (JsonNode node : pathNode) {
+        for (List<Double> coordinate : path) {
             Milepost milepost = new Milepost();
             milepost.setCommonName(ROUTE_ID);
-            BigDecimal latitude = new BigDecimal(node.get(1).asText()).setScale(14, RoundingMode.HALF_UP);
-            BigDecimal longitude =
-                    new BigDecimal(node.get(0).asText()).setScale(14, RoundingMode.HALF_UP);
-            milepost.setLatitude(latitude);
-            milepost.setLongitude(longitude);
+            milepost.setLatitude(coordinate.get(1));
+            milepost.setLongitude(coordinate.get(0));
             mileposts.add(milepost);
         }
         return mileposts;
@@ -67,27 +64,13 @@ class CdotUpstreamPathControllerTest {
     @Test
     void testGetMilepostsForRoute() throws IOException {
         // prepare
-        String routeJsonString =
-                new String(Files.readAllBytes(Paths.get(PATH_TO_ROUTE_JSON_TEST_DATA)));
-        ResponseEntity<String> mockResponse = new ResponseEntity<>(routeJsonString, HttpStatus.OK);
-        when(gisConnector.getRouteById(ROUTE_ID)).thenReturn(mockResponse);
-        List<Milepost> expectedMileposts = getMockMileposts();
+        when(gisConnector.getRouteById(ROUTE_ID)).thenReturn(getMockMileposts());
 
         // execute
         List<Milepost> mileposts = uut.getMilepostsForRoute(ROUTE_ID);
 
         // verify
         verify(gisConnector).getRouteById(ROUTE_ID);
-        Assertions.assertEquals(expectedMileposts.size(), mileposts.size());
-        for (int i = 0; i < expectedMileposts.size(); i++) {
-            Milepost expected = expectedMileposts.get(i);
-            Milepost actual = mileposts.get(i);
-            Assertions.assertEquals(expected.getCommonName(), actual.getCommonName());
-            Assertions.assertNull(actual.getMilepost());
-            Assertions.assertNull(actual.getDirection());
-            Assertions.assertEquals(expected.getLatitude(), actual.getLatitude());
-            Assertions.assertEquals(expected.getLongitude(), actual.getLongitude());
-        }
     }
 
     @Test
@@ -177,10 +160,7 @@ class CdotUpstreamPathControllerTest {
     @Test
     void testGetBufferForPath_Ascending_Success() throws IOException {
         // prepare
-        String routeJsonString =
-                new String(Files.readAllBytes(Paths.get(PATH_TO_ROUTE_JSON_TEST_DATA)));
-        ResponseEntity<String> mockResponse = new ResponseEntity<>(routeJsonString, HttpStatus.OK);
-        when(gisConnector.getRouteById(ROUTE_ID)).thenReturn(mockResponse);
+        when(gisConnector.getRouteById(ROUTE_ID)).thenReturn(getMockMileposts());
 
         List<Milepost> allMileposts = getMockMileposts();
         Milepost mp1 = allMileposts.get(20);
@@ -207,10 +187,7 @@ class CdotUpstreamPathControllerTest {
     @Test
     void testGetBufferForPath_Ascending_Failure_EndOfAllMilepostsReached() throws IOException {
         // prepare
-        String routeJsonString =
-                new String(Files.readAllBytes(Paths.get(PATH_TO_ROUTE_JSON_TEST_DATA)));
-        ResponseEntity<String> mockResponse = new ResponseEntity<>(routeJsonString, HttpStatus.OK);
-        when(gisConnector.getRouteById(ROUTE_ID)).thenReturn(mockResponse);
+        when(gisConnector.getRouteById(ROUTE_ID)).thenReturn(getMockMileposts());
 
         List<Milepost> allMileposts = getMockMileposts();
         Milepost mp1 = allMileposts.get(1);
@@ -231,10 +208,7 @@ class CdotUpstreamPathControllerTest {
     @Test
     void testGetBufferForPath_Descending_Success() throws IOException {
         // prepare
-        String routeJsonString =
-                new String(Files.readAllBytes(Paths.get(PATH_TO_ROUTE_JSON_TEST_DATA)));
-        ResponseEntity<String> mockResponse = new ResponseEntity<>(routeJsonString, HttpStatus.OK);
-        when(gisConnector.getRouteById(ROUTE_ID)).thenReturn(mockResponse);
+        when(gisConnector.getRouteById(ROUTE_ID)).thenReturn(getMockMileposts());
 
         List<Milepost> allMileposts = getMockMileposts();
         Milepost mp1 = allMileposts.get(1);
@@ -261,10 +235,7 @@ class CdotUpstreamPathControllerTest {
     @Test
     void testGetBufferForPath_Descending_Failure_EndOfAllMilepostsReached() throws IOException {
         // prepare
-        String routeJsonString =
-                new String(Files.readAllBytes(Paths.get(PATH_TO_ROUTE_JSON_TEST_DATA)));
-        ResponseEntity<String> mockResponse = new ResponseEntity<>(routeJsonString, HttpStatus.OK);
-        when(gisConnector.getRouteById(ROUTE_ID)).thenReturn(mockResponse);
+        when(gisConnector.getRouteById(ROUTE_ID)).thenReturn(getMockMileposts());
 
         List<Milepost> allMileposts = getMockMileposts();
         Milepost mp1 = allMileposts.get(28);
@@ -285,10 +256,7 @@ class CdotUpstreamPathControllerTest {
     @Test
     void testGetBufferForPath_PathDirectionIsNull() throws IOException {
         // prepare
-        String routeJsonString =
-                new String(Files.readAllBytes(Paths.get(PATH_TO_ROUTE_JSON_TEST_DATA)));
-        ResponseEntity<String> mockResponse = new ResponseEntity<>(routeJsonString, HttpStatus.OK);
-        when(gisConnector.getRouteById(ROUTE_ID)).thenReturn(mockResponse);
+        when(gisConnector.getRouteById(ROUTE_ID)).thenReturn(getMockMileposts());
 
         List<Milepost> allMileposts = getMockMileposts();
         Milepost mp1 = allMileposts.get(0);

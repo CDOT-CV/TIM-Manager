@@ -10,6 +10,7 @@ import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.trihydro.cvdatacontroller.repositories.MilepostRepository;
 import com.trihydro.library.helpers.DbInteractions;
 import com.trihydro.library.model.Coordinate;
 import com.trihydro.library.model.Milepost;
@@ -40,7 +41,7 @@ public class MilepostDbImplTest {
     protected ResultSet mockRs;
 
     @Mock
-    MilepostDbService mockMilepostDbService;
+    MilepostRepository mockMilepostRepository;
     @Mock
     protected DbInteractions mockDbInteractions;
 
@@ -52,7 +53,7 @@ public class MilepostDbImplTest {
         startPoint = new Coordinate(BigDecimal.valueOf(-1), BigDecimal.valueOf(-2));
         endPoint = new Coordinate(BigDecimal.valueOf(-3), BigDecimal.valueOf(-4));
 
-        uut = new MilepostDbImpl(mockMilepostDbService, mockDbInteractions);
+        uut = new MilepostDbImpl(mockMilepostRepository, mockDbInteractions);
     }
 
     private void setupWydotTim() {
@@ -141,7 +142,7 @@ public class MilepostDbImplTest {
     public void getMilepostsByStartEndPoint_SUCCESS() {
         // Arrange
         setupWydotTim();
-        doReturn(getMockMilepostList()).when(mockMilepostDbService).getPathWithBuffer(anyString(), any(), any(), any(),
+        doReturn(getMockMilepostList()).when(mockMilepostRepository).getPathWithBuffer(anyString(), any(), any(), any(),
                 any(), anyString());
 
         // Act
@@ -155,7 +156,7 @@ public class MilepostDbImplTest {
     @Test
     public void getMilepostsByPointWithBuffer_SUCCESS() {
         // Arrange
-        when(mockMilepostDbService.getPathWithSpecifiedBuffer(anyString(), any(), any(),
+        when(mockMilepostRepository.getPathWithSpecifiedBuffer(anyString(), any(), any(),
                 anyString(), anyDouble())).thenReturn(getMockMilepostList());
         MilepostBuffer mpb = new MilepostBuffer();
         mpb.setCommonName("route");

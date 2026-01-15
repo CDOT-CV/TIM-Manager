@@ -41,5 +41,6 @@ public class DataControllerConfigProperties implements DbInteractionsProps, Emai
     private int mailPort;
 
     private String milepostProvider;
+    private String arcGisUrl;
 
 }
