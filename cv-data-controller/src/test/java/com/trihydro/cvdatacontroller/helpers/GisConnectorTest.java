@@ -1,6 +1,7 @@
 package com.trihydro.cvdatacontroller.helpers;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.trihydro.cvdatacontroller.model.DataControllerConfigProperties;
 import com.trihydro.cvdatacontroller.model.gisResponse.GisResponse;
 import com.trihydro.cvdatacontroller.model.gisResponse.GisRoutesResponse;
 import com.trihydro.library.model.Milepost;
@@ -19,7 +20,6 @@ import org.springframework.web.util.UriComponentsBuilder;
 
 import java.io.IOException;
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -30,8 +30,7 @@ import java.util.List;
 import static org.mockito.Mockito.*;
 
 class GisConnectorTest {
-    private final String baseUrl = "https://dtdapps.codot.gov/server/rest/services/LRS/Routes_withDEC/MapServer/exts/LrsServerRounded";
-    private final String PATH_TO_MEASURE_AT_POINT_Data =
+    private final String PATH_TO_MEASURE_AT_POINT_DATA =
             "src/test/resources/com/trihydro/cvdatacontroller/controller/cdotMeasureAtPointResponse_DescendingRoute.json";
     private final String PATH_TO_ROUTE_JSON_TEST_DATA =
             "src/test/resources/com/trihydro/cvdatacontroller/controller/cdotRouteResponseForI25_First30Mileposts.json";
@@ -48,15 +47,18 @@ class GisConnectorTest {
     @Mock
     RestTemplate mockRestTemplate = Mockito.mock(RestTemplate.class);
     @Mock
-    RestTemplateProvider mockRestTemplateProvider = Mockito.mock(RestTemplateProvider.class);;
+    RestTemplateProvider mockRestTemplateProvider = Mockito.mock(RestTemplateProvider.class);
+    @Mock
+    DataControllerConfigProperties mockDataControllerConfigProperties = Mockito.mock(DataControllerConfigProperties.class);
 
     @InjectMocks
     GISConnector uut;
 
     @BeforeEach
     void setUp() {
+        when(mockDataControllerConfigProperties.getArcGisUrl()).thenReturn("");
         when(mockRestTemplateProvider.GetRestTemplate()).thenReturn(mockRestTemplate);
-        uut = new GISConnector(mockRestTemplateProvider);
+        uut = new GISConnector(mockDataControllerConfigProperties, mockRestTemplateProvider);
     }
 
     List<Milepost> getMockMileposts() throws IOException {
@@ -79,7 +81,7 @@ class GisConnectorTest {
     @Test
     void testGetRouteById_Success() throws IOException {
         // prepare
-        String expectedTargetUrl = baseUrl + "/Route";
+        String expectedTargetUrl = "/Route";
         var expectedUri = UriComponentsBuilder.fromUriString(expectedTargetUrl)
           .queryParam("routeId", routeId)
           .queryParam("outSR", 4326)
@@ -91,23 +93,25 @@ class GisConnectorTest {
         HttpEntity<String> mockEntity = new HttpEntity<>(mockHeaders);
 
         String mockResponseString =
-                new String(Files.readAllBytes(Paths.get(PATH_TO_MEASURE_AT_POINT_Data)));
+                new String(Files.readAllBytes(Paths.get(PATH_TO_ROUTE_JSON_TEST_DATA)));
         GisResponse mockGisResponse = objectMapper.readValue(mockResponseString, GisResponse.class);
         ResponseEntity<GisResponse> mockResponse = ResponseEntity.ok(mockGisResponse);
         when(mockRestTemplate.exchange(expectedUri, HttpMethod.GET, mockEntity, GisResponse.class)).thenReturn(mockResponse);
+
+        int expectedMilepostCount = 30;
 
         // execute
         List<Milepost> response = uut.getRouteById(routeId);
 
         // verify
-        Assertions.assertEquals(0, response.size());
+        Assertions.assertEquals(expectedMilepostCount, response.size());
         verify(mockRestTemplate).exchange(expectedUri, HttpMethod.GET, mockEntity, GisResponse.class);
     }
 
     @Test
     void testGetRouteById_Fail_NullValueResponse() {
         // prepare
-        String expectedTargetUrl = baseUrl + "/Route";
+        String expectedTargetUrl = "/Route";
         var expectedUri = UriComponentsBuilder.fromUriString(expectedTargetUrl)
           .queryParam("routeId", routeId)
           .queryParam("outSR", 4326)
@@ -132,7 +136,7 @@ class GisConnectorTest {
     @Test
     void testGetRouteById_Fail_BadRequest() {
         // prepare
-        String expectedTargetUrl = baseUrl + "/Route";
+        String expectedTargetUrl = "/Route";
 
         var expectedTargetUri = UriComponentsBuilder.fromUriString(expectedTargetUrl)
           .queryParam("routeId", routeId)
@@ -165,7 +169,7 @@ class GisConnectorTest {
     @Test
     void testGetAllRoutes_Success() throws IOException {
         // prepare
-        URI expectedTargetUrl = URI.create(baseUrl + "/Routes/query");
+        URI expectedTargetUrl = URI.create("/Routes/query");
         URI expectedUri = UriComponentsBuilder
                 .fromUri(expectedTargetUrl)
                 .queryParam("f", "json")
@@ -194,7 +198,7 @@ class GisConnectorTest {
     @Test
     void testGetAllRoutes_Fail_NullValueResponse() {
         // prepare
-        URI expectedTargetUrl = URI.create(baseUrl + "/Routes/query");
+        URI expectedTargetUrl = URI.create("/Routes/query");
         URI expectedUri = UriComponentsBuilder
                 .fromUri(expectedTargetUrl)
                 .queryParam("f", "json")
@@ -224,7 +228,7 @@ class GisConnectorTest {
     @Test
     void testGetAllRoutes_Fail_BadRequest() {
         // prepare
-        URI expectedTargetUrl = URI.create(baseUrl + "/Routes/query");
+        URI expectedTargetUrl = URI.create("/Routes/query");
         URI expectedUri = UriComponentsBuilder
                 .fromUri(expectedTargetUrl)
                 .queryParam("f", "json")
@@ -262,7 +266,7 @@ class GisConnectorTest {
     @Test
     void testGetMeasureAtPoint_Success() throws IOException {
         // prepare
-        URI expectedTargetUrl = URI.create(baseUrl + "/MeasureAtPoint?");
+        URI expectedTargetUrl = URI.create("/MeasureAtPoint?");
         BigDecimal latitude = new BigDecimal("123.456");
         BigDecimal longitude = new BigDecimal("234.567");
         int tolerance = 10000;
@@ -281,7 +285,7 @@ class GisConnectorTest {
         HttpEntity<String> mockEntity = new HttpEntity<>(mockHeaders);
 
         String mockResponseString =
-                new String(Files.readAllBytes(Paths.get(PATH_TO_MEASURE_AT_POINT_Data)));
+                new String(Files.readAllBytes(Paths.get(PATH_TO_MEASURE_AT_POINT_DATA)));
         GisResponse mockGisResponse = objectMapper.readValue(mockResponseString, GisResponse.class);
         ResponseEntity<GisResponse> mockResponse = ResponseEntity.ok(mockGisResponse);
         when(mockRestTemplate.exchange(expectedUri, HttpMethod.GET, mockEntity, GisResponse.class)).thenReturn(mockResponse);
@@ -297,7 +301,7 @@ class GisConnectorTest {
     @Test
     void testGetMeasureAtPoint_Fail_NullValueResponse() {
         // prepare
-        URI expectedTargetUrl = URI.create(baseUrl + "/MeasureAtPoint?");
+        URI expectedTargetUrl = URI.create("/MeasureAtPoint?");
         BigDecimal latitude = new BigDecimal("123.456");
         BigDecimal longitude = new BigDecimal("234.567");
         int tolerance = 10000;
@@ -330,7 +334,7 @@ class GisConnectorTest {
     @Test
     void testGetMeasureAtPoint_Fail_BadRequest() {
         // prepare
-        URI expectedTargetUrl = URI.create(baseUrl + "/MeasureAtPoint");
+        URI expectedTargetUrl = URI.create("/MeasureAtPoint");
         BigDecimal latitude = new BigDecimal("123.456");
         BigDecimal longitude = new BigDecimal("234.567");
         int tolerance = 10000;
@@ -376,7 +380,7 @@ class GisConnectorTest {
     @Test
     void testGetRouteBetweenMeasures_Success() throws IOException{
         // prepare
-        URI expectedTargetUrl = URI.create(baseUrl + "/RouteBetweenMeasures?");
+        URI expectedTargetUrl = URI.create("/RouteBetweenMeasures?");
         double startMeasure = 123.456;
         double endMeasure = 123.456;
 
@@ -419,7 +423,7 @@ class GisConnectorTest {
     @Test
     void testGetRouteBetweenMeasures_Fail_NullValueResponse() {
         // prepare
-        URI expectedTargetUrl = URI.create(baseUrl + "/RouteBetweenMeasures?");
+        URI expectedTargetUrl = URI.create("/RouteBetweenMeasures?");
         double startMeasure = 123.456;
         double endMeasure = 123.456;
 
@@ -450,7 +454,7 @@ class GisConnectorTest {
     @Test
     void testGetRouteBetweenMeasures_Fail_BadRequest() {
         // prepare
-        URI expectedTargetUrl = URI.create(baseUrl + "/RouteBetweenMeasures?");
+        URI expectedTargetUrl = URI.create("/RouteBetweenMeasures?");
         double startMeasure = 123.456;
         double endMeasure = 123.456;
 
