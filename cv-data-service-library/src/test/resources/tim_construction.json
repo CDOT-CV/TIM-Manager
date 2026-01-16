@@ -1,122 +1,123 @@
 {
-    "metadata": {
-        "request": {
-            "ode": { "verb": "POST", "version": 3 },
-            "sdw": {
-                "recordId": "BC1AC5E4",
-                "serviceRegion": {
-                    "nwCorner": { "latitude": 41.77329283, "longitude": -107.1000312 },
-                    "seCorner": { "latitude": 41.77163046, "longitude": -107.07895106 }
-                },
-                "ttl": "oneyear"
-            }
-        },
-        "recordGeneratedBy": "TMC",
-        "schemaVersion": 6,
-        "payloadType": "us.dot.its.jpo.ode.model.OdeTimPayload",
-        "odePacketID": "59CE5322A49CED33CB",
-        "serialId": {
-            "recordId": 0,
-            "serialNumber": 917,
-            "streamId": "9fa59341-9cab-403e-8306-6876238e9fda",
-            "bundleSize": 1,
-            "bundleId": 917
-        },
-        "sanitized": false,
-        "recordGeneratedAt": "2021-03-23T18:24:18.410648Z",
-        "maxDurationTime": 32000,
-        "odeTimStartDateTime": "2021-03-04T00:00:00.000Z",
-        "odeReceivedAt": "2021-03-23T18:24:18.438Z"
+  "metadata": {
+    "payloadType": "us.dot.its.jpo.ode.model.OdeMessageFramePayload",
+    "serialId": {
+      "streamId": "ef0b70ca-be5e-4192-a5e1-115116ab7864",
+      "bundleSize": 1,
+      "bundleId": 25,
+      "recordId": 0,
+      "serialNumber": 25
     },
-	"payload": {
-		"data": {
-			"msgCnt": 1,
-			"timeStamp": 117744,
-			"packetID": "59CE5322A49CED33CB",
-			"urlB": "null",
-			"dataFrames": [
-				{
-					"doNotUse1": 0,
-					"frameType": "roadSignage",
-					"msgId": {
-						"furtherInfoID": "0000"
-					},
-                    "durationTime": 32000,
-                    "startYear": 2021,
-					"startTime": 89280,
-					"priority": 5,
-					"doNotUse2": 0,
-					"regions": [
-						{
-                            "name": "I_I 80_SAT-BC1AC5E4_RW_24869%BUFF0-0",
-							"id": {
-								"region": 0,
-								"id": 0
-							},
-                            "anchor": { "lat": 417732928, "long": -1071000312 },
-							"laneWidth": 5000,
-							"directionality": "both",
-							"closedPath": false,
-							"direction": {
-								"from000-0to022-5degrees": false,
-								"from022-5to045-0degrees": false,
-								"from045-0to067-5degrees": false,
-								"from067-5to090-0degrees": true,
-								"from090-0to112-5degrees": true,
-								"from112-5to135-0degrees": false,
-								"from135-0to157-5degrees": false,
-								"from157-5to180-0degrees": false,
-								"from180-0to202-5degrees": false,
-								"from202-5to225-0degrees": false,
-								"from225-0to247-5degrees": false,
-								"from247-5to270-0degrees": false,
-								"from270-0to292-5degrees": false,
-								"from292-5to315-0degrees": false,
-								"from315-0to337-5degrees": false,
-								"from337-5to360-0degrees": false
-							},
-							"description": {
-								"path": {
-									"scale": 0,
-									"offset": {
-										"ll": {
-											"nodes": [
-                                                { "delta": { "node-LL1": { "lon": 0, "lat": 0 } } },
-                                                {
-                                                    "delta": {
-                                                        "node-LL4": { "lon": 115529, "lat": -16624 }
-                                                    }
-                                                },
-                                                {
-                                                    "delta": {
-                                                        "node-LL4": { "lon": 39044, "lat": 1521 }
-                                                    }
-                                                },
-                                                {
-                                                    "delta": {
-                                                        "node-LL4": { "lon": 56228, "lat": 11450 }
-                                                    }
-                                                }
-											]
-										}
-									}
-								}
-							}
-						}
-					],
-					"doNotUse3": 0,
-					"doNotUse4": 0,
-					"content": {
-						"workZone": [
-                            { "item": { "itis": 1537 } },
-                            { "item": { "itis": 12554 } },
-                            { "item": { "itis": 8728 } }
-						]
-					},
-					"url": "null"
-				}
-			]
-		},
-		"dataType": "us.dot.its.jpo.ode.plugin.j2735.travelerinformation.TravelerInformation"
-	}
+    "odeReceivedAt": "2026-01-15T21:29:33.019Z",
+    "schemaVersion": 9,
+    "maxDurationTime": 7199,
+    "recordGeneratedAt": "2026-01-15T21:29:32.936Z",
+    "recordGeneratedBy": "TMC",
+    "sanitized": false,
+    "odePacketID": "1B2843F8509412F770",
+    "odeTimStartDateTime": "2024-03-26T00:00:00.000Z",
+    "request": {
+      "ode": {
+        "version": 3,
+        "verb": "POST"
+      },
+      "sdw": {
+        "serviceRegion": {
+          "nwCorner": {
+            "latitude": 39.61320660700005,
+            "longitude": -104.89573620999994
+          },
+          "seCorner": {
+            "latitude": 39.60023459400003,
+            "longitude": -104.88829135999998
+          }
+        },
+        "ttl": "oneweek",
+        "recordId": "D4ECADF7"
+      }
+    },
+    "isCertPresent": false
+  },
+  "payload": {
+    "data": {
+      "messageId": 31,
+      "value": {
+        "TravelerInformation": {
+          "msgCnt": 1,
+          "timeStamp": 22682,
+          "packetID": "1B2843F8509412F770",
+          "urlB": "null",
+          "dataFrames": [
+            {
+              "doNotUse1": 0,
+              "frameType": "roadSignage",
+              "msgId": {
+                "furtherInfoID": "0000"
+              },
+              "startYear": 2024,
+              "startTime": 122400,
+              "durationTime": 7199,
+              "priority": 5,
+              "doNotUse2": 0,
+              "regions": [
+                {
+                  "name": "I_025A_DEC_SAT-D4ECADF7_RW_test20240326-3-I-12559",
+                  "id": {
+                    "region": 0,
+                    "id": 0
+                  },
+                  "anchor": {
+                    "lat": 396133302,
+                    "long": -1048958060
+                  },
+                  "laneWidth": 5000,
+                  "directionality": "both",
+                  "closedPath": false,
+                  "direction": "0300",
+                  "description": {
+                    "path": {
+                      "scale": 0,
+                      "offset": {
+                        "ll": {
+                          "nodes": [
+                            {
+                              "delta": {
+                                "node-LL1": {
+                                  "lon": 698,
+                                  "lat": -1236
+                                }
+                              }
+                            },
+                            {
+                              "delta": {
+                                "node-LL4": {
+                                  "lon": 74448,
+                                  "lat": -129720
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  }
+                }
+              ],
+              "doNotUse3": 0,
+              "doNotUse4": 0,
+              "content": {
+                "advisory": [
+                  { "item": { "itis": 1537 } },
+                  { "item": { "itis": 12554 } },
+                  { "item": { "itis": 8728 } }
+                ]
+              },
+              "url": "null"
+            }
+          ]
+        }
+      }
+    },
+    "dataType": "us.dot.its.jpo.asn.j2735.r2024.TravelerInformation.TravelerInformationMessageFrame"
+  }
 }

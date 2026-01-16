@@ -1,166 +1,233 @@
 {
   "metadata": {
+    "payloadType": "us.dot.its.jpo.ode.model.OdeMessageFramePayload",
+    "serialId": {
+      "streamId": "96ae544f-85f8-4162-aec5-fc54974fb1c2",
+      "bundleSize": 1,
+      "bundleId": 24,
+      "recordId": 0,
+      "serialNumber": 24
+    },
+    "odeReceivedAt": "2026-01-15T21:29:33.019Z",
+    "schemaVersion": 9,
+    "maxDurationTime": 120,
+    "recordGeneratedAt": "2026-01-15T21:29:32.936Z",
+    "recordGeneratedBy": "TMC",
+    "sanitized": false,
+    "odePacketID": "1B28436B7EFB7C7794",
+    "odeTimStartDateTime": "2026-01-15T22:50:30.311Z",
     "request": {
-      "ode": { "verb": "POST", "version": 3 },
+      "ode": {
+        "version": 3,
+        "verb": "POST"
+      },
       "sdw": {
-        "recordId": "1AF9F730",
         "serviceRegion": {
-          "nwCorner": { "latitude": 41.09852308, "longitude": -105.13317609 },
-          "seCorner": { "latitude": 41.09795279, "longitude": -105.11411777 }
+          "nwCorner": {
+            "latitude": 39.61320660700005,
+            "longitude": -104.89573620999994
+          },
+          "seCorner": {
+            "latitude": 39.60023459400003,
+            "longitude": -104.88829135999998
+          }
         },
-        "ttl": "oneday"
+        "ttl": "oneday",
+        "recordId": "3B3E7B6F"
       }
     },
-    "recordGeneratedBy": "TMC",
-    "schemaVersion": 6,
-    "payloadType": "us.dot.its.jpo.ode.model.OdeTimPayload",
-    "odePacketID": "AE394DB5A033905B26",
-    "serialId": {
-      "recordId": 0,
-      "serialNumber": 922,
-      "streamId": "9fa59341-9cab-403e-8306-6876238e9fda",
-      "bundleSize": 1,
-      "bundleId": 922
-    },
-    "sanitized": false,
-    "recordGeneratedAt": "2021-03-23T19:20:48.130840Z",
-    "maxDurationTime": 120,
-    "odeTimStartDateTime": "2021-03-23T19:20:47.118Z",
-    "odeReceivedAt": "2021-03-23T19:20:48.177Z"
+    "isCertPresent": false
   },
   "payload": {
     "data": {
-        "timeStamp": 117800,
-        "packetID": "AE394DB5A033905B26",
-        "urlB": null,
-        "dataFrames": [
+      "messageId": 31,
+      "value": {
+        "TravelerInformation": {
+          "msgCnt": 1,
+          "timeStamp": 21530,
+          "packetID": "1B28436B7EFB7C7794",
+          "urlB": "null",
+          "dataFrames": [
             {
-            "regions": [
+              "doNotUse1": 0,
+              "frameType": "roadSignage",
+              "msgId": {
+                "furtherInfoID": "0000"
+              },
+              "startYear": 2026,
+              "startTime": 21530,
+              "durationTime": 120,
+              "priority": 5,
+              "doNotUse2": 0,
+              "regions": [
                 {
-                  "closedPath": false,
-                  "anchor": { "lat": 410985067, "long": -1051331761 },
-                  "name": "I_I 80_SAT-1AF9F730_P_68-0",
+                  "name": "I_025A_DEC_SAT-F8EA5688_VSL_testid-I-8720",
+                  "id": {
+                    "region": 0,
+                    "id": 0
+                  },
+                  "anchor": {
+                    "lat": 396130830,
+                    "long": -1048956660
+                  },
                   "laneWidth": 5000,
                   "directionality": "both",
+                  "closedPath": false,
+                  "direction": "E00F",
                   "description": {
                     "path": {
+                      "scale": 0,
                       "offset": {
                         "ll": {
                           "nodes": [
-                              {
-                                "delta": { "node-LL1": { "lon": 0, "lat": 0 } }
-                              },
-                              {
-                                "delta": {
-                                  "node-LL5": { "lon": 133699, "lat": 163 }
-                                }
-                              },
-                              {
-                                "delta": {
-                                  "node-LL4": { "lon": 56885, "lat": -5703 }
+                            {
+                              "delta": {
+                                "node-LL1": {
+                                  "lon": -702,
+                                  "lat": 1236
                                 }
                               }
-                        ]
+                            },
+                            {
+                              "delta": {
+                                "node-LL5": {
+                                  "lon": -97591,
+                                  "lat": 172251
+                                }
+                              }
+                            },
+                            {
+                              "delta": {
+                                "node-LL4": {
+                                  "lon": -19501,
+                                  "lat": 44134
+                                }
+                              }
+                            },
+                            {
+                              "delta": {
+                                "node-LL4": {
+                                  "lon": -35318,
+                                  "lat": 48928
+                                }
+                              }
+                            },
+                            {
+                              "delta": {
+                                "node-LL5": {
+                                  "lon": -75595,
+                                  "lat": 133609
+                                }
+                              }
+                            }
+                          ]
                         }
-                      },
-                      "scale": 0
+                      }
                     }
-                  },
-                  "id": { "id": 0, "region": 0 },
-                  "direction": {
-                    "from000-0to022-5degrees": false,
-                    "from022-5to045-0degrees": false,
-                    "from045-0to067-5degrees": false,
-                    "from067-5to090-0degrees": true,
-                    "from090-0to112-5degrees": true,
-                    "from112-5to135-0degrees": false,
-                    "from135-0to157-5degrees": false,
-                    "from157-5to180-0degrees": false,
-                    "from180-0to202-5degrees": false,
-                    "from202-5to225-0degrees": false,
-                    "from225-0to247-5degrees": false,
-                    "from247-5to270-0degrees": false,
-                    "from270-0to292-5degrees": false,
-                    "from292-5to315-0degrees": false,
-                    "from315-0to337-5degrees": false,
-                    "from337-5to360-0degrees": false
-                }
+                  }
                 },
                 {
-                  "closedPath": "false",
-                  "anchor": { "lat": 410985067, "long": -1051331761 },
-                  "name": "I_I 80_SAT-1AF9F730_P_68-0",
+                  "name": "Temp",
+                  "id": {
+                    "region": 0,
+                    "id": 0
+                  },
+                  "anchor": {
+                    "lat": 399840592,
+                    "long": -1049882243
+                  },
                   "laneWidth": 5000,
                   "directionality": "both",
+                  "closedPath": false,
+                  "direction": "E10F",
                   "description": {
                     "path": {
+                      "scale": 0,
                       "offset": {
                         "ll": {
                           "nodes": [
-                              {
-                                "delta": { "node-LL1": { "lon": 0, "lat": 0 } }
-                              },
-                              {
-                                "delta": {
-                                  "node-LL5": { "lon": 133699, "lat": 163 }
-                                }
-                              },
-                              {
-                                "delta": {
-                                  "node-LL4": { "lon": 56885, "lat": -5703 }
+                            {
+                              "delta": {
+                                "node-LL3": {
+                                  "lon": 5667,
+                                  "lat": 31904
                                 }
                               }
-                            ]
+                            },
+                            {
+                              "delta": {
+                                "node-LL3": {
+                                  "lon": 15679,
+                                  "lat": 32740
+                                }
+                              }
+                            },
+                            {
+                              "delta": {
+                                "node-LL4": {
+                                  "lon": 48062,
+                                  "lat": 90548
+                                }
+                              }
+                            },
+                            {
+                              "delta": {
+                                "node-LL3": {
+                                  "lon": 4032,
+                                  "lat": 17529
+                                }
+                              }
+                            },
+                            {
+                              "delta": {
+                                "node-LL5": {
+                                  "lon": 3227,
+                                  "lat": 1112951
+                                }
+                              }
+                            },
+                            {
+                              "delta": {
+                                "node-LL4": {
+                                  "lon": 3490,
+                                  "lat": 42717
+                                }
+                              }
+                            }
+                          ]
                         }
-                      },
-                      "scale": 0
+                      }
                     }
-                  },
-                  "id": { "id": 0, "region": 0 },
-                  "direction": {
-                    "from000-0to022-5degrees": false,
-                    "from022-5to045-0degrees": false,
-                    "from045-0to067-5degrees": false,
-                    "from067-5to090-0degrees": true,
-                    "from090-0to112-5degrees": true,
-                    "from112-5to135-0degrees": false,
-                    "from135-0to157-5degrees": false,
-                    "from157-5to180-0degrees": false,
-                    "from180-0to202-5degrees": false,
-                    "from202-5to225-0degrees": false,
-                    "from225-0to247-5degrees": false,
-                    "from247-5to270-0degrees": false,
-                    "from270-0to292-5degrees": false,
-                    "from292-5to315-0degrees": false,
-                    "from315-0to337-5degrees": false,
-                    "from337-5to360-0degrees": false
-                }
+                  }
                 }
               ],
-            "durationTime": 120,
-            "doNotUse3": 0,
-            "doNotUse4": 0,
-            "startYear": 2021,
-            "msgId": {
-              "furtherInfoID": "0000"
-            },
-            "priority": 5,
-            "content": {
-              "exitService": [
-                  { "item": { "itis": 4104 } },
-                  { "item": { "itis": 11794 } },
-                  { "item": { "text": 345 } }
-              ]
-            },
-            "url": "null",
-            "doNotUse1": 0,
-            "doNotUse2": 0,
-            "frameType": "roadSignage",
-            "startTime": 117800
-          }
-        ],
-        "msgCnt": 1
+              "doNotUse3": 0,
+              "doNotUse4": 0,
+              "content": {
+                "advisory": [
+                  {
+                    "item": {
+                      "itis": 4104
+                    }
+                  },
+                  {
+                    "item": {
+                      "itis": 11794
+                    }
+                  },
+                  {
+                    "item": {
+                      "text": "345"
+                    }
+                  }
+                ]
+              },
+              "url": "null"
+            }
+          ]
+        }
+      }
     },
-    "dataType": "TravelerInformation"
+    "dataType": "us.dot.its.jpo.asn.j2735.r2024.TravelerInformation.TravelerInformationMessageFrame"
   }
 }

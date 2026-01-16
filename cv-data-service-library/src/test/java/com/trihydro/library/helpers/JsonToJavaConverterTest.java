@@ -11,7 +11,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.slf4j.Logger;
 
 import us.dot.its.jpo.ode.model.OdeLogMetadata;
 import us.dot.its.jpo.ode.model.OdeLogMetadata.RecordType;
@@ -394,7 +393,7 @@ public class JsonToJavaConverterTest {
         Assertions.assertEquals("advisory", getTim(tim_vsl).getDataframes()[0].getContent());
         Assertions.assertArrayEquals(new String[] { "268", "12604", "8720" },
                 getTim(tim_vsl).getDataframes()[0].getItems());
-        
+
         // verify number of regions = 1
         Assertions.assertEquals(1, getTim(tim_vsl).getDataframes()[0].getRegions().length);
     }
@@ -412,7 +411,7 @@ public class JsonToJavaConverterTest {
         Assertions.assertEquals("advisory", getTim(tim_vsl).getDataframes()[0].getContent());
         Assertions.assertArrayEquals(new String[] { "268", "12604", "8720" },
                 getTim(tim_vsl).getDataframes()[0].getItems());
-        
+
         // verify number of regions = 2
         Assertions.assertEquals(2, getTim(tim_vsl).getDataframes()[0].getRegions().length);
     }
@@ -430,7 +429,7 @@ public class JsonToJavaConverterTest {
         Assertions.assertEquals("advisory", getTim(tim_parking).getDataframes()[0].getContent());
         Assertions.assertArrayEquals(new String[] { "4104", "11794", "345" },
                 getTim(tim_parking).getDataframes()[0].getItems());
-        
+
         // verify number of regions = 1
         Assertions.assertEquals(1, getTim(tim_parking).getDataframes()[0].getRegions().length);
     }
@@ -448,7 +447,7 @@ public class JsonToJavaConverterTest {
         Assertions.assertEquals("advisory", getTim(tim_parking).getDataframes()[0].getContent());
         Assertions.assertArrayEquals(new String[] { "4104", "11794", "345" },
                 getTim(tim_parking).getDataframes()[0].getItems());
-        
+
         // verify number of regions = 2
         Assertions.assertEquals(2, getTim(tim_parking).getDataframes()[0].getRegions().length);
     }
@@ -467,7 +466,7 @@ public class JsonToJavaConverterTest {
         Assertions.assertEquals("advisory", getTim(tim_construction).getDataframes()[0].getContent());
         Assertions.assertArrayEquals(new String[] { "1537", "12554", "8728" },
                 getTim(tim_construction).getDataframes()[0].getItems());
-        
+
         // verify number of regions = 1
         Assertions.assertEquals(1, getTim(tim_construction).getDataframes()[0].getRegions().length);
     }
@@ -486,7 +485,7 @@ public class JsonToJavaConverterTest {
         Assertions.assertEquals("advisory", getTim(tim_construction).getDataframes()[0].getContent());
         Assertions.assertArrayEquals(new String[] { "1537", "12554", "8728" },
                 getTim(tim_construction).getDataframes()[0].getItems());
-        
+
         // verify number of regions = 2
         Assertions.assertEquals(2, getTim(tim_construction).getDataframes()[0].getRegions().length);
     }
