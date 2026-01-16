@@ -9,12 +9,16 @@ import java.util.stream.StreamSupport;
 
 import com.trihydro.cvdatacontroller.model.Milepost;
 
+import lombok.extern.slf4j.Slf4j;
 import org.neo4j.ogm.session.Session;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
+@Slf4j
 @Repository
 @Transactional
+@ConditionalOnProperty(name="config.milepostProvider", havingValue="neo4J")
 public class MilepostRepositoryImplementation implements MilepostRepository {
     private final Session session;
 
@@ -102,7 +106,7 @@ public class MilepostRepositoryImplementation implements MilepostRepository {
             String direction, Double bufferInMiles) {
         /**
          * This function creates a statement such as the following
-         * 
+         *
          * match(mp:Milepost{CommonName: 'WY 59'}) where mp.Direction in ['I', 'B'] with
          * min(mp) as extremeMp match(mp:Milepost{CommonName: 'WY 59'}) where
          * mp.Direction in ['I', 'B'] with extremeMp, mp,
@@ -122,14 +126,14 @@ public class MilepostRepositoryImplementation implements MilepostRepository {
          * match(mp:Milepost{CommonName: 'WY 130'})
          * where mp.Direction in ['I', 'B'] with
          * min(mp) as extremeMp
-         * 
+         *
          * match(mp:Milepost{CommonName: 'WY 130'})
          * where mp.Direction in ['I', 'B']
          * with extremeMp, mp,
          * distance(point({longitude:-105.62924042,latitude:41.3088996361}),
          * point({longitude:mp.Longitude,latitude:mp.Latitude})) as d1
          * with extremeMp, mp, d1 ORDER BY d1 ASC LIMIT 1
-         * 
+         *
          * match path=(mp)-[rels:WY_130_I*0..10]-(d)
          * where all(rel in rels WHERE rel.Direction in ['I', 'B'])
          * return path
@@ -152,8 +156,7 @@ public class MilepostRepositoryImplementation implements MilepostRepository {
         query += " match(mp:Milepost{CommonName: $commonName})";
         query += " where mp.Direction in " + dirQuery;
         query += " with extremeMp, mp, distance(point({longitude:apoc.number.parseFloat($lon),latitude:apoc.number.parseFloat($lat)}), point({longitude:mp.Longitude,latitude:mp.Latitude})) as d1 ";
-        query += " with extremeMp, mp, d1 ORDER BY d1 ASC LIMIT 1";// here we have the closest point, now go back
-                                                                   // bufferInMiles
+        query += " with extremeMp, mp, d1 ORDER BY d1 ASC LIMIT 1";// here we have the closest point, now go back// bufferInMiles
 
         // determine the relationship name and buffer in miles (mileposts are in tenths
         // of a mile, so 1 mile = 10 mileposts)

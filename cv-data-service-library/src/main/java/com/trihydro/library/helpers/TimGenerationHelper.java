@@ -29,7 +29,6 @@ import com.trihydro.library.model.TimUpdateModel;
 import com.trihydro.library.model.WydotRsu;
 import com.trihydro.library.model.WydotRsuTim;
 import com.trihydro.library.model.WydotTim;
-import com.trihydro.library.model.WydotTravelerInputData;
 import com.trihydro.library.service.ActiveTimHoldingService;
 import com.trihydro.library.service.ActiveTimService;
 import com.trihydro.library.service.DataFrameService;
@@ -44,6 +43,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import us.dot.its.jpo.ode.model.OdeTravelerInputData;
 import us.dot.its.jpo.ode.plugin.RoadSideUnit.RSU;
 import us.dot.its.jpo.ode.plugin.SNMP;
 import us.dot.its.jpo.ode.plugin.ServiceRequest;
@@ -204,7 +204,7 @@ public class TimGenerationHelper {
                         tum.getActiveTimId(), gson.toJson(validationResult));
                     continue;
                 }
-                WydotTravelerInputData timToSend = new WydotTravelerInputData();
+                OdeTravelerInputData timToSend = new OdeTravelerInputData();
                 timToSend.setTim(tim);
                 var extraEx = sendTim(timToSend, tum, activeTimId, mps);
                 if (!extraEx.isEmpty()) {
@@ -459,7 +459,7 @@ public class TimGenerationHelper {
                     exceptions.add(new ResubmitTimException(activeTimId, exMsg));
                     continue;
                 }
-                WydotTravelerInputData timToSend = new WydotTravelerInputData();
+                OdeTravelerInputData timToSend = new OdeTravelerInputData();
                 timToSend.setTim(tim);
                 var extraEx = sendTim(timToSend, tum, activeTimId, reduced_mps);
                 if (!extraEx.isEmpty()) {
@@ -554,7 +554,7 @@ public class TimGenerationHelper {
                     exceptions.add(new ResubmitTimException(activeTimId, exMsg));
                     continue;
                 }
-                WydotTravelerInputData timToSend = new WydotTravelerInputData();
+                OdeTravelerInputData timToSend = new OdeTravelerInputData();
                 timToSend.setTim(tim);
                 var extraEx = sendTim(timToSend, tum, activeTimId, reduced_mps);
                 if (!extraEx.isEmpty()) {
@@ -698,7 +698,7 @@ public class TimGenerationHelper {
                 }
 
                 log.trace("Preparing TIM for sending - TIM ID: {}", activeTimId);
-                WydotTravelerInputData timToSend = new WydotTravelerInputData();
+                OdeTravelerInputData timToSend = new OdeTravelerInputData();
                 timToSend.setTim(tim);
 
                 log.debug("Sending resubmitted TIM for ID: {}", activeTimId);
@@ -901,7 +901,7 @@ public class TimGenerationHelper {
         return regions;
     }
 
-    private List<ResubmitTimException> sendTim(WydotTravelerInputData timToSend, TimUpdateModel tum, Long activeTimId, List<Milepost> reduced_mps) {
+    private List<ResubmitTimException> sendTim(OdeTravelerInputData timToSend, TimUpdateModel tum, Long activeTimId, List<Milepost> reduced_mps) {
         log.trace("Sending TIM to ODE with client id {}", tum.getClientId());
         List<ResubmitTimException> exceptions = new ArrayList<>();
 
@@ -1117,7 +1117,7 @@ public class TimGenerationHelper {
         return regionName;
     }
 
-    private String updateAndSendRSU(WydotTravelerInputData timToSend, TimUpdateModel aTim, List<Milepost> mileposts) {
+    private String updateAndSendRSU(OdeTravelerInputData timToSend, TimUpdateModel aTim, List<Milepost> mileposts) {
         String exMsg = "";
         List<WydotRsuTim> wydotRsus = rsuService.getFullRsusTimIsOn(aTim.getTimId());
         List<WydotRsu> dbRsus = new ArrayList<WydotRsu>();
@@ -1262,7 +1262,7 @@ public class TimGenerationHelper {
         return exMsg;
     }
 
-    private String updateAndSendSDX(WydotTravelerInputData timToSend, TimUpdateModel aTim,
+    private String updateAndSendSDX(OdeTravelerInputData timToSend, TimUpdateModel aTim,
                                     List<Milepost> reduced_mps) {
         // Ensure request is empty
         timToSend.setRequest(new ServiceRequest());

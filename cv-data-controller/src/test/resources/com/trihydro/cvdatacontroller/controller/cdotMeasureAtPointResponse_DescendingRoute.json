@@ -1,0 +1,65 @@
+{
+  "displayFieldName": "",
+  "fieldAliases": {
+    "OBJECTID": "OBJECTID",
+    "Route": "Route",
+    "Measure": "Measure",
+    "Distance": "Distance",
+    "MMin": "MMin",
+    "MMax": "MMax"
+  },
+  "geometryType": "esriGeometryPoint",
+  "spatialReference": {
+    "wkid": 4326,
+    "latestWkid": 4326
+  },
+  "fields": [
+    {
+      "name": "OBJECTID",
+      "type": "esriFieldTypeOID",
+      "alias": "OBJECTID"
+    },
+    {
+      "name": "Route",
+      "type": "esriFieldTypeString",
+      "alias": "Route",
+      "length": 90
+    },
+    {
+      "name": "Measure",
+      "type": "esriFieldTypeDouble",
+      "alias": "Measure"
+    },
+    {
+      "name": "Distance",
+      "type": "esriFieldTypeDouble",
+      "alias": "Distance"
+    },
+    {
+      "name": "MMin",
+      "type": "esriFieldTypeDouble",
+      "alias": "MMin"
+    },
+    {
+      "name": "MMax",
+      "type": "esriFieldTypeDouble",
+      "alias": "MMax"
+    }
+  ],
+  "features": [
+    {
+      "attributes": {
+        "OBJECTID": 1,
+        "Route": "025A_DEC",
+        "Measure": 198.61099999999999,
+        "Distance": 3.1200000000000001,
+        "MMin": 0,
+        "MMax": 298.87900000000002
+      },
+      "geometry": {
+        "x": -104.89573840099996,
+        "y": 39.613210472000048
+      }
+    }
+  ]
+}

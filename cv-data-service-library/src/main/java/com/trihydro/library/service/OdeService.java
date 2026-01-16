@@ -9,10 +9,10 @@ import com.trihydro.library.helpers.Utility;
 import com.trihydro.library.model.OdeProps;
 import com.trihydro.library.model.TimQuery;
 import com.trihydro.library.model.WydotRsu;
-import com.trihydro.library.model.WydotTravelerInputData;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import us.dot.its.jpo.ode.model.OdeTravelerInputData;
 import us.dot.its.jpo.ode.plugin.RoadSideUnit.RSU;
 import us.dot.its.jpo.ode.plugin.SnmpProtocol;
 
@@ -41,12 +41,12 @@ public class OdeService {
         odeProps = _odeProps;
     }
 
-    public String sendNewTimToRsu(WydotTravelerInputData timToSend) {
+    public String sendNewTimToRsu(OdeTravelerInputData timToSend) {
         logger.info("Sending the following new TIM to ODE for processing: {}", gson.toJson(timToSend));
         String exMsg = "";
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
-        HttpEntity<WydotTravelerInputData> entity = new HttpEntity<WydotTravelerInputData>(timToSend, headers);
+        HttpEntity<OdeTravelerInputData> entity = new HttpEntity<>(timToSend, headers);
         ResponseEntity<String> response = restTemplateProvider.GetRestTemplate_NoErrors()
                 .exchange(odeProps.getOdeUrl() + "/tim", HttpMethod.POST, entity, String.class);
         if (response.getStatusCode().series() != HttpStatus.Series.SUCCESSFUL) {
@@ -56,11 +56,11 @@ public class OdeService {
         return exMsg;
     }
 
-    public String updateTimOnSdw(WydotTravelerInputData timToSend) {
+    public String updateTimOnSdw(OdeTravelerInputData timToSend) {
         String exceptionMessage = "";
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
-        HttpEntity<WydotTravelerInputData> entity = new HttpEntity<WydotTravelerInputData>(timToSend, headers);
+        HttpEntity<OdeTravelerInputData> entity = new HttpEntity<>(timToSend, headers);
         logger.debug("Sending updated TIM {} to ODE for processing", gson.toJson(timToSend));
         try {
             ResponseEntity<String> response = restTemplateProvider.GetRestTemplate_NoErrors()

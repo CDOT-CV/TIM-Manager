@@ -1,31 +1,25 @@
 package com.trihydro.cvdatacontroller.controller;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.stream.Collectors;
-
-import com.mapbox.services.commons.geojson.Feature;
-import com.mapbox.services.commons.geojson.FeatureCollection;
-import com.mapbox.services.commons.geojson.LineString;
-import com.mapbox.services.commons.models.Position;
-import lombok.extern.slf4j.Slf4j;
-
 import com.trihydro.cvdatacontroller.services.MilepostService;
 import com.trihydro.library.model.Milepost;
 import com.trihydro.library.model.MilepostBuffer;
-import com.trihydro.library.model.WydotTim;
 import com.trihydro.library.model.SetMilepostCacheRequest;
-
+import com.trihydro.library.model.WydotTim;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import springfox.documentation.annotations.ApiIgnore;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -33,527 +27,425 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
-import springfox.documentation.annotations.ApiIgnore;
-
 @CrossOrigin
 @RestController
 @Slf4j
 @ApiIgnore
 public class MilepostController extends BaseController {
 
-  private MilepostService milepostService;
-	private final HashMap<String, List<Milepost>> milepostCache = new HashMap<>();
+    private MilepostService milepostService;
+    private final HashMap<String, List<Milepost>> milepostCache = new HashMap<>();
 
-	@Autowired
-	public void InjectDependencies(MilepostService _milepostService) {
-		this.milepostService = _milepostService;
-	}
+    @Autowired
+    public void InjectDependencies(MilepostService _milepostService) {
+        this.milepostService = _milepostService;
+    }
 
-	@RequestMapping(value = "/routes", method = RequestMethod.GET)
-	public ResponseEntity<List<String>> getRoutes() {
-		Connection connection = null;
-		ResultSet rs = null;
-		PreparedStatement preparedStatement = null;
-		List<String> routes = new ArrayList<>();
-		try {
+    @RequestMapping(value = "/routes", method = RequestMethod.GET)
+    public ResponseEntity<List<String>> getRoutes() {
 
-			connection = dbInteractions.getConnectionPool();
+        List<String> routes = milepostService.getRoutes();
 
-			// build SQL query
-			String statementStr = "select distinct common_name from MILEPOST_VW_NEW";
-			preparedStatement = connection.prepareStatement(statementStr);
-			rs = preparedStatement.executeQuery();
+        if (routes.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(routes);
+        }
 
-			while (rs.next()) {
-				routes.add(rs.getString("COMMON_NAME"));
-			}
-			return ResponseEntity.ok(routes);
-		} catch (SQLException e) {
+        return ResponseEntity.ok(routes);
+    }
+
+    /**
+     * Fetch mileposts from the view by their common name. Used for TimCreator tool
+     *
+     * @param commonName
+     * @param mod
+     * @return
+     */
+    @RequestMapping(method = RequestMethod.GET, value = "/mileposts-common-name/{commonName}/{mod}")
+    public ResponseEntity<List<Milepost>> getMilepostsCommonName(@PathVariable String commonName,
+                                                                 @PathVariable Boolean mod) {
+        List<Milepost> mileposts = new ArrayList<Milepost>();
+        Connection connection = null;
+        Statement statement = null;
+        ResultSet rs = null;
+
+        try {
+
+            // build statement SQL query
+            connection = dbInteractions.getConnectionPool();
+            statement = connection.createStatement();
+
+            // build statement SQL query
+            String sqlString = "select * from MILEPOST_VW_NEW where COMMON_NAME = '" + commonName + "'";
+
+            if (mod)
+                sqlString += " and MOD(milepost, 1) = 0";
+
+            rs = statement.executeQuery(sqlString);
+
+            // convert result to milepost objects
+            while (rs.next()) {
+                Milepost milepost = new Milepost();
+                milepost.setCommonName(rs.getString("COMMON_NAME"));
+                milepost.setMilepost(rs.getDouble("MILEPOST"));
+                milepost.setDirection(rs.getString("DIRECTION"));
+                milepost.setLatitude(rs.getBigDecimal("LATITUDE"));
+                milepost.setLongitude(rs.getBigDecimal("LONGITUDE"));
+                mileposts.add(milepost);
+            }
+        } catch (SQLException e) {
             log.error("Exception", e);
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(routes);
-		} finally {
-			try {
-				// close prepared statement
-				if (preparedStatement != null)
-					preparedStatement.close();
-				// return connection back to pool
-				if (connection != null)
-					connection.close();
-				// close result set
-				if (rs != null)
-					rs.close();
-			} catch (SQLException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(mileposts);
+        } finally {
+            try {
+                // close prepared statement
+                if (statement != null)
+                    statement.close();
+                // return connection back to pool
+                if (connection != null)
+                    connection.close();
+                // close result set
+                if (rs != null)
+                    rs.close();
+            } catch (SQLException e) {
                 log.error("Exception", e);
-			}
-		}
-	}
+            }
+        }
+        return ResponseEntity.ok(mileposts);
+    }
 
-	/**
-	 * Fetch mileposts from the view by their common name. Used for TimCreator tool
-	 * 
-	 * @param commonName
-	 * @param mod
-	 * @return
-	 */
-	@RequestMapping(method = RequestMethod.GET, value = "/mileposts-common-name/{commonName}/{mod}")
-	public ResponseEntity<List<Milepost>> getMilepostsCommonName(@PathVariable String commonName,
-			@PathVariable Boolean mod) {
-		List<Milepost> mileposts = new ArrayList<Milepost>();
-		Connection connection = null;
-		Statement statement = null;
-		ResultSet rs = null;
+    // the milepost_vw
+    @RequestMapping(method = RequestMethod.GET, value = "/get-milepost-range/{direction}/{fromMilepost}/{toMilepost}/{commonName}")
+    public ResponseEntity<List<Milepost>> getMilepostRange(@PathVariable String direction,
+                                                           @PathVariable String commonName, @PathVariable Double fromMilepost, @PathVariable Double toMilepost) {
+        List<Milepost> mileposts = new ArrayList<Milepost>();
+        Connection connection = null;
+        Statement statement = null;
+        ResultSet rs = null;
 
-		try {
+        try {
 
-			// build statement SQL query
-			connection = dbInteractions.getConnectionPool();
-			statement = connection.createStatement();
+            connection = dbInteractions.getConnectionPool();
+            statement = connection.createStatement();
 
-			// build statement SQL query
-			String sqlString = "select * from MILEPOST_VW_NEW where COMMON_NAME = '" + commonName + "'";
+            // build SQL query
+            String statementStr = "select * from MILEPOST_VW_NEW where direction = '" + translateDirection(direction)
+                    + "' and milepost between " + Math.min(fromMilepost, toMilepost) + " and "
+                    + Math.max(fromMilepost, toMilepost) + " and common_name = '" + commonName + "'";
 
-			if (mod)
-				sqlString += " and MOD(milepost, 1) = 0";
+            if (fromMilepost < toMilepost)
+                rs = statement.executeQuery(statementStr + " order by milepost asc");
+            else
+                rs = statement.executeQuery(statementStr + " order by milepost desc");
 
-			rs = statement.executeQuery(sqlString);
+            // convert result to milepost objects
+            while (rs.next()) {
+                Milepost milepost = new Milepost();
+                milepost.setCommonName(rs.getString("COMMON_NAME"));
+                milepost.setMilepost(rs.getDouble("MILEPOST"));
+                milepost.setDirection(rs.getString("DIRECTION"));
+                milepost.setLatitude(rs.getBigDecimal("LATITUDE"));
+                milepost.setLongitude(rs.getBigDecimal("LONGITUDE"));
+                mileposts.add(milepost);
+            }
 
-			// convert result to milepost objects
-			while (rs.next()) {
-				Milepost milepost = new Milepost();
-				milepost.setCommonName(rs.getString("COMMON_NAME"));
-				milepost.setMilepost(rs.getDouble("MILEPOST"));
-				milepost.setDirection(rs.getString("DIRECTION"));
-				milepost.setLatitude(rs.getBigDecimal("LATITUDE"));
-				milepost.setLongitude(rs.getBigDecimal("LONGITUDE"));
-				mileposts.add(milepost);
-			}
-		} catch (SQLException e) {
-      log.error("Exception", e);
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(mileposts);
-		} finally {
-			try {
-				// close prepared statement
-				if (statement != null)
-					statement.close();
-				// return connection back to pool
-				if (connection != null)
-					connection.close();
-				// close result set
-				if (rs != null)
-					rs.close();
-			} catch (SQLException e) {
-        log.error("Exception", e);
-			}
-		}
-		return ResponseEntity.ok(mileposts);
-	}
+            if (mileposts.size() == 0) {
+                log.info("Unable to find mileposts with query: {}", statementStr);
+            }
+        } catch (SQLException e) {
+            log.error("Exception", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(mileposts);
+        } finally {
+            try {
+                // close prepared statement
+                if (statement != null)
+                    statement.close();
+                // return connection back to pool
+                if (connection != null)
+                    connection.close();
+                // close result set
+                if (rs != null)
+                    rs.close();
+            } catch (SQLException e) {
+                log.error("Exception", e);
+            }
+        }
+        return ResponseEntity.ok(mileposts);
+    }
 
-	// the milepost_vw
-	@RequestMapping(method = RequestMethod.GET, value = "/get-milepost-range/{direction}/{fromMilepost}/{toMilepost}/{commonName}")
-	public ResponseEntity<List<Milepost>> getMilepostRange(@PathVariable String direction,
-			@PathVariable String commonName, @PathVariable Double fromMilepost, @PathVariable Double toMilepost) {
-		List<Milepost> mileposts = new ArrayList<Milepost>();
-		Connection connection = null;
-		Statement statement = null;
-		ResultSet rs = null;
+    @RequestMapping(method = RequestMethod.GET, value = "/get-milepost-range-no-direction/{fromMilepost}/{toMilepost}/{commonName}")
+    public ResponseEntity<List<Milepost>> getMilepostRangeNoDirection(@PathVariable String commonName,
+                                                                      @PathVariable Double fromMilepost, @PathVariable Double toMilepost) {
+        List<Milepost> mileposts = new ArrayList<Milepost>();
+        Connection connection = null;
+        Statement statement = null;
+        ResultSet rs = null;
 
-		try {
+        try {
 
-			connection = dbInteractions.getConnectionPool();
-			statement = connection.createStatement();
+            connection = dbInteractions.getConnectionPool();
+            statement = connection.createStatement();
 
-			// build SQL query
-			String statementStr = "select * from MILEPOST_VW_NEW where direction = '" + translateDirection(direction)
-					+ "' and milepost between " + Math.min(fromMilepost, toMilepost) + " and "
-					+ Math.max(fromMilepost, toMilepost) + " and common_name = '" + commonName + "'";
+            // build SQL query
+            String statementStr = "select * from MILEPOST_VW_NEW where milepost between "
+                    + Math.min(fromMilepost, toMilepost) + " and " + Math.max(fromMilepost, toMilepost)
+                    + " and common_name = '" + commonName + "'";
 
-			if (fromMilepost < toMilepost)
-				rs = statement.executeQuery(statementStr + " order by milepost asc");
-			else
-				rs = statement.executeQuery(statementStr + " order by milepost desc");
+            if (fromMilepost < toMilepost)
+                rs = statement.executeQuery(statementStr + " order by milepost asc");
+            else
+                rs = statement.executeQuery(statementStr + " order by milepost desc");
 
-			// convert result to milepost objects
-			while (rs.next()) {
-				Milepost milepost = new Milepost();
-				milepost.setCommonName(rs.getString("COMMON_NAME"));
-				milepost.setMilepost(rs.getDouble("MILEPOST"));
-				milepost.setDirection(rs.getString("DIRECTION"));
-				milepost.setLatitude(rs.getBigDecimal("LATITUDE"));
-				milepost.setLongitude(rs.getBigDecimal("LONGITUDE"));
-				mileposts.add(milepost);
-			}
+            // convert result to milepost objects
+            while (rs.next()) {
+                Milepost milepost = new Milepost();
+                milepost.setCommonName(rs.getString("COMMON_NAME"));
+                milepost.setMilepost(rs.getDouble("MILEPOST"));
+                milepost.setLatitude(rs.getBigDecimal("LATITUDE"));
+                milepost.setLongitude(rs.getBigDecimal("LONGITUDE"));
+                mileposts.add(milepost);
+            }
+        } catch (SQLException e) {
+            log.error("Exception", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(mileposts);
+        } finally {
+            try {
+                // close prepared statement
+                if (statement != null)
+                    statement.close();
+                // return connection back to pool
+                if (connection != null)
+                    connection.close();
+                // close result set
+                if (rs != null)
+                    rs.close();
+            } catch (SQLException e) {
+                log.error("Exception", e);
+            }
+        }
+        return ResponseEntity.ok(mileposts);
+    }
 
-			if (mileposts.size() == 0) {
-        log.info("Unable to find mileposts with query: {}", statementStr);
-			}
-		} catch (SQLException e) {
-      log.error("Exception", e);
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(mileposts);
-		} finally {
-			try {
-				// close prepared statement
-				if (statement != null)
-					statement.close();
-				// return connection back to pool
-				if (connection != null)
-					connection.close();
-				// close result set
-				if (rs != null)
-					rs.close();
-			} catch (SQLException e) {
-        log.error("Exception", e);
-			}
-		}
-		return ResponseEntity.ok(mileposts);
-	}
+    private String translateDirection(String direction) {
+        switch (direction.toLowerCase()) {
+            case "northbound":
+            case "eastbound":
+            case "eastward":
+                return "I";
 
-	@RequestMapping(method = RequestMethod.GET, value = "/get-milepost-range-no-direction/{fromMilepost}/{toMilepost}/{commonName}")
-	public ResponseEntity<List<Milepost>> getMilepostRangeNoDirection(@PathVariable String commonName,
-			@PathVariable Double fromMilepost, @PathVariable Double toMilepost) {
-		List<Milepost> mileposts = new ArrayList<Milepost>();
-		Connection connection = null;
-		Statement statement = null;
-		ResultSet rs = null;
+            case "southbound":
+            case "westbound":
+            case "westward":
+                return "D";
 
-		try {
+            case "both":
+                return "B";
 
-			connection = dbInteractions.getConnectionPool();
-			statement = connection.createStatement();
+            default:
+                return direction.toUpperCase();
+        }
+    }
 
-			// build SQL query
-			String statementStr = "select * from MILEPOST_VW_NEW where milepost between "
-					+ Math.min(fromMilepost, toMilepost) + " and " + Math.max(fromMilepost, toMilepost)
-					+ " and common_name = '" + commonName + "'";
+    @RequestMapping(method = RequestMethod.POST, produces = "application/json", value = "get-milepost-start-end")
+    public ResponseEntity<List<Milepost>> getMilepostsByStartEndPoint(@RequestBody WydotTim wydotTim) throws Exception {
 
-			if (fromMilepost < toMilepost)
-				rs = statement.executeQuery(statementStr + " order by milepost asc");
-			else
-				rs = statement.executeQuery(statementStr + " order by milepost desc");
+        List<Milepost> mileposts = milepostService.getMilepostsByStartEndPoint(wydotTim);
 
-			// convert result to milepost objects
-			while (rs.next()) {
-				Milepost milepost = new Milepost();
-				milepost.setCommonName(rs.getString("COMMON_NAME"));
-				milepost.setMilepost(rs.getDouble("MILEPOST"));
-				milepost.setLatitude(rs.getBigDecimal("LATITUDE"));
-				milepost.setLongitude(rs.getBigDecimal("LONGITUDE"));
-				mileposts.add(milepost);
-			}
-		} catch (SQLException e) {
-      log.error("Exception", e);
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(mileposts);
-		} finally {
-			try {
-				// close prepared statement
-				if (statement != null)
-					statement.close();
-				// return connection back to pool
-				if (connection != null)
-					connection.close();
-				// close result set
-				if (rs != null)
-					rs.close();
-			} catch (SQLException e) {
-        log.error("Exception", e);
-			}
-		}
-		return ResponseEntity.ok(mileposts);
-	}
+        if (mileposts.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(mileposts);
+        }
 
-	private String translateDirection(String direction) {
-		switch (direction.toLowerCase()) {
-			case "northbound":
-			case "eastbound":
-			case "eastward":
-				return "I";
+        return ResponseEntity.ok(mileposts);
+    }
 
-			case "southbound":
-			case "westbound":
-			case "westward":
-				return "D";
+    @RequestMapping(method = RequestMethod.POST, value="/set-milepost-cache")
+    public ResponseEntity<String> setMilepostCache(@RequestBody SetMilepostCacheRequest milepostCacheBody) {
 
-			case "both":
-				return "B";
+        if (milepostCacheBody.getMileposts().isEmpty() || milepostCacheBody.getTimID() == null) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid Request: please provide a valid milepost list and timID");
+        }
+        if (milepostCache.containsKey(milepostCacheBody.getTimID())) {
+            log.info("Updating milepost cache for timID: {}", milepostCacheBody.getTimID());
+        } else {
+            log.info("Setting milepost cache for timID: {}", milepostCacheBody.getTimID());
+        }
+        milepostCache.put(milepostCacheBody.getTimID(), milepostCacheBody.getMileposts());
+        return ResponseEntity.ok("Milepost cache set successfully for timID: " + milepostCacheBody.getTimID());
+    }
 
-			default:
-				return direction.toUpperCase();
-		}
-	}
+    @RequestMapping(method = RequestMethod.GET, value="/get-milepost-cache/{timID}")
+    public ResponseEntity<List<Milepost>> getMilepostCacheByTimID(@PathVariable String timID) {
+        List<Milepost> mileposts = new ArrayList<>();
 
-	/**
-	 * Gets a collection of Mileposts between a start and end point, along the given
-	 * route. Includes a buffer point ahead of start point as an anchor
-	 * 
-	 * @param wydotTim
-	 * @return Collection of Milepost objects representing the path
-	 */
-	@RequestMapping(method = RequestMethod.POST, produces = "application/json", value = "/get-milepost-start-end")
-	public ResponseEntity<Collection<com.trihydro.cvdatacontroller.model.Milepost>> getMilepostsByStartEndPoint(
-			@RequestBody WydotTim wydotTim) {
+        if (milepostCache.containsKey(timID)) {
+            mileposts = milepostCache.get(timID);
+            log.info("Found {} mileposts in cache for timID: {}", mileposts.size(), timID);
+            return ResponseEntity.ok(milepostCache.get(timID));
+        }
 
-		// check startPoint
-		if (wydotTim.getStartPoint() == null || wydotTim.getStartPoint().getLatitude() == null
-				|| wydotTim.getStartPoint().getLongitude() == null) {
-			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
-		}
+        return ResponseEntity.ok(mileposts);
+    }
 
-		// check endpoint
-		if (wydotTim.getEndPoint() == null || wydotTim.getEndPoint().getLatitude() == null
-				|| wydotTim.getEndPoint().getLongitude() == null) {
-			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
-		}
+    @RequestMapping(method = RequestMethod.DELETE, value="/delete-milepost-cache/{timID}")
+    public ResponseEntity<String> deleteMilepostCache(@PathVariable String timID) {
+        log.info("Deleting milepost cache for timID: {}", timID);
 
-		// check direction, route
-		if (wydotTim.getDirection() == null || wydotTim.getRoute() == null) {
-			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
-		}
+        if (milepostCache.containsKey(timID)) {
+            milepostCache.remove(timID);
+            return ResponseEntity.ok("Milepost cache deleted successfully for timID: " + timID);
+        }
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Milepost cache not found for timID: " + timID);
+    }
 
-		Collection<com.trihydro.cvdatacontroller.model.Milepost> data = milepostService.getPathWithBuffer(
-				wydotTim.getRoute(), wydotTim.getStartPoint().getLatitude(), wydotTim.getStartPoint().getLongitude(),
-				wydotTim.getEndPoint().getLatitude(), wydotTim.getEndPoint().getLongitude(), wydotTim.getDirection());
-		return ResponseEntity.ok(data);
-	}
+    @RequestMapping(method = RequestMethod.GET, value="/clear-milepost-cache")
+    public ResponseEntity<String> clearMilepostCache() {
+        log.info("Clearing milepost cache");
+        List<String> clientIDs = new ArrayList<>(milepostCache.keySet());
+        List<String> activeTimClientIds = getActiveTimClientIds();
+        // remove all active TIM IDs from the list of milepost cache TIM IDs
+        clientIDs.removeAll(activeTimClientIds);
+        for (String clientID : clientIDs) {
+            milepostCache.remove(clientID);
+        }
+        return ResponseEntity.ok("Milepost cache cleared successfully");
+    }
 
-	@RequestMapping(method = RequestMethod.POST, value="/set-milepost-cache")
-	public ResponseEntity<String> setMilepostCache(@RequestBody SetMilepostCacheRequest milepostCacheBody) {
+    private List<String> getActiveTimClientIds() {
+        List<String> activeTimIds = new ArrayList<>();
+        String sql = "SELECT client_id FROM active_tim WHERE marked_for_deletion = False";
+        try (Connection connection = dbInteractions.getConnectionPool();
+             Statement statement = connection.createStatement();
+             ResultSet rs = statement.executeQuery(sql)) {
+            while (rs.next()) {
+                String timId = rs.getString("CLIENT_ID");
+                activeTimIds.add(timId);
+            }
+        } catch (SQLException e) {
+            log.error("Error retrieving active TIM IDs ", e); // Improved logging
+        }
+        return activeTimIds;
+    }
 
-		if (milepostCacheBody.getMileposts().isEmpty() || milepostCacheBody.getTimID() == null) {
-			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid Request: please provide a valid milepost list and timID");
-		}
-		if (milepostCache.containsKey(milepostCacheBody.getTimID())) {
-			log.info("Updating milepost cache for timID: {}", milepostCacheBody.getTimID());
-		} else {
-			log.info("Setting milepost cache for timID: {}", milepostCacheBody.getTimID());
-		}
-		milepostCache.put(milepostCacheBody.getTimID(), milepostCacheBody.getMileposts());
-		return ResponseEntity.ok("Milepost cache set successfully for timID: " + milepostCacheBody.getTimID());
-	}
+    @RequestMapping(method = RequestMethod.POST, produces = "application/json", value = "/get-milepost-single-point")
+    public ResponseEntity<List<Milepost>> getMilepostsByPointWithBuffer(
+            @RequestBody MilepostBuffer milepostBuffer) throws Exception {
 
-	@RequestMapping(method = RequestMethod.GET, value="/get-milepost-cache/{timID}")
-	public ResponseEntity<List<Milepost>> getMilepostCacheByTimID(@PathVariable String timID) {
-		List<Milepost> mileposts = new ArrayList<>();
+        List<Milepost> mileposts = milepostService.getMilepostsByPointWithBuffer(milepostBuffer);
 
-		if (milepostCache.containsKey(timID)) {
-			mileposts = milepostCache.get(timID);
-			log.info("Found {} mileposts in cache for timID: {}", mileposts.size(), timID);
-			return ResponseEntity.ok(milepostCache.get(timID));
-		}
+        if (mileposts.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(mileposts);
+        }
 
-		return ResponseEntity.ok(mileposts);
-	}
+        return ResponseEntity.ok(mileposts);
+    }
 
-	@RequestMapping(method = RequestMethod.DELETE, value="/delete-milepost-cache/{timID}")
-	public ResponseEntity<String> deleteMilepostCache(@PathVariable String timID) {
-		log.info("Deleting milepost cache for timID: {}", timID);
+    /**
+     * Needed for TIM Creator
+     *
+     * @return
+     */
+    @RequestMapping(value = "/mileposts-test", method = RequestMethod.GET, headers = "Accept=application/json")
+    public List<Milepost> getMilepostsTest() {
 
-		if (milepostCache.containsKey(timID)) {
-			milepostCache.remove(timID);
-			return ResponseEntity.ok("Milepost cache deleted successfully for timID: " + timID);
-		}
-		return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Milepost cache not found for timID: " + timID);
-	}
+        List<Milepost> mileposts = new ArrayList<Milepost>();
+        Connection connection = null;
+        Statement statement = null;
+        ResultSet rs = null;
 
-	@RequestMapping(method = RequestMethod.GET, value="/clear-milepost-cache")
-	public ResponseEntity<String> clearMilepostCache() {
-		log.info("Clearing milepost cache");
-		List<String> clientIDs = new ArrayList<>(milepostCache.keySet());
-		List<String> activeTimClientIds = getActiveTimClientIds();
-		// remove all active TIM IDs from the list of milepost cache TIM IDs
-		clientIDs.removeAll(activeTimClientIds);
-		for (String clientID : clientIDs) {
-			milepostCache.remove(clientID);
-		}
-		return ResponseEntity.ok("Milepost cache cleared successfully");
-	}
+        try {
+            connection = dbInteractions.getConnectionPool();
+            statement = connection.createStatement();
+            rs = statement.executeQuery("select * from MILEPOST_TEST order by milepost asc");
 
-	private List<String> getActiveTimClientIds() {
-		List<String> activeTimIds = new ArrayList<>();
-		String sql = "SELECT client_id FROM active_tim WHERE marked_for_deletion = False";
-		try (Connection connection = dbInteractions.getConnectionPool();
-			 Statement statement = connection.createStatement();
-			 ResultSet rs = statement.executeQuery(sql)) {
-			while (rs.next()) {
-				String timId = rs.getString("CLIENT_ID");
-				activeTimIds.add(timId);
-			}
-		} catch (SQLException e) {
-			log.error("Error retrieving active TIM IDs ", e); // Improved logging
-		}
-		return activeTimIds;
-	}
+            // convert result to milepost objects
+            while (rs.next()) {
+                Milepost milepost = new Milepost();
+                // milepost.setMilepostId(rs.getInt("milepost_id"));
+                milepost.setCommonName(rs.getString("route"));
+                milepost.setMilepost(rs.getDouble("milepost"));
+                milepost.setDirection(rs.getString("direction"));
+                milepost.setLatitude(rs.getBigDecimal("latitude"));
+                milepost.setLongitude(rs.getBigDecimal("longitude"));
+                mileposts.add(milepost);
+            }
+        } catch (SQLException e) {
+            log.error("Exception", e);
+        } finally {
+            try {
+                // close prepared statement
+                if (statement != null)
+                    statement.close();
+                // return connection back to pool
+                if (connection != null)
+                    connection.close();
+                // close result set
+                if (rs != null)
+                    rs.close();
+            } catch (SQLException e) {
+                log.error("Exception", e);
+            }
+        }
+        return mileposts;
+    }
 
-	/**
-	 * Rewrite of getMilepostsByStartEndPoint used in testing to cut time on geojson
-	 * creation to test continuity
-	 * 
-	 * @param wydotTim
-	 * @return
-	 */
-	@RequestMapping(method = RequestMethod.POST, value = "/get-feature-collection", produces = "application/json")
-	public ResponseEntity<String> getMilepostsFeatureCollectionByStartEndPoint(@RequestBody WydotTim wydotTim) {
+    /**
+     * Needed for TIM Creator
+     *
+     * @param direction
+     * @param route
+     * @param start
+     * @param end
+     * @return
+     */
+    @RequestMapping(method = RequestMethod.GET, value = "/get-milepost-test-range/{direction}/{start}/{end}/{route}")
+    public List<Milepost> getMilepostTestRange(@PathVariable String direction, @PathVariable String route,
+                                               @PathVariable Double start, @PathVariable Double end) {
+        List<Milepost> mileposts = new ArrayList<Milepost>();
+        Connection connection = null;
+        Statement statement = null;
+        ResultSet rs = null;
 
-		// check startPoint
-		if (wydotTim.getStartPoint() == null || wydotTim.getStartPoint().getLatitude() == null
-				|| wydotTim.getStartPoint().getLongitude() == null) {
-			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
-		}
+        try {
 
-		// check endpoint
-		if (wydotTim.getEndPoint() == null || wydotTim.getEndPoint().getLatitude() == null
-				|| wydotTim.getEndPoint().getLongitude() == null) {
-			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
-		}
+            connection = dbInteractions.getConnectionPool();
+            statement = connection.createStatement();
 
-		// check direction, route
-		if (wydotTim.getDirection() == null || wydotTim.getRoute() == null) {
-			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
-		}
+            // build SQL query
+            String statementStr = "select * from MILEPOST_TEST where direction = '" + direction
+                    + "' and milepost between " + Math.min(start, end) + " and " + Math.max(start, end)
+                    + " and route like '%" + route + "%'";
 
-		Collection<com.trihydro.cvdatacontroller.model.Milepost> data = milepostService.getPathWithBuffer(
-				wydotTim.getRoute(), wydotTim.getStartPoint().getLatitude(), wydotTim.getStartPoint().getLongitude(),
-				wydotTim.getEndPoint().getLatitude(), wydotTim.getEndPoint().getLongitude(), wydotTim.getDirection());
+            if (start < end)
+                rs = statement.executeQuery(statementStr + "order by milepost asc");
+            else
+                rs = statement.executeQuery(statementStr + "order by milepost desc");
 
-		List<Feature> features = new ArrayList<>();
-		var coordinates = data.stream().map(x -> Position.fromCoordinates(x.getLongitude(), x.getLatitude()))
-				.collect(Collectors.toList());
-		LineString ls = LineString.fromCoordinates(coordinates);
-		var feature = Feature.fromGeometry(ls);
-		features.add(feature);
-		FeatureCollection fc = FeatureCollection.fromFeatures(features);
-
-		return ResponseEntity.ok(fc.toJson());
-	}
-
-	@RequestMapping(method = RequestMethod.POST, produces = "application/json", value = "/get-milepost-single-point")
-	public ResponseEntity<Collection<com.trihydro.cvdatacontroller.model.Milepost>> getMilepostsByPointWithBuffer(
-			@RequestBody MilepostBuffer milepostBuffer) {
-		// check startPoint
-		if (milepostBuffer.getPoint() == null || milepostBuffer.getPoint().getLatitude() == null
-				|| milepostBuffer.getPoint().getLongitude() == null) {
-			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
-		}
-
-		// check direction, route
-		if (milepostBuffer.getDirection() == null || milepostBuffer.getCommonName() == null) {
-			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
-		}
-
-		Collection<com.trihydro.cvdatacontroller.model.Milepost> data = milepostService.getPathWithSpecifiedBuffer(
-				milepostBuffer.getCommonName(), milepostBuffer.getPoint().getLatitude(),
-				milepostBuffer.getPoint().getLongitude(), milepostBuffer.getDirection(),
-				milepostBuffer.getBufferMiles());
-		return ResponseEntity.ok(data);
-	}
-
-	/**
-	 * Needed for TIM Creator
-	 * 
-	 * @return
-	 */
-	@RequestMapping(value = "/mileposts-test", method = RequestMethod.GET, headers = "Accept=application/json")
-	public List<Milepost> getMilepostsTest() {
-
-		List<Milepost> mileposts = new ArrayList<Milepost>();
-		Connection connection = null;
-		Statement statement = null;
-		ResultSet rs = null;
-
-		try {
-			connection = dbInteractions.getConnectionPool();
-			statement = connection.createStatement();
-			rs = statement.executeQuery("select * from MILEPOST_TEST order by milepost asc");
-
-			// convert result to milepost objects
-			while (rs.next()) {
-				Milepost milepost = new Milepost();
-				// milepost.setMilepostId(rs.getInt("milepost_id"));
-				milepost.setCommonName(rs.getString("route"));
-				milepost.setMilepost(rs.getDouble("milepost"));
-				milepost.setDirection(rs.getString("direction"));
-				milepost.setLatitude(rs.getBigDecimal("latitude"));
-				milepost.setLongitude(rs.getBigDecimal("longitude"));
-				mileposts.add(milepost);
-			}
-		} catch (SQLException e) {
-      log.error("Exception", e);
-		} finally {
-			try {
-				// close prepared statement
-				if (statement != null)
-					statement.close();
-				// return connection back to pool
-				if (connection != null)
-					connection.close();
-				// close result set
-				if (rs != null)
-					rs.close();
-			} catch (SQLException e) {
-        log.error("Exception", e);
-			}
-		}
-		return mileposts;
-	}
-
-	/**
-	 * Needed for TIM Creator
-	 * 
-	 * @param direction
-	 * @param route
-	 * @param start
-	 * @param end
-	 * @return
-	 */
-	@RequestMapping(method = RequestMethod.GET, value = "/get-milepost-test-range/{direction}/{start}/{end}/{route}")
-	public List<Milepost> getMilepostTestRange(@PathVariable String direction, @PathVariable String route,
-			@PathVariable Double start, @PathVariable Double end) {
-		List<Milepost> mileposts = new ArrayList<Milepost>();
-		Connection connection = null;
-		Statement statement = null;
-		ResultSet rs = null;
-
-		try {
-
-			connection = dbInteractions.getConnectionPool();
-			statement = connection.createStatement();
-
-			// build SQL query
-			String statementStr = "select * from MILEPOST_TEST where direction = '" + direction
-					+ "' and milepost between " + Math.min(start, end) + " and " + Math.max(start, end)
-					+ " and route like '%" + route + "%'";
-
-			if (start < end)
-				rs = statement.executeQuery(statementStr + "order by milepost asc");
-			else
-				rs = statement.executeQuery(statementStr + "order by milepost desc");
-
-			// convert result to milepost objects
-			while (rs.next()) {
-				Milepost milepost = new Milepost();
-				milepost.setCommonName(rs.getString("route"));
-				milepost.setMilepost(rs.getDouble("milepost"));
-				milepost.setDirection(rs.getString("direction"));
-				milepost.setLatitude(rs.getBigDecimal("latitude"));
-				milepost.setLongitude(rs.getBigDecimal("longitude"));
-				mileposts.add(milepost);
-			}
-		} catch (SQLException e) {
-      log.error("Exception", e);
-		} finally {
-			try {
-				// close prepared statement
-				if (statement != null)
-					statement.close();
-				// return connection back to pool
-				if (connection != null)
-					connection.close();
-				// close result set
-				if (rs != null)
-					rs.close();
-			} catch (SQLException e) {
-        log.error("Exception", e);
-			}
-		}
-		return mileposts;
-	}
-
+            // convert result to milepost objects
+            while (rs.next()) {
+                Milepost milepost = new Milepost();
+                milepost.setCommonName(rs.getString("route"));
+                milepost.setMilepost(rs.getDouble("milepost"));
+                milepost.setDirection(rs.getString("direction"));
+                milepost.setLatitude(rs.getBigDecimal("latitude"));
+                milepost.setLongitude(rs.getBigDecimal("longitude"));
+                mileposts.add(milepost);
+            }
+        } catch (SQLException e) {
+            log.error("Exception", e);
+        } finally {
+            try {
+                // close prepared statement
+                if (statement != null)
+                    statement.close();
+                // return connection back to pool
+                if (connection != null)
+                    connection.close();
+                // close result set
+                if (rs != null)
+                    rs.close();
+            } catch (SQLException e) {
+                log.error("Exception", e);
+            }
+        }
+        return mileposts;
+    }
 }

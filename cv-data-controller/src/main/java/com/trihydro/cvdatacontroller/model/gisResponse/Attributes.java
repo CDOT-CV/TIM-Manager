@@ -1,0 +1,28 @@
+package com.trihydro.cvdatacontroller.model.gisResponse;
+
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.Getter;
+import lombok.Setter;
+
+/**
+ * Holds metadata attributes for a GIS feature.
+ * Used in GISMilepostImpl to retrieve route names, and if applicable, specific milepost measures
+ * and boundary constraints (MMin/MMax).
+ */
+@Getter
+@Setter
+@JsonIgnoreProperties(ignoreUnknown = true)
+public class Attributes {
+    @JsonProperty("Route")
+    private String route;
+
+    @JsonProperty("Measure")
+    private Double measure;
+
+    @JsonProperty("MMin")
+    private Double mMin;
+
+    @JsonProperty("MMax")
+    private Double mMax;
+}

@@ -7,7 +7,6 @@ import static org.springframework.test.web.client.match.MockRestRequestMatchers.
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withServerError;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
 
-import com.trihydro.library.model.WydotTravelerInputData;
 import java.math.BigDecimal;
 
 import com.trihydro.library.helpers.Utility;
@@ -23,6 +22,7 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.springframework.test.web.client.MockRestServiceServer;
 import org.springframework.web.client.RestTemplate;
+import us.dot.its.jpo.ode.model.OdeTravelerInputData;
 
 class OdeServiceTest {
 
@@ -58,7 +58,7 @@ class OdeServiceTest {
     @Test
     void updateTimOnSdw_Success() {
         // prepare
-        WydotTravelerInputData timToSend = new WydotTravelerInputData();
+        OdeTravelerInputData timToSend = new OdeTravelerInputData();
         String url = baseUrl + "/tim";
         String jsonString = "{\"status\":\"success\"}";
         mockServer.expect(requestTo(url)).andRespond(withSuccess(jsonString, org.springframework.http.MediaType.APPLICATION_JSON));
@@ -75,7 +75,7 @@ class OdeServiceTest {
     @Test
     void updateTimOnSdw_Failure_ServerError() {
         // prepare
-        WydotTravelerInputData timToSend = new WydotTravelerInputData();
+        OdeTravelerInputData timToSend = new OdeTravelerInputData();
         String url = baseUrl + "/tim";
         mockServer.expect(requestTo(url)).andRespond(withServerError());
 

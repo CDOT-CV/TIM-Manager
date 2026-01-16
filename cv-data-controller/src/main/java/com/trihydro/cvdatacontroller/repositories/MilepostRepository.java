@@ -12,7 +12,7 @@ public interface MilepostRepository {
     /**
      * Finds a path along commonName route between the given endpoints. Adds a
      * buffer point to the start point to help with anchoring
-     * 
+     *
      * @param commonName the common name of the route to use
      * @param startLat   starting latitude
      * @param startLong  starting longitude
@@ -22,13 +22,13 @@ public interface MilepostRepository {
      * @return Collection of Milepost objects within given boundaries
      */
     Collection<Milepost> getPathWithBuffer(String commonName, BigDecimal startLat, BigDecimal startLong, BigDecimal endLat,
-    BigDecimal endLong, String direction);
+                                           BigDecimal endLong, String direction);
 
     /**
      * Finds a path along commonName route with the given point. Creates a buffer
      * with a mileage of bufferInMiles around that point dependent upon direction
      * field. Accounts for edge cases of path terminus
-     * 
+     *
      * @param commonName
      * @param lat
      * @param lon
@@ -37,5 +37,5 @@ public interface MilepostRepository {
      * @return
      */
     Collection<Milepost> getPathWithSpecifiedBuffer(String commonName, BigDecimal lat, BigDecimal lon, String direction,
-            Double bufferInMiles);
+                                                    Double bufferInMiles);
 }

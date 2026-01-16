@@ -1,6 +1,7 @@
 package com.trihydro.library.model;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 
 import com.grum.geocalc.Coordinate;
 import com.grum.geocalc.EarthCalc;
@@ -93,12 +94,24 @@ public class Milepost {
         this.latitude = latitude;
     }
 
+    public void setLatitude(double latitude) {
+        this.latitude = fromDegrees(latitude);
+    }
+
     public BigDecimal getLongitude() {
         return longitude;
     }
 
     public void setLongitude(BigDecimal longitude) {
         this.longitude = longitude;
+    }
+
+    public void setLongitude(double longitude) {
+        this.longitude = fromDegrees(longitude);
+    }
+
+    private BigDecimal fromDegrees(double degrees) {
+        return BigDecimal.valueOf(degrees).setScale(14, RoundingMode.HALF_UP);
     }
 
     /**

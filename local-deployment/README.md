@@ -53,6 +53,10 @@ The certificate file that is being used must be present in the same directory as
 Several database objects are mocked and can be created using the scripts in `db-scripts\pgsql\mocking\sql`. Depending on what is being tested, these may or may not be necessary.
 
 ## Running the Suite
+
+**Note:** You will need to have the ODE repository cloned locally and the ODE services running for the suite to function properly. Follow the instructions in the ODE repository to set up and run the ODE services.
+The minimum required ODE services are enabled by setting the following variable in the ODE's `.env` file: `COMPOSE_PROFILES=ode_base,kafka,kafka_setup`
+
 After the database is set up and the JAR files are in place, run the following command in the `local-deployment` directory:
 
 ```bash

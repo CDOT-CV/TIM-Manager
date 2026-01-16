@@ -30,6 +30,9 @@ public class MilepostServiceTest extends BaseServiceTest {
     private ResponseEntity<List<Milepost>> mockRespMilepostList;
 
     @Mock
+    private ResponseEntity<Boolean> mockRespBoolean;
+
+    @Mock
     private CVRestServiceProps mockConfig;
 
     @InjectMocks
