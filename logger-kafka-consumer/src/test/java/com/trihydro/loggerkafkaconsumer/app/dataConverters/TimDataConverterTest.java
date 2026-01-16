@@ -191,7 +191,7 @@ public class TimDataConverterTest {
                 // Assert
                 Assertions.assertNotNull(data);
                 Assertions.assertNotNull(data.getMetadata());
-                Assertions.assertEquals("2020-11-11T07:36:53.035Z", data.getMetadata().getOdeTimStartDateTime());
+                Assertions.assertEquals("2026-01-15T20:26:17.989Z", data.getMetadata().getOdeTimStartDateTime());
         }
 
         @Test
