@@ -4,7 +4,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
-import org.slf4j.Logger;
 
 import com.google.gson.Gson;
 import com.trihydro.library.helpers.JsonToJavaConverter;
@@ -58,7 +57,7 @@ public class TimDataConverter {
     public OdeData translateTimJson(String value) {
         OdeData odeData = null;
         OdeLogMetadata odeTimMetadata = jsonToJava.convertTimMetadataJsonToJava(value);
-        OdeTimPayload odeTimPayload = jsonToJava.convertTimPayloadJsonToJava(value);
+        OdeTimPayload odeTimPayload = jsonToJava.convertTimTopicJsonToJava(value);
         if (odeTimMetadata != null && odeTimPayload != null)
             odeData = new OdeData(odeTimMetadata, odeTimPayload);
         return odeData;
@@ -67,7 +66,7 @@ public class TimDataConverter {
     public OdeData translateBroadcastTimJson(String value) {
         OdeData odeData = null;
         OdeRequestMsgMetadata odeTimMetadata = jsonToJava.convertBroadcastTimMetadataJsonToJava(value);
-        OdeTimPayload odeTimPayload = jsonToJava.convertTmcTimTopicJsonToJava(value);
+        OdeTimPayload odeTimPayload = jsonToJava.convertTimTopicJsonToJava(value);
         if (odeTimMetadata != null && odeTimPayload != null)
             odeData = new OdeData(odeTimMetadata, odeTimPayload);
         return odeData;
