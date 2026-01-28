@@ -148,7 +148,7 @@ public class RsuControllerTest extends TestBase<RsuController> {
     }
 
     @Test
-    public void GetRsuClaimedIndexes_SUCCESS() throws SQLException {
+    public void getRsuClaimedIndexes_SUCCESS() throws SQLException {
         // Arrange
         when(mockRs.getInt("RSU_INDEX")).thenReturn(-1);
         var statement = "select rsu_index from active_tim inner join tim_rsu on active_tim.tim_id = tim_rsu.tim_id"
@@ -172,7 +172,7 @@ public class RsuControllerTest extends TestBase<RsuController> {
     }
 
     @Test
-    public void GetRsuClaimedIndexes_FAIL() throws SQLException {
+    public void getRsuClaimedIndexes_FAIL() throws SQLException {
         // Arrange
         var statement = "select rsu_index from active_tim inner join tim_rsu on active_tim.tim_id = tim_rsu.tim_id"
                 + " where sat_record_id is null and rsu_id = ?";
