@@ -18,12 +18,12 @@ import com.trihydro.library.model.WydotRsuTim;
 public class RsuControllerTest extends TestBase<RsuController> {
 
     @Test
-    public void SelectAllRsus_SUCCESS() throws SQLException {
+    public void selectAllRsus_SUCCESS() throws SQLException {
         // Arrange
         String selectStatement = "select rsu_id, ST_X(ST_AsText(geography)) as longitude, ST_Y(ST_AsText(geography)) as latitude, ipv4_address, primary_route, milepost from rsus order by milepost asc";
 
         // Act
-        ResponseEntity<List<WydotRsu>> data = uut.SelectAllRsus();
+        ResponseEntity<List<WydotRsu>> data = uut.selectAllRsus();
 
         // Assert
         Assertions.assertEquals(HttpStatus.OK, data.getStatusCode());
@@ -40,12 +40,12 @@ public class RsuControllerTest extends TestBase<RsuController> {
     }
 
     @Test
-    public void SelectAllRsus_FAIL() throws SQLException {
+    public void selectAllRsus_FAIL() throws SQLException {
         // Arrange
         String selectStatement = "select rsu_id, ST_X(ST_AsText(geography)) as longitude, ST_Y(ST_AsText(geography)) as latitude, ipv4_address, primary_route, milepost from rsus order by milepost asc";
         doThrow(new SQLException()).when(mockRs).getInt("RSU_ID");
         // Act
-        ResponseEntity<List<WydotRsu>> data = uut.SelectAllRsus();
+        ResponseEntity<List<WydotRsu>> data = uut.selectAllRsus();
 
         // Assert
         Assertions.assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, data.getStatusCode());
@@ -56,7 +56,7 @@ public class RsuControllerTest extends TestBase<RsuController> {
     }
 
     @Test
-    public void GetFullRsusTimIsOn_SUCCESS() throws SQLException {
+    public void getFullRsusTimIsOn_SUCCESS() throws SQLException {
         // Arrange
         Long timId = -1l;
         String selectStatement = "select rsus.rsu_id, rsu_credentials.username as update_username, " + 
@@ -66,7 +66,7 @@ public class RsuControllerTest extends TestBase<RsuController> {
         "tim_rsu on tim_rsu.rsu_id = rsus.rsu_id where tim_rsu.tim_id = " + timId;
 
         // Act
-        ResponseEntity<List<WydotRsuTim>> data = uut.GetFullRsusTimIsOn(timId);
+        ResponseEntity<List<WydotRsuTim>> data = uut.getFullRsusTimIsOn(timId);
 
         // Assert
         Assertions.assertEquals(HttpStatus.OK, data.getStatusCode());
@@ -83,7 +83,7 @@ public class RsuControllerTest extends TestBase<RsuController> {
     }
 
     @Test
-    public void GetFullRsusTimIsOn_FAIL() throws SQLException {
+    public void getFullRsusTimIsOn_FAIL() throws SQLException {
         // Arrange
         Long timId = -1l;
         String selectStatement = "select rsus.rsu_id, rsu_credentials.username as update_username, " + 
@@ -94,7 +94,7 @@ public class RsuControllerTest extends TestBase<RsuController> {
         doThrow(new SQLException()).when(mockRs).getString("IPV4_ADDRESS");
 
         // Act
-        ResponseEntity<List<WydotRsuTim>> data = uut.GetFullRsusTimIsOn(timId);
+        ResponseEntity<List<WydotRsuTim>> data = uut.getFullRsusTimIsOn(timId);
 
         // Assert
         Assertions.assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, data.getStatusCode());
@@ -105,14 +105,14 @@ public class RsuControllerTest extends TestBase<RsuController> {
     }
 
     @Test
-    public void SelectRsusByRoute_SUCCESS() throws SQLException {
+    public void selectRsusByRoute_SUCCESS() throws SQLException {
         // Arrange
         String route = "I80";
         String selectStatement = "select rsu_id, ST_X(ST_AsText(geography)) as longitude, " + 
         "ST_Y(ST_AsText(geography)) as latitude, ipv4_address, primary_route, milepost from rsus " + 
         "where primary_route like '%" + route + "%'";
         // Act
-        ResponseEntity<ArrayList<WydotRsu>> data = uut.SelectRsusByRoute(route);
+        ResponseEntity<ArrayList<WydotRsu>> data = uut.selectRsusByRoute(route);
 
         // Assert
         Assertions.assertEquals(HttpStatus.OK, data.getStatusCode());
@@ -129,7 +129,7 @@ public class RsuControllerTest extends TestBase<RsuController> {
     }
 
     @Test
-    public void SelectRsusByRoute_FAIL() throws SQLException {
+    public void selectRsusByRoute_FAIL() throws SQLException {
         // Arrange
         String route = "I80";
         String selectStatement = "select rsu_id, ST_X(ST_AsText(geography)) as longitude, " + 
@@ -137,7 +137,7 @@ public class RsuControllerTest extends TestBase<RsuController> {
         "where primary_route like '%" + route + "%'";
         doThrow(new SQLException()).when(mockRs).getInt("RSU_ID");
         // Act
-        ResponseEntity<ArrayList<WydotRsu>> data = uut.SelectRsusByRoute(route);
+        ResponseEntity<ArrayList<WydotRsu>> data = uut.selectRsusByRoute(route);
 
         // Assert
         Assertions.assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, data.getStatusCode());
@@ -155,7 +155,7 @@ public class RsuControllerTest extends TestBase<RsuController> {
                 + " where sat_record_id is null and rsu_id = ?";
 
         // Act
-        var result = uut.GetActiveRsuTimIndexes(123);
+        var result = uut.getActiveRsuTimIndexes(123);
 
         // Assert
         Assertions.assertEquals(HttpStatus.OK, result.getStatusCode());
@@ -179,7 +179,7 @@ public class RsuControllerTest extends TestBase<RsuController> {
         when(mockPreparedStatement.executeQuery()).thenThrow(new SQLException());
 
         // Act
-        var result = uut.GetActiveRsuTimIndexes(123);
+        var result = uut.getActiveRsuTimIndexes(123);
 
         // Assert
         Assertions.assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, result.getStatusCode());

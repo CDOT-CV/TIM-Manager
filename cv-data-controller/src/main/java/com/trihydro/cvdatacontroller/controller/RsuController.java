@@ -12,7 +12,6 @@ import com.trihydro.library.model.WydotRsu;
 import com.trihydro.library.model.WydotRsuTim;
 
 import lombok.extern.slf4j.Slf4j;
-import org.slf4j.Logger;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -30,7 +29,7 @@ import springfox.documentation.annotations.ApiIgnore;
 public class RsuController extends BaseController {
 
     @RequestMapping(value = "/rsus", method = RequestMethod.GET, headers = "Accept=application/json")
-    public ResponseEntity<List<WydotRsu>> SelectAllRsus() {
+    public ResponseEntity<List<WydotRsu>> selectAllRsus() {
         ArrayList<WydotRsu> rsus = new ArrayList<WydotRsu>();
         Connection connection = null;
         ResultSet rs = null;
@@ -77,7 +76,7 @@ public class RsuController extends BaseController {
     }
 
     @RequestMapping(method = RequestMethod.GET, value = "/rsus-for-tim/{timId}")
-    public ResponseEntity<List<WydotRsuTim>> GetFullRsusTimIsOn(@PathVariable Long timId) {
+    public ResponseEntity<List<WydotRsuTim>> getFullRsusTimIsOn(@PathVariable Long timId) {
         List<WydotRsuTim> rsus = new ArrayList<WydotRsuTim>();
         Connection connection = null;
         ResultSet rs = null;
@@ -130,7 +129,7 @@ public class RsuController extends BaseController {
     }
 
     @RequestMapping(method = RequestMethod.GET, produces = "application/json", value = "/rsus-by-geometry/{geometry}")
-    public ResponseEntity<ArrayList<WydotRsu>> SelectRsusByGeometry(@PathVariable String geometry) {
+    public ResponseEntity<ArrayList<WydotRsu>> selectRsusByGeometry(@PathVariable String geometry) {
         ArrayList<WydotRsu> rsus = new ArrayList<>();
         Connection connection = null;
         ResultSet rs = null;
@@ -189,7 +188,7 @@ public class RsuController extends BaseController {
     }
 
     @RequestMapping(method = RequestMethod.GET, produces = "application/json", value = "/rsus-by-route/{route}")
-    public ResponseEntity<ArrayList<WydotRsu>> SelectRsusByRoute(@PathVariable String route) {
+    public ResponseEntity<ArrayList<WydotRsu>> selectRsusByRoute(@PathVariable String route) {
         ArrayList<WydotRsu> rsus = new ArrayList<WydotRsu>();
         Connection connection = null;
         ResultSet rs = null;
@@ -235,7 +234,7 @@ public class RsuController extends BaseController {
     }
 
     @RequestMapping(method = RequestMethod.GET, produces = "application/json", value = "/active-rsu-tim-indexes/{rsuId}")
-    public ResponseEntity<List<Integer>> GetActiveRsuTimIndexes(@PathVariable Integer rsuId) {
+    public ResponseEntity<List<Integer>> getActiveRsuTimIndexes(@PathVariable Integer rsuId) {
         List<Integer> indexes = new ArrayList<Integer>();
 
         Connection connection = null;
