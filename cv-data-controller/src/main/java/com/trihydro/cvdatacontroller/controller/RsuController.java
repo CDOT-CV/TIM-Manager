@@ -4,7 +4,6 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -36,18 +35,19 @@ public class RsuController extends BaseController {
         String query = "select rsu_id, ST_X(ST_AsText(geography)) as longitude, ST_Y(ST_AsText(geography)) as latitude, ipv4_address, primary_route, milepost from rsus order by milepost asc";
 
         try (Connection connection = dbInteractions.getConnectionPool();
-             Statement statement = connection.createStatement();
-             ResultSet rs = statement.executeQuery(query)) {
+             PreparedStatement statement = connection.prepareStatement(query)) {
 
-            while (rs.next()) {
-                WydotRsu rsu = new WydotRsu();
-                rsu.setRsuId(rs.getInt("RSU_ID"));
-                rsu.setRsuTarget(rs.getString("IPV4_ADDRESS"));
-                rsu.setLatitude(rs.getBigDecimal("LATITUDE"));
-                rsu.setLongitude(rs.getBigDecimal("LONGITUDE"));
-                rsu.setRoute(rs.getString("PRIMARY_ROUTE"));
-                rsu.setMilepost(rs.getDouble("MILEPOST"));
-                rsus.add(rsu);
+            try(ResultSet rs = statement.executeQuery()) {
+                while (rs.next()) {
+                    WydotRsu rsu = new WydotRsu();
+                    rsu.setRsuId(rs.getInt("RSU_ID"));
+                    rsu.setRsuTarget(rs.getString("IPV4_ADDRESS"));
+                    rsu.setLatitude(rs.getBigDecimal("LATITUDE"));
+                    rsu.setLongitude(rs.getBigDecimal("LONGITUDE"));
+                    rsu.setRoute(rs.getString("PRIMARY_ROUTE"));
+                    rsu.setMilepost(rs.getDouble("MILEPOST"));
+                    rsus.add(rsu);
+                }
             }
 
         } catch (SQLException e) {
@@ -68,23 +68,26 @@ public class RsuController extends BaseController {
                         "as longitude, ST_Y(ST_AsText(rsus.geography)) as latitude, rsus.ipv4_address, " +
                         "tim_rsu.rsu_index from rsus inner join rsu_credentials on " +
                         "rsu_credentials.credential_id = rsus.credential_id inner join tim_rsu on " +
-                        "tim_rsu.rsu_id = rsus.rsu_id where tim_rsu.tim_id = " + timId;
+                        "tim_rsu.rsu_id = rsus.rsu_id where tim_rsu.tim_id = ?";
 
         try(Connection connection = dbInteractions.getConnectionPool();
-            Statement statement = connection.createStatement();
-            ResultSet rs = statement.executeQuery(query)) {
+            PreparedStatement statement = connection.prepareStatement(query)) {
 
-            while (rs.next()) {
-                WydotRsuTim rsu = new WydotRsuTim();
-                rsu.setRsuTarget(rs.getString("IPV4_ADDRESS"));
-                rsu.setLatitude(rs.getBigDecimal("LATITUDE"));
-                rsu.setLongitude(rs.getBigDecimal("LONGITUDE"));
-                rsu.setIndex(rs.getInt("RSU_INDEX"));
-                rsu.setRsuUsername(rs.getString("UPDATE_USERNAME"));
-                rsu.setRsuPassword(rs.getString("UPDATE_PASSWORD"));
-                // only add unique values in
-                if (!rsus.contains(rsu)) {
-                    rsus.add(rsu);
+            statement.setLong(1, timId);
+
+            try(ResultSet rs = statement.executeQuery()) {
+                while (rs.next()) {
+                    WydotRsuTim rsu = new WydotRsuTim();
+                    rsu.setRsuTarget(rs.getString("IPV4_ADDRESS"));
+                    rsu.setLatitude(rs.getBigDecimal("LATITUDE"));
+                    rsu.setLongitude(rs.getBigDecimal("LONGITUDE"));
+                    rsu.setIndex(rs.getInt("RSU_INDEX"));
+                    rsu.setRsuUsername(rs.getString("UPDATE_USERNAME"));
+                    rsu.setRsuPassword(rs.getString("UPDATE_PASSWORD"));
+                    // only add unique values in
+                    if (!rsus.contains(rsu)) {
+                        rsus.add(rsu);
+                    }
                 }
             }
         } catch (SQLException e) {
@@ -108,23 +111,26 @@ public class RsuController extends BaseController {
                 "JOIN organizations AS o ON ro.organization_id = o.organization_id " +
                 "WHERE o.name = 'Region 1') " +
                 "AND ST_Intersects(" +
-                "ST_Buffer(ST_GeomFromText('" + geometry + "'), 1), geography)";
+                "ST_Buffer(ST_GeomFromText(?), 1), geography)";
 
         try(Connection connection = dbInteractions.getConnectionPool();
-            Statement statement = connection.createStatement();
-            ResultSet rs = statement.executeQuery(query)) {
+            PreparedStatement statement = connection.prepareStatement(query)) {
 
-            while (rs.next()) {
-                WydotRsu rsu = new WydotRsu();
-                rsu.setRsuId(rs.getInt("RSU_ID"));
-                rsu.setRsuTarget(rs.getString("IPV4_ADDRESS"));
-                rsu.setLatitude(rs.getBigDecimal("LATITUDE"));
-                rsu.setLongitude(rs.getBigDecimal("LONGITUDE"));
-                rsu.setRoute(rs.getString("PRIMARY_ROUTE"));
-                rsu.setMilepost(rs.getDouble("MILEPOST"));
-                rsu.setRsuUsername(rs.getString("USERNAME"));
-                rsu.setRsuPassword(rs.getString("PASSWORD"));
-                rsus.add(rsu);
+            statement.setString(1, geometry);
+
+            try(ResultSet rs = statement.executeQuery()) {
+                while (rs.next()) {
+                    WydotRsu rsu = new WydotRsu();
+                    rsu.setRsuId(rs.getInt("RSU_ID"));
+                    rsu.setRsuTarget(rs.getString("IPV4_ADDRESS"));
+                    rsu.setLatitude(rs.getBigDecimal("LATITUDE"));
+                    rsu.setLongitude(rs.getBigDecimal("LONGITUDE"));
+                    rsu.setRoute(rs.getString("PRIMARY_ROUTE"));
+                    rsu.setMilepost(rs.getDouble("MILEPOST"));
+                    rsu.setRsuUsername(rs.getString("USERNAME"));
+                    rsu.setRsuPassword(rs.getString("PASSWORD"));
+                    rsus.add(rsu);
+                }
             }
         } catch (SQLException e) {
             log.error("Exception", e);
@@ -138,21 +144,24 @@ public class RsuController extends BaseController {
         ArrayList<WydotRsu> rsus = new ArrayList<WydotRsu>();
 
         // select all RSUs from RSU table
-        String query = "select rsu_id, ST_X(ST_AsText(geography)) as longitude, ST_Y(ST_AsText(geography)) as latitude, ipv4_address, primary_route, milepost from rsus where primary_route like '%" + route + "%'";
+        String query = "select rsu_id, ST_X(ST_AsText(geography)) as longitude, ST_Y(ST_AsText(geography)) as latitude, ipv4_address, primary_route, milepost from rsus where primary_route like ?";
 
         try(Connection connection = dbInteractions.getConnectionPool();
-            Statement statement = connection.createStatement();
-            ResultSet rs = statement.executeQuery(query)) {
+            PreparedStatement statement = connection.prepareStatement(query)) {
 
-            while (rs.next()) {
-                WydotRsu rsu = new WydotRsu();
-                rsu.setRsuId(rs.getInt("RSU_ID"));
-                rsu.setRsuTarget(rs.getString("IPV4_ADDRESS"));
-                rsu.setLatitude(rs.getBigDecimal("LATITUDE"));
-                rsu.setLongitude(rs.getBigDecimal("LONGITUDE"));
-                rsu.setRoute(rs.getString("ROUTE"));
-                rsu.setMilepost(rs.getDouble("MILEPOST"));
-                rsus.add(rsu);
+            statement.setString(1, "%" + route + "%");
+
+            try(ResultSet rs = statement.executeQuery()) {
+                while (rs.next()) {
+                    WydotRsu rsu = new WydotRsu();
+                    rsu.setRsuId(rs.getInt("RSU_ID"));
+                    rsu.setRsuTarget(rs.getString("IPV4_ADDRESS"));
+                    rsu.setLatitude(rs.getBigDecimal("LATITUDE"));
+                    rsu.setLongitude(rs.getBigDecimal("LONGITUDE"));
+                    rsu.setRoute(rs.getString("ROUTE"));
+                    rsu.setMilepost(rs.getDouble("MILEPOST"));
+                    rsus.add(rsu);
+                }
             }
         } catch (SQLException e) {
             log.error("Exception", e);

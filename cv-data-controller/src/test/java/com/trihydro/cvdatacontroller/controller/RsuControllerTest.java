@@ -27,14 +27,16 @@ public class RsuControllerTest extends TestBase<RsuController> {
 
         // Assert
         Assertions.assertEquals(HttpStatus.OK, data.getStatusCode());
-        verify(mockStatement).executeQuery(selectStatement);
+
+        verify(mockConnection).prepareStatement(selectStatement);
+        verify(mockPreparedStatement).executeQuery();
         verify(mockRs).getInt("RSU_ID");
         verify(mockRs).getString("IPV4_ADDRESS");
         verify(mockRs).getBigDecimal("LATITUDE");
         verify(mockRs).getBigDecimal("LONGITUDE");
         verify(mockRs).getString("PRIMARY_ROUTE");
         verify(mockRs).getDouble("MILEPOST");
-        verify(mockStatement).close();
+        verify(mockPreparedStatement).close();
         verify(mockConnection).close();
         verify(mockRs).close();
     }
@@ -44,13 +46,15 @@ public class RsuControllerTest extends TestBase<RsuController> {
         // Arrange
         String selectStatement = "select rsu_id, ST_X(ST_AsText(geography)) as longitude, ST_Y(ST_AsText(geography)) as latitude, ipv4_address, primary_route, milepost from rsus order by milepost asc";
         doThrow(new SQLException()).when(mockRs).getInt("RSU_ID");
+
         // Act
         ResponseEntity<List<WydotRsu>> data = uut.selectAllRsus();
 
         // Assert
         Assertions.assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, data.getStatusCode());
-        verify(mockStatement).executeQuery(selectStatement);
-        verify(mockStatement).close();
+        verify(mockConnection).prepareStatement(selectStatement);
+        verify(mockPreparedStatement).executeQuery();
+        verify(mockPreparedStatement).close();
         verify(mockConnection).close();
         verify(mockRs).close();
     }
@@ -63,21 +67,23 @@ public class RsuControllerTest extends TestBase<RsuController> {
         "rsu_credentials.password as update_password, ST_X(ST_AsText(rsus.geography)) as longitude, " + 
         "ST_Y(ST_AsText(rsus.geography)) as latitude, rsus.ipv4_address, tim_rsu.rsu_index from rsus " + 
         "inner join rsu_credentials on rsu_credentials.credential_id = rsus.credential_id inner join " + 
-        "tim_rsu on tim_rsu.rsu_id = rsus.rsu_id where tim_rsu.tim_id = " + timId;
+        "tim_rsu on tim_rsu.rsu_id = rsus.rsu_id where tim_rsu.tim_id = ?";
 
         // Act
         ResponseEntity<List<WydotRsuTim>> data = uut.getFullRsusTimIsOn(timId);
 
         // Assert
         Assertions.assertEquals(HttpStatus.OK, data.getStatusCode());
-        verify(mockStatement).executeQuery(selectStatement);
+        verify(mockConnection).prepareStatement(selectStatement);
+        verify(mockPreparedStatement).setLong(1, timId);
+        verify(mockPreparedStatement).executeQuery();
         verify(mockRs).getString("IPV4_ADDRESS");
         verify(mockRs).getBigDecimal("LATITUDE");
         verify(mockRs).getBigDecimal("LONGITUDE");
         verify(mockRs).getInt("RSU_INDEX");
         verify(mockRs).getString("UPDATE_USERNAME");
         verify(mockRs).getString("UPDATE_PASSWORD");
-        verify(mockStatement).close();
+        verify(mockPreparedStatement).close();
         verify(mockConnection).close();
         verify(mockRs).close();
     }
@@ -90,7 +96,7 @@ public class RsuControllerTest extends TestBase<RsuController> {
         "rsu_credentials.password as update_password, ST_X(ST_AsText(rsus.geography)) as longitude, " + 
         "ST_Y(ST_AsText(rsus.geography)) as latitude, rsus.ipv4_address, tim_rsu.rsu_index from rsus " + 
         "inner join rsu_credentials on rsu_credentials.credential_id = rsus.credential_id inner join " + 
-        "tim_rsu on tim_rsu.rsu_id = rsus.rsu_id where tim_rsu.tim_id = " + timId;
+        "tim_rsu on tim_rsu.rsu_id = rsus.rsu_id where tim_rsu.tim_id = ?";
         doThrow(new SQLException()).when(mockRs).getString("IPV4_ADDRESS");
 
         // Act
@@ -98,8 +104,10 @@ public class RsuControllerTest extends TestBase<RsuController> {
 
         // Assert
         Assertions.assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, data.getStatusCode());
-        verify(mockStatement).executeQuery(selectStatement);
-        verify(mockStatement).close();
+        verify(mockConnection).prepareStatement(selectStatement);
+        verify(mockPreparedStatement).setLong(1, timId);
+        verify(mockPreparedStatement).executeQuery();
+        verify(mockPreparedStatement).close();
         verify(mockConnection).close();
         verify(mockRs).close();
     }
@@ -110,20 +118,23 @@ public class RsuControllerTest extends TestBase<RsuController> {
         String route = "I80";
         String selectStatement = "select rsu_id, ST_X(ST_AsText(geography)) as longitude, " + 
         "ST_Y(ST_AsText(geography)) as latitude, ipv4_address, primary_route, milepost from rsus " + 
-        "where primary_route like '%" + route + "%'";
+        "where primary_route like ?";
+
         // Act
         ResponseEntity<ArrayList<WydotRsu>> data = uut.selectRsusByRoute(route);
 
         // Assert
         Assertions.assertEquals(HttpStatus.OK, data.getStatusCode());
-        verify(mockStatement).executeQuery(selectStatement);
+        verify(mockConnection).prepareStatement(selectStatement);
+        verify(mockPreparedStatement).setString(1, "%" + route + "%");
+        verify(mockPreparedStatement).executeQuery();
         verify(mockRs).getInt("RSU_ID");
         verify(mockRs).getString("IPV4_ADDRESS");
         verify(mockRs).getBigDecimal("LATITUDE");
         verify(mockRs).getBigDecimal("LONGITUDE");
         verify(mockRs).getString("ROUTE");
         verify(mockRs).getDouble("MILEPOST");
-        verify(mockStatement).close();
+        verify(mockPreparedStatement).close();
         verify(mockConnection).close();
         verify(mockRs).close();
     }
@@ -134,15 +145,18 @@ public class RsuControllerTest extends TestBase<RsuController> {
         String route = "I80";
         String selectStatement = "select rsu_id, ST_X(ST_AsText(geography)) as longitude, " + 
         "ST_Y(ST_AsText(geography)) as latitude, ipv4_address, primary_route, milepost from rsus " + 
-        "where primary_route like '%" + route + "%'";
+        "where primary_route like ?";
         doThrow(new SQLException()).when(mockRs).getInt("RSU_ID");
+
         // Act
         ResponseEntity<ArrayList<WydotRsu>> data = uut.selectRsusByRoute(route);
 
         // Assert
         Assertions.assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, data.getStatusCode());
-        verify(mockStatement).executeQuery(selectStatement);
-        verify(mockStatement).close();
+        verify(mockConnection).prepareStatement(selectStatement);
+        verify(mockPreparedStatement).setString(1, "%" + route + "%");
+        verify(mockPreparedStatement).executeQuery();
+        verify(mockPreparedStatement).close();
         verify(mockConnection).close();
         verify(mockRs).close();
     }
@@ -161,7 +175,6 @@ public class RsuControllerTest extends TestBase<RsuController> {
         Assertions.assertEquals(HttpStatus.OK, result.getStatusCode());
         Assertions.assertEquals(1, result.getBody().size());
         Assertions.assertEquals(-1, result.getBody().get(0));
-
         verify(mockConnection).prepareStatement(statement);
         verify(mockPreparedStatement).setLong(1, 123);
         verify(mockPreparedStatement).executeQuery();
