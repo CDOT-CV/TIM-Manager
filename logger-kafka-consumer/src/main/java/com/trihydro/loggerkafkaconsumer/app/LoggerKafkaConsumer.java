@@ -218,7 +218,14 @@ public class LoggerKafkaConsumer {
 
                 if (ath != null) {
                     log.debug("Found record in holding table, updating expiration");
-                    success = activeTimHoldingService.updateTimExpiration(certExpirationModel.getPacketID(), Instant.parse(certExpirationModel.getExpirationDate()));
+                    Instant expiration = null;
+                    String expDateStr = certExpirationModel.getExpirationDate();
+
+                    if (expDateStr != null) {
+                        expiration = Instant.parse(expDateStr); // or ZonedDateTime.parse if needed
+                    }
+
+                    success = activeTimHoldingService.updateTimExpiration(certExpirationModel.getPacketID(), expiration);
 
                     if (success) {
                         log.info("Successfully updated expiration date in holding table for packet ID: {}", certExpirationModel.getPacketID());

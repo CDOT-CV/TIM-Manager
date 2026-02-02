@@ -148,12 +148,15 @@ public class ActiveTimHoldingService extends BaseService {
             Connection connection = dbInteractions.getConnectionPool();
             PreparedStatement preparedStatement = connection.prepareStatement(updateStatement);
         ) {
-            preparedStatement.setTimestamp(1, Timestamp.from(expDate));
-            // (GetMinExpiration)
-            preparedStatement.setObject(2, packetID);
+            if (expDate == null) {
+                preparedStatement.setNull(1, Types.TIMESTAMP); // 👈 preserves old behavior
+            } else {
+                preparedStatement.setTimestamp(1, Timestamp.from(expDate));
+            }
 
-            // execute update statement
+            preparedStatement.setObject(2, packetID);
             success = dbInteractions.updateOrDelete(preparedStatement);
+
         } catch (Exception e) {
             log.error("Exception while updating ACTIVE_TIM_HOLDING with packetID: {}", packetID, e);
             return false;
