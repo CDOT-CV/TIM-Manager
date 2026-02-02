@@ -156,7 +156,7 @@ public class RsuController extends BaseController {
                     rsu.setRsuTarget(rs.getString("IPV4_ADDRESS"));
                     rsu.setLatitude(rs.getBigDecimal("LATITUDE"));
                     rsu.setLongitude(rs.getBigDecimal("LONGITUDE"));
-                    rsu.setRoute(rs.getString("ROUTE"));
+                    rsu.setRoute(rs.getString("PRIMARY_ROUTE"));
                     rsu.setMilepost(rs.getDouble("MILEPOST"));
                     rsus.add(rsu);
                 }

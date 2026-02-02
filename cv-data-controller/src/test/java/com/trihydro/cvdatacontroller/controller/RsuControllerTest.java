@@ -137,7 +137,7 @@ public class RsuControllerTest extends TestBase<RsuController> {
         verify(mockRs).getString("IPV4_ADDRESS");
         verify(mockRs).getBigDecimal("LATITUDE");
         verify(mockRs).getBigDecimal("LONGITUDE");
-        verify(mockRs).getString("ROUTE");
+        verify(mockRs).getString("PRIMARY_ROUTE");
         verify(mockRs).getDouble("MILEPOST");
         verify(mockPreparedStatement).close();
         verify(mockConnection).close();
