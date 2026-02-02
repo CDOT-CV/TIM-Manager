@@ -28,6 +28,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.stereotype.Component;
 
 import us.dot.its.jpo.ode.model.OdeData;
+import us.dot.its.jpo.ode.model.OdeTimPayload;
 
 @Component
 @Slf4j
@@ -159,7 +160,7 @@ public class LoggerKafkaConsumer {
         log.trace("Starting OdeTimJson processing for message with length: {} bytes", tdw.getData().length());
         log.trace("Message content: {}", tdw.getData());
 
-        OdeData odeData = timDataConverter.processTimJson(tdw.getData());
+        OdeData<?, OdeTimPayload> odeData = timDataConverter.processTimJson(tdw.getData());
 
         if (odeData == null) {
             log.error("Failed to parse topic.OdeTimJson message, database insertion skipped");
