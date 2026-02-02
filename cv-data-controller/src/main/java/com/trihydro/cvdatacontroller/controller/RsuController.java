@@ -31,16 +31,13 @@ public class RsuController extends BaseController {
     @RequestMapping(value = "/rsus", method = RequestMethod.GET, headers = "Accept=application/json")
     public ResponseEntity<List<WydotRsu>> selectAllRsus() {
         ArrayList<WydotRsu> rsus = new ArrayList<WydotRsu>();
-        Connection connection = null;
-        ResultSet rs = null;
-        Statement statement = null;
 
-        try {
-            connection = dbInteractions.getConnectionPool();
-            statement = connection.createStatement();
+        // select all RSUs from rsus table
+        String query = "select rsu_id, ST_X(ST_AsText(geography)) as longitude, ST_Y(ST_AsText(geography)) as latitude, ipv4_address, primary_route, milepost from rsus order by milepost asc";
 
-            // select all RSUs from rsus table
-            rs = statement.executeQuery("select rsu_id, ST_X(ST_AsText(geography)) as longitude, ST_Y(ST_AsText(geography)) as latitude, ipv4_address, primary_route, milepost from rsus order by milepost asc");
+        try (Connection connection = dbInteractions.getConnectionPool();
+             Statement statement = connection.createStatement();
+             ResultSet rs = statement.executeQuery(query)) {
 
             while (rs.next()) {
                 WydotRsu rsu = new WydotRsu();
@@ -56,20 +53,6 @@ public class RsuController extends BaseController {
         } catch (SQLException e) {
             log.error("Exception", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(rsus);
-        } finally {
-            try {
-                // close prepared statement
-                if (statement != null)
-                    statement.close();
-                // return connection back to pool
-                if (connection != null)
-                    connection.close();
-                // close result set
-                if (rs != null)
-                    rs.close();
-            } catch (SQLException e) {
-                log.error("Exception", e);
-            }
         }
 
         return ResponseEntity.ok(rsus);
@@ -78,21 +61,18 @@ public class RsuController extends BaseController {
     @RequestMapping(method = RequestMethod.GET, value = "/rsus-for-tim/{timId}")
     public ResponseEntity<List<WydotRsuTim>> getFullRsusTimIsOn(@PathVariable Long timId) {
         List<WydotRsuTim> rsus = new ArrayList<WydotRsuTim>();
-        Connection connection = null;
-        ResultSet rs = null;
-        Statement statement = null;
 
-        try {
-            connection = dbInteractions.getConnectionPool();
-            statement = connection.createStatement();
+        String query =
+                "select rsus.rsu_id, rsu_credentials.username as update_username, " +
+                        "rsu_credentials.password as update_password, ST_X(ST_AsText(rsus.geography)) " +
+                        "as longitude, ST_Y(ST_AsText(rsus.geography)) as latitude, rsus.ipv4_address, " +
+                        "tim_rsu.rsu_index from rsus inner join rsu_credentials on " +
+                        "rsu_credentials.credential_id = rsus.credential_id inner join tim_rsu on " +
+                        "tim_rsu.rsu_id = rsus.rsu_id where tim_rsu.tim_id = " + timId;
 
-            rs = statement.executeQuery(
-                    "select rsus.rsu_id, rsu_credentials.username as update_username, " +
-                            "rsu_credentials.password as update_password, ST_X(ST_AsText(rsus.geography)) " +
-                            "as longitude, ST_Y(ST_AsText(rsus.geography)) as latitude, rsus.ipv4_address, " +
-                            "tim_rsu.rsu_index from rsus inner join rsu_credentials on " +
-                            "rsu_credentials.credential_id = rsus.credential_id inner join tim_rsu on " +
-                            "tim_rsu.rsu_id = rsus.rsu_id where tim_rsu.tim_id = " + timId);
+        try(Connection connection = dbInteractions.getConnectionPool();
+            Statement statement = connection.createStatement();
+            ResultSet rs = statement.executeQuery(query)) {
 
             while (rs.next()) {
                 WydotRsuTim rsu = new WydotRsuTim();
@@ -110,20 +90,6 @@ public class RsuController extends BaseController {
         } catch (SQLException e) {
             log.error("Exception", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(rsus);
-        } finally {
-            try {
-                // close prepared statement
-                if (statement != null)
-                    statement.close();
-                // return connection back to pool
-                if (connection != null)
-                    connection.close();
-                // close result set
-                if (rs != null)
-                    rs.close();
-            } catch (SQLException e) {
-                log.error("Exception", e);
-            }
         }
         return ResponseEntity.ok(rsus);
     }
@@ -131,28 +97,22 @@ public class RsuController extends BaseController {
     @RequestMapping(method = RequestMethod.GET, produces = "application/json", value = "/rsus-by-geometry/{geometry}")
     public ResponseEntity<ArrayList<WydotRsu>> selectRsusByGeometry(@PathVariable String geometry) {
         ArrayList<WydotRsu> rsus = new ArrayList<>();
-        Connection connection = null;
-        ResultSet rs = null;
-        Statement statement = null;
 
-        try {
-            connection = dbInteractions.getConnectionPool();
-            statement = connection.createStatement();
+        String query = "SELECT rsu_id, ST_X(ST_AsText(geography)) as longitude, " +
+                "ST_Y(ST_AsText(geography)) as latitude, primary_route, milepost, ipv4_address, sc.username, sc.password " +
+                "FROM rsus " +
+                "JOIN snmp_credentials AS sc ON rsus.snmp_credential_id = sc.snmp_credential_id " +
+                "WHERE rsu_id NOT IN (" +
+                "SELECT rsu_id " +
+                "FROM rsu_organization AS ro " +
+                "JOIN organizations AS o ON ro.organization_id = o.organization_id " +
+                "WHERE o.name = 'Region 1') " +
+                "AND ST_Intersects(" +
+                "ST_Buffer(ST_GeomFromText('" + geometry + "'), 1), geography)";
 
-            // select all RSUs from RSU table
-            rs = statement.executeQuery(
-                    "SELECT rsu_id, ST_X(ST_AsText(geography)) as longitude, " +
-                            "ST_Y(ST_AsText(geography)) as latitude, primary_route, milepost, ipv4_address, sc.username, sc.password " +
-                            "FROM rsus " +
-                            "JOIN snmp_credentials AS sc ON rsus.snmp_credential_id = sc.snmp_credential_id " +
-                            "WHERE rsu_id NOT IN (" +
-                            "SELECT rsu_id " +
-                            "FROM rsu_organization AS ro " +
-                            "JOIN organizations AS o ON ro.organization_id = o.organization_id " +
-                            "WHERE o.name = 'Region 1') " +
-                            "AND ST_Intersects(" +
-                            "ST_Buffer(ST_GeomFromText('" + geometry + "'), 1), geography)"
-            );
+        try(Connection connection = dbInteractions.getConnectionPool();
+            Statement statement = connection.createStatement();
+            ResultSet rs = statement.executeQuery(query)) {
 
             while (rs.next()) {
                 WydotRsu rsu = new WydotRsu();
@@ -169,20 +129,6 @@ public class RsuController extends BaseController {
         } catch (SQLException e) {
             log.error("Exception", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(rsus);
-        } finally {
-            try {
-                // close prepared statement
-                if (statement != null)
-                    statement.close();
-                // return connection back to pool
-                if (connection != null)
-                    connection.close();
-                // close result set
-                if (rs != null)
-                    rs.close();
-            } catch (SQLException e) {
-                log.error("Exception", e);
-            }
         }
         return ResponseEntity.ok(rsus);
     }
@@ -190,17 +136,13 @@ public class RsuController extends BaseController {
     @RequestMapping(method = RequestMethod.GET, produces = "application/json", value = "/rsus-by-route/{route}")
     public ResponseEntity<ArrayList<WydotRsu>> selectRsusByRoute(@PathVariable String route) {
         ArrayList<WydotRsu> rsus = new ArrayList<WydotRsu>();
-        Connection connection = null;
-        ResultSet rs = null;
-        Statement statement = null;
 
-        try {
-            connection = dbInteractions.getConnectionPool();
-            statement = connection.createStatement();
+        // select all RSUs from RSU table
+        String query = "select rsu_id, ST_X(ST_AsText(geography)) as longitude, ST_Y(ST_AsText(geography)) as latitude, ipv4_address, primary_route, milepost from rsus where primary_route like '%" + route + "%'";
 
-            // select all RSUs from RSU table
-            rs = statement.executeQuery(
-                    "select rsu_id, ST_X(ST_AsText(geography)) as longitude, ST_Y(ST_AsText(geography)) as latitude, ipv4_address, primary_route, milepost from rsus where primary_route like '%" + route + "%'");
+        try(Connection connection = dbInteractions.getConnectionPool();
+            Statement statement = connection.createStatement();
+            ResultSet rs = statement.executeQuery(query)) {
 
             while (rs.next()) {
                 WydotRsu rsu = new WydotRsu();
@@ -215,20 +157,6 @@ public class RsuController extends BaseController {
         } catch (SQLException e) {
             log.error("Exception", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(rsus);
-        } finally {
-            try {
-                // close prepared statement
-                if (statement != null)
-                    statement.close();
-                // return connection back to pool
-                if (connection != null)
-                    connection.close();
-                // close result set
-                if (rs != null)
-                    rs.close();
-            } catch (SQLException e) {
-                log.error("Exception", e);
-            }
         }
         return ResponseEntity.ok(rsus);
     }
@@ -237,41 +165,24 @@ public class RsuController extends BaseController {
     public ResponseEntity<List<Integer>> getActiveRsuTimIndexes(@PathVariable Integer rsuId) {
         List<Integer> indexes = new ArrayList<Integer>();
 
-        Connection connection = null;
-        ResultSet rs = null;
-        PreparedStatement statement = null;
+        // select all RSUs from RSU table
+        var sql = "select rsu_index from active_tim inner join tim_rsu on active_tim.tim_id = tim_rsu.tim_id"
+                + " where sat_record_id is null and rsu_id = ?";
 
-        try {
-            // select all RSUs from RSU table
-            var sql = "select rsu_index from active_tim inner join tim_rsu on active_tim.tim_id = tim_rsu.tim_id"
-                    + " where sat_record_id is null and rsu_id = ?";
+        try(Connection connection = dbInteractions.getConnectionPool();
+            PreparedStatement statement = connection.prepareStatement(sql)) {
 
-            connection = dbInteractions.getConnectionPool();
-            statement = connection.prepareStatement(sql);
             statement.setLong(1, rsuId);
 
-            rs = statement.executeQuery();
-
-            while (rs.next()) {
-                indexes.add(rs.getInt("RSU_INDEX"));
+            try(ResultSet rs = statement.executeQuery()) {
+                while (rs.next()) {
+                    indexes.add(rs.getInt("RSU_INDEX"));
+                }
             }
+
         } catch (SQLException e) {
             log.error("Exception", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(indexes);
-        } finally {
-            try {
-                // close prepared statement
-                if (statement != null)
-                    statement.close();
-                // return connection back to pool
-                if (connection != null)
-                    connection.close();
-                // close result set
-                if (rs != null)
-                    rs.close();
-            } catch (SQLException e) {
-                log.error("Exception", e);
-            }
         }
         return ResponseEntity.ok(indexes);
     }
