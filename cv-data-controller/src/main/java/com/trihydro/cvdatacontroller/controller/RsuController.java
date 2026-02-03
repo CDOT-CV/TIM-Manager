@@ -102,15 +102,12 @@ public class RsuController extends BaseController {
     public ResponseEntity<ArrayList<WydotRsu>> selectRsusByGeometry(@PathVariable String geometry) {
         ArrayList<WydotRsu> rsus = new ArrayList<>();
 
-        String query = "SELECT rsu_id, ST_X(ST_AsText(geography)) AS longitude, ST_Y(ST_AsText(geography)) AS latitude, "
+        String query = "SELECT rsus.rsu_id, ST_X(ST_AsText(geography)) AS longitude, ST_Y(ST_AsText(geography)) AS latitude, "
                 + "primary_route, milepost, ipv4_address, sc.username, sc.password "
                 + "FROM rsus "
                 + "JOIN snmp_credentials AS sc ON rsus.snmp_credential_id = sc.snmp_credential_id "
-                + "WHERE rsu_id NOT IN ("
-                + "  SELECT rsu_id "
-                + "  FROM rsu_organization AS ro "
-                + "  JOIN organizations AS o ON ro.organization_id = o.organization_id "
-                + "  WHERE o.name = 'Region 1') "
+                + "JOIN rsu_options AS ro ON rsus.rsu_id = ro.rsu_id "
+                + "WHERE ro.tim_deposit = true "
                 + "AND ST_Intersects(ST_Buffer(ST_GeomFromText(?), 1), geography)";
 
         try(Connection connection = dbInteractions.getConnectionPool();
@@ -159,7 +156,7 @@ public class RsuController extends BaseController {
                     rsu.setRsuTarget(rs.getString("IPV4_ADDRESS"));
                     rsu.setLatitude(rs.getBigDecimal("LATITUDE"));
                     rsu.setLongitude(rs.getBigDecimal("LONGITUDE"));
-                    rsu.setRoute(rs.getString("ROUTE"));
+                    rsu.setRoute(rs.getString("PRIMARY_ROUTE"));
                     rsu.setMilepost(rs.getDouble("MILEPOST"));
                     rsus.add(rsu);
                 }

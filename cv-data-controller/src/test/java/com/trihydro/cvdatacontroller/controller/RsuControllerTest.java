@@ -137,7 +137,7 @@ public class RsuControllerTest extends TestBase<RsuController> {
         verify(mockRs).getString("IPV4_ADDRESS");
         verify(mockRs).getBigDecimal("LATITUDE");
         verify(mockRs).getBigDecimal("LONGITUDE");
-        verify(mockRs).getString("ROUTE");
+        verify(mockRs).getString("PRIMARY_ROUTE");
         verify(mockRs).getDouble("MILEPOST");
         verify(mockPreparedStatement).close();
         verify(mockConnection).close();
@@ -204,6 +204,64 @@ public class RsuControllerTest extends TestBase<RsuController> {
         Assertions.assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, result.getStatusCode());
         verify(mockConnection).prepareStatement(statement);
         verify(mockPreparedStatement).setLong(1, 123);
+        verify(mockPreparedStatement).executeQuery();
+        verify(mockPreparedStatement).close();
+        verify(mockConnection).close();
+    }
+
+    @Test
+    public void selectRsusByGeometry_SUCCESS() throws SQLException {
+        // Arrange
+        String geometry = "POLYGON((-105 41, -104 41, -104 42, -105 42, -105 41))";
+        String selectStatement = "SELECT rsus.rsu_id, ST_X(ST_AsText(geography)) AS longitude, ST_Y(ST_AsText(geography)) AS latitude, "
+                + "primary_route, milepost, ipv4_address, sc.username, sc.password "
+                + "FROM rsus "
+                + "JOIN snmp_credentials AS sc ON rsus.snmp_credential_id = sc.snmp_credential_id "
+                + "JOIN rsu_options AS ro ON rsus.rsu_id = ro.rsu_id "
+                + "WHERE ro.tim_deposit = true "
+                + "AND ST_Intersects(ST_Buffer(ST_GeomFromText(?), 1), geography)";
+
+        // Act
+        ResponseEntity<ArrayList<WydotRsu>> data = uut.selectRsusByGeometry(geometry);
+
+        // Assert
+        Assertions.assertEquals(HttpStatus.OK, data.getStatusCode());
+        verify(mockConnection).prepareStatement(selectStatement);
+        verify(mockPreparedStatement).setString(1, geometry);
+        verify(mockPreparedStatement).executeQuery();
+        verify(mockRs).getInt("RSU_ID");
+        verify(mockRs).getString("IPV4_ADDRESS");
+        verify(mockRs).getBigDecimal("LATITUDE");
+        verify(mockRs).getBigDecimal("LONGITUDE");
+        verify(mockRs).getString("PRIMARY_ROUTE");
+        verify(mockRs).getDouble("MILEPOST");
+        verify(mockRs).getString("USERNAME");
+        verify(mockRs).getString("PASSWORD");
+        verify(mockPreparedStatement).close();
+        verify(mockConnection).close();
+        verify(mockRs).close();
+    }
+
+    @Test
+    public void selectRsusByGeometry_FAIL() throws SQLException {
+        // Arrange
+        String geometry = "POLYGON((-105 41, -104 41, -104 42, -105 42, -105 41))";
+        String selectStatement = "SELECT rsus.rsu_id, ST_X(ST_AsText(geography)) AS longitude, ST_Y(ST_AsText(geography)) AS latitude, "
+                + "primary_route, milepost, ipv4_address, sc.username, sc.password "
+                + "FROM rsus "
+                + "JOIN snmp_credentials AS sc ON rsus.snmp_credential_id = sc.snmp_credential_id "
+                + "JOIN rsu_options AS ro ON rsus.rsu_id = ro.rsu_id "
+                + "WHERE ro.tim_deposit = true "
+                + "AND ST_Intersects(ST_Buffer(ST_GeomFromText(?), 1), geography)";
+        when(mockPreparedStatement.executeQuery()).thenThrow(new SQLException());
+
+        // Act
+        ResponseEntity<ArrayList<WydotRsu>> data = uut.selectRsusByGeometry(geometry);
+
+        // Assert
+        Assertions.assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, data.getStatusCode());
+        verify(mockConnection).prepareStatement(selectStatement);
+        verify(mockPreparedStatement).setString(1, geometry);
         verify(mockPreparedStatement).executeQuery();
         verify(mockPreparedStatement).close();
         verify(mockConnection).close();
