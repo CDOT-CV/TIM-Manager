@@ -1095,7 +1095,6 @@ public class TimGenerationHelper {
 
     private String getBaseRegionName(TimUpdateModel aTim, String middle) {
         String regionName = aTim.getDirection();
-        regionName += "_" + aTim.getRoute();
         regionName += middle;// SAT_xxx or RSU_xxx
 
         String timType = aTim.getTimTypeName();

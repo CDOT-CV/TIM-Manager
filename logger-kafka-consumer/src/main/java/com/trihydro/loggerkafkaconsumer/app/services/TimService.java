@@ -699,11 +699,6 @@ public class TimService extends BaseService {
 
         activeTim.setDirection(elements.direction);
 
-        if (elements.route != null) {
-            activeTim.setRoute(elements.route);
-        } else {
-            return activeTim;
-        }
         if (elements.rsuOrSat != null) {
             // if this is an RSU TIM
             String[] hyphen_array = elements.rsuOrSat.split("-");

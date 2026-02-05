@@ -572,10 +572,10 @@ public class TimServiceTest extends TestBase<TimService> {
     @Test
     public void setActiveTimByRegionName_RsuSUCCESS() {
         // Arrange
-        String regionName = "I_Prairie Center Cir_RSU-10.145.1.100_RC_clientId";
+        String regionName = "I_RSU-10.145.1.100_RC_clientId";
         TimType timType = new TimType();
         timType.setType("RC");
-        timType.setTimTypeId(-1l);
+        timType.setTimTypeId(-1L);
         doReturn(timType).when(uut).getTimType("RC");
 
         // Act
@@ -584,7 +584,6 @@ public class TimServiceTest extends TestBase<TimService> {
         // Assert
         Assertions.assertNotNull(data);
         Assertions.assertNotNull(data.getDirection());
-        Assertions.assertNotNull(data.getRoute());
         Assertions.assertNotNull(data.getRsuTarget());
         Assertions.assertNotNull(data.getTimType());
         Assertions.assertNotNull(data.getTimTypeId());
@@ -594,7 +593,7 @@ public class TimServiceTest extends TestBase<TimService> {
     @Test
     public void setActiveTimByRegionName_RsuSUCCESS_TrimmedRegion_RouteCutOffPartly() {
         // Arrange
-        String regionName = "I_Prairie Center Cir..._RSU-10.145.1.100_RC_clientid-12345";
+        String regionName = "I_RSU-10.145.1.100_RC_clientid-12345";
         TimType timType = new TimType();
         timType.setType("RC");
         timType.setTimTypeId(-1l);
@@ -606,7 +605,6 @@ public class TimServiceTest extends TestBase<TimService> {
         // Assert
         Assertions.assertNotNull(data);
         Assertions.assertEquals("I", data.getDirection());
-        Assertions.assertEquals("Prairie Center Cir...", data.getRoute());
         Assertions.assertEquals("10.145.1.100", data.getRsuTarget());
         Assertions.assertEquals("RC", data.getTimType());
         Assertions.assertEquals(Long.valueOf(-1), data.getTimTypeId());
@@ -616,7 +614,7 @@ public class TimServiceTest extends TestBase<TimService> {
     @Test
     public void setActiveTimByRegionName_SatSUCCESS() {
         // Arrange
-        String regionName = "I_Prairie Center Cir_SAT-satId_RC_clientId";
+        String regionName = "I_SAT-satId_RC_clientId";
         TimType timType = new TimType();
         timType.setType("RC");
         timType.setTimTypeId(-1l);
@@ -628,7 +626,6 @@ public class TimServiceTest extends TestBase<TimService> {
         // Assert
         Assertions.assertNotNull(data);
         Assertions.assertNotNull(data.getDirection());
-        Assertions.assertNotNull(data.getRoute());
         Assertions.assertNotNull(data.getSatRecordId());
         Assertions.assertNotNull(data.getTimType());
         Assertions.assertNotNull(data.getTimTypeId());
