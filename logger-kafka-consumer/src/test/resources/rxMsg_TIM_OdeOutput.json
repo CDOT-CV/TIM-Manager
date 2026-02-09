@@ -1,132 +1,227 @@
 {
   "metadata": {
-    "recordGeneratedBy": "OBU",
-    "receivedMessageDetails": {
-      "locationData": {
-        "elevation": 1515,
-        "heading": "0.0000",
-        "latitude": 40.4739533,
-        "speed": 0.14,
-        "longitude": -104.9689995
-      },
-      "rxSource": "SAT"
-    },
-    "schemaVersion": 3,
-    "securityResultCode": "unknown",
-    "payloadType": "us.dot.its.jpo.ode.model.OdeTimPayload",
-    "serialId": {
-      "recordId": 2,
-      "serialNumber": 0,
-      "streamId": "f212c298-4021-412a-b7c6-1fdb64a6a227",
-      "bundleSize": 1,
-      "bundleId": 4
-    },
-    "sanitized": false,
-    "recordGeneratedAt": "2017-09-05T20:23:39.194Z[UTC]",
-    "recordType": "rxMsg",
     "logFileName": "rxMsg_TIM.bin",
-    "odeReceivedAt": "2017-11-09T13:33:34.039Z[UTC]"
+    "recordType": "timMsg",
+    "securityResultCode": "success",
+    "receivedMessageDetails": {
+      "rxSource": "NA"
+    },
+    "payloadType": "us.dot.its.jpo.ode.model.OdeMessageFramePayload",
+    "serialId": {
+      "streamId": "6f204bcf-5db1-4b46-be8a-35149a6b2240",
+      "bundleSize": 1,
+      "bundleId": 0,
+      "recordId": 0,
+      "serialNumber": 0
+    },
+    "odeReceivedAt": "2026-01-22T21:10:48.642Z",
+    "schemaVersion": 9,
+    "maxDurationTime": 0,
+    "recordGeneratedAt": "2026-01-22T21:10:48.642Z",
+    "recordGeneratedBy": "RSU",
+    "sanitized": false,
+    "odePacketID": "17e610000000000000",
+    "odeTimStartDateTime": "2026-01-22T21:10:48.642Z",
+    "asn1": "001F80A97014B901EC9C236B00000000000F775D9B0301EA73E452D1539716C99E9D555100003F0A59B080010007F8AA9979F4D3BB3A0A9266C000000854E3B2C47291F21E85EEF057980028422C1FFE0001FFFC00017FFF80000FFFFF000009FFFFF8000005FFFFFF00000007FF80007FFF00005FFFE00003FFFFC000027FFFFE0000017FFFFFC000000C523E43D138ECB11C6200C00FB0473DFB72A0E997C74007D408E5C376CD4F775D9B00",
+    "source": "RSU",
+    "originIp": "172.19.0.1",
+    "isCertPresent": false
   },
   "payload": {
     "data": {
-      "MessageFrame": {
-        "messageId": 31,
-        "value": {
-          "TravelerInformation": {
-            "timeStamp": 408812,
-            "packetID": "EC9C236B0000000000",
-            "dataFrames": {
-              "TravelerDataFrame": {
-                "regions": {
-                  "GeographicalPath": {
-                    "anchor": {
-                      "elevation": 20,
-                      "lat": 263056840,
-                      "long": -801481510
-                    },
-                    "name": "SXM DFB CSW 10",
-                    "laneWidth": 600,
-                    "directionality": {
-                      "forward": ""
-                    },
-                    "description": {
-                      "path": {
-                        "offset": {
-                          "xy": {
-                            "nodes": {
-                              "NodeXY": [
-                                {
-                                  "delta": {
-                                    "node-LatLon": {
-                                      "lon": -1050524251,
-                                      "lat": 405744807
-                                    }
-                                  }
-                                },
-                                {
-                                  "delta": {
-                                    "node-LatLon": {
-                                      "lon": -1050500237,
-                                      "lat": 405735393
-                                    }
-                                  }
-                                }                                                                                                                            
-                              ]
+      "messageId": 31,
+      "value": {
+        "TravelerInformation": {
+          "msgCnt": 1,
+          "timeStamp": 309505,
+          "packetID": "EC9C236B0000000000",
+          "urlB": "null",
+          "dataFrames": [
+            {
+              "doNotUse1": 0,
+              "frameType": "advisory",
+              "msgId": {
+                "roadSignID": {
+                  "position": {
+                    "lat": 416784730,
+                    "long": -1087827750,
+                    "elevation": 9171
+                  },
+                  "viewAngle": "AAAA",
+                  "mutcdCode": "warning",
+                  "crc": "0000"
+                }
+              },
+              "startYear": 2017,
+              "startTime": 308065,
+              "durationTime": 1,
+              "priority": 0,
+              "doNotUse2": 0,
+              "regions": [
+                {
+                  "name": "Testing TIM",
+                  "id": {
+                    "region": 0,
+                    "id": 33
+                  },
+                  "anchor": {
+                    "lat": 412500807,
+                    "long": -1110093847,
+                    "elevation": 20207
+                  },
+                  "laneWidth": 700,
+                  "directionality": "both",
+                  "closedPath": false,
+                  "direction": "000A",
+                  "description": {
+                    "path": {
+                      "scale": 0,
+                      "offset": {
+                        "ll": {
+                          "nodes": [
+                            {
+                              "delta": {
+                                "node-LL1": {
+                                  "lon": 2047,
+                                  "lat": -2048
+                                }
+                              }
+                            },
+                            {
+                              "delta": {
+                                "node-LL2": {
+                                  "lon": 8191,
+                                  "lat": -8192
+                                }
+                              }
+                            },
+                            {
+                              "delta": {
+                                "node-LL3": {
+                                  "lon": 32767,
+                                  "lat": -32768
+                                }
+                              }
+                            },
+                            {
+                              "delta": {
+                                "node-LL4": {
+                                  "lon": 131071,
+                                  "lat": -131072
+                                }
+                              }
+                            },
+                            {
+                              "delta": {
+                                "node-LL5": {
+                                  "lon": 2097151,
+                                  "lat": -2097152
+                                }
+                              }
+                            },
+                            {
+                              "delta": {
+                                "node-LL6": {
+                                  "lon": 8388607,
+                                  "lat": -8388608
+                                }
+                              }
+                            },
+                            {
+                              "delta": {
+                                "node-LL1": {
+                                  "lon": 2047,
+                                  "lat": -2048
+                                }
+                              }
+                            },
+                            {
+                              "delta": {
+                                "node-LL2": {
+                                  "lon": 8191,
+                                  "lat": -8192
+                                }
+                              }
+                            },
+                            {
+                              "delta": {
+                                "node-LL3": {
+                                  "lon": 32767,
+                                  "lat": -32768
+                                }
+                              }
+                            },
+                            {
+                              "delta": {
+                                "node-LL4": {
+                                  "lon": 131071,
+                                  "lat": -131072
+                                }
+                              }
+                            },
+                            {
+                              "delta": {
+                                "node-LL5": {
+                                  "lon": 2097151,
+                                  "lat": -2097152
+                                }
+                              }
+                            },
+                            {
+                              "delta": {
+                                "node-LL6": {
+                                  "lon": 8388607,
+                                  "lat": -8388608
+                                }
+                              }
+                            },
+                            {
+                              "delta": {
+                                "node-LatLon": {
+                                  "lon": -1110093847,
+                                  "lat": 412500807
+                                }
+                              }
                             }
-                          }
-                        },
-                        "scale": 0
-                      }
-                    },
-                    "direction": 1111100000000001
-                  }
-                },
-                "durationTime": 32000,
-                "doNotUse3": 0,
-                "doNotUse4": 0,
-                "doNotUse1": 0,
-                "doNotUse2": 0,
-                "frameType": {
-                  "roadSignage": ""
-                },
-                "msgId": {
-                  "furtherInfoID": "0000"
-                },
-                "startTime": 149760,
-                "priority": 2,
-                "content": {
-                  "advisory": {
-                    "SEQUENCE": [
-                      {
-                        "item": {
-                          "itis": 13609
-                        }
-                      },
-                      {
-                        "item": {
-                          "itis": 268
-                        }
-                      },
-                      {
-                        "item": {
-                          "itis": 12554
-                        }
-                      },
-                      {
-                        "item": {
-                          "itis": 8720
+                          ]
                         }
                       }
-                    ]
+                    }
                   }
                 }
-              }
-            },
-            "msgCnt": 0
-          }
+              ],
+              "doNotUse3": 3,
+              "doNotUse4": 2,
+              "content": {
+                "advisory": [
+                  {
+                    "item": {
+                      "itis": 125
+                    }
+                  },
+                  {
+                    "item": {
+                      "text": "some text"
+                    }
+                  },
+                  {
+                    "item": {
+                      "itis": 250
+                    }
+                  },
+                  {
+                    "item": {
+                      "text": "98765"
+                    }
+                  }
+                ]
+              },
+              "url": "null"
+            }
+          ]
         }
       }
     },
-    "dataType": "TravelerInformation"
+    "dataType": "us.dot.its.jpo.asn.j2735.r2024.TravelerInformation.TravelerInformationMessageFrame"
   }
 }

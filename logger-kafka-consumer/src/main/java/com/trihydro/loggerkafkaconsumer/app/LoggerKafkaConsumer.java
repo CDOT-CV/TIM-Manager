@@ -2,6 +2,8 @@ package com.trihydro.loggerkafkaconsumer.app;
 
 import com.trihydro.library.helpers.DateTimeHelper;
 import com.trihydro.library.helpers.DateTimeHelperImpl;
+
+import java.time.Instant;
 import java.util.Date;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
@@ -26,6 +28,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.stereotype.Component;
 
 import us.dot.its.jpo.ode.model.OdeData;
+import us.dot.its.jpo.ode.model.OdeTimPayload;
 
 @Component
 @Slf4j
@@ -157,7 +160,7 @@ public class LoggerKafkaConsumer {
         log.trace("Starting OdeTimJson processing for message with length: {} bytes", tdw.getData().length());
         log.trace("Message content: {}", tdw.getData());
 
-        OdeData odeData = timDataConverter.processTimJson(tdw.getData());
+        OdeData<?, OdeTimPayload> odeData = timDataConverter.processTimJson(tdw.getData());
 
         if (odeData == null) {
             log.error("Failed to parse topic.OdeTimJson message, database insertion skipped");
@@ -215,7 +218,14 @@ public class LoggerKafkaConsumer {
 
                 if (ath != null) {
                     log.debug("Found record in holding table, updating expiration");
-                    success = activeTimHoldingService.updateTimExpiration(certExpirationModel.getPacketID(), certExpirationModel.getExpirationDate());
+                    Instant expiration = null;
+                    String expDateStr = certExpirationModel.getExpirationDate();
+
+                    if (expDateStr != null) {
+                        expiration = Instant.parse(expDateStr); // or ZonedDateTime.parse if needed
+                    }
+
+                    success = activeTimHoldingService.updateTimExpiration(certExpirationModel.getPacketID(), expiration);
 
                     if (success) {
                         log.info("Successfully updated expiration date in holding table for packet ID: {}", certExpirationModel.getPacketID());

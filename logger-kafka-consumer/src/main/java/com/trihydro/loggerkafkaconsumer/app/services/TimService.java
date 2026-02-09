@@ -99,7 +99,7 @@ public class TimService extends BaseService {
         this.dateTimeHelper = dateTimeHelper;
     }
 
-    public void addTimToDatabase(OdeData odeData) { // TODO: identify if this method can be removed
+    public void addTimToDatabase(OdeData<?, OdeTimPayload> odeData) { // TODO: identify if this method can be removed
 
         try {
             log.info("Called addTimToDatabase");
@@ -156,11 +156,11 @@ public class TimService extends BaseService {
     /**
      * Adds an active TIM to the database. This only handles a single TIM at a time.
      */
-    public void addActiveTimToDatabase(OdeData odeData) {
+    public void addActiveTimToDatabase(OdeData<?, OdeTimPayload> odeData) {
         log.info("Processing active TIM to add to database");
 
         // Initial validation
-        OdeTimPayload payload = (OdeTimPayload) odeData.getPayload();
+        OdeTimPayload payload = odeData.getPayload();
         if (payload == null) {
             log.warn("Cannot process active TIM: payload is null");
             return;

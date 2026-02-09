@@ -4,7 +4,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
-import org.slf4j.Logger;
 
 import com.google.gson.Gson;
 import com.trihydro.library.helpers.JsonToJavaConverter;
@@ -30,7 +29,7 @@ public class TimDataConverter {
         jsonToJava = _jsonToJava;
     }
 
-    public OdeData processTimJson(String value) {
+    public OdeData<?, OdeTimPayload> processTimJson(String value) {
 
         var metadata = JsonUtils.getJsonNode(value, "metadata");
         if (metadata == null) {
@@ -55,21 +54,21 @@ public class TimDataConverter {
             return translateTimJson(value);
     }
 
-    public OdeData translateTimJson(String value) {
-        OdeData odeData = null;
+    public OdeData<OdeLogMetadata, OdeTimPayload> translateTimJson(String value) {
+        OdeData<OdeLogMetadata, OdeTimPayload> odeData = null;
         OdeLogMetadata odeTimMetadata = jsonToJava.convertTimMetadataJsonToJava(value);
-        OdeTimPayload odeTimPayload = jsonToJava.convertTimPayloadJsonToJava(value);
+        OdeTimPayload odeTimPayload = jsonToJava.convertTimTopicJsonToJava(value);
         if (odeTimMetadata != null && odeTimPayload != null)
-            odeData = new OdeData(odeTimMetadata, odeTimPayload);
+            odeData = new OdeData<>(odeTimMetadata, odeTimPayload);
         return odeData;
     }
 
-    public OdeData translateBroadcastTimJson(String value) {
-        OdeData odeData = null;
+    public OdeData<OdeRequestMsgMetadata, OdeTimPayload> translateBroadcastTimJson(String value) {
+        OdeData<OdeRequestMsgMetadata, OdeTimPayload> odeData = null;
         OdeRequestMsgMetadata odeTimMetadata = jsonToJava.convertBroadcastTimMetadataJsonToJava(value);
-        OdeTimPayload odeTimPayload = jsonToJava.convertTmcTimTopicJsonToJava(value);
+        OdeTimPayload odeTimPayload = jsonToJava.convertTimTopicJsonToJava(value);
         if (odeTimMetadata != null && odeTimPayload != null)
-            odeData = new OdeData(odeTimMetadata, odeTimPayload);
+            odeData = new OdeData<>(odeTimMetadata, odeTimPayload);
         return odeData;
     }
 }
