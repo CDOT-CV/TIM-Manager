@@ -18,7 +18,6 @@ import us.dot.its.jpo.ode.model.OdeData;
 import us.dot.its.jpo.ode.model.OdeLogMetadata;
 import us.dot.its.jpo.ode.model.OdeLogMetadata.RecordType;
 import us.dot.its.jpo.ode.model.OdeLogMetadata.SecurityResultCode;
-import us.dot.its.jpo.ode.model.OdeLogMsgMetadataLocation;
 import us.dot.its.jpo.ode.model.OdeMsgMetadata.GeneratedBy;
 import us.dot.its.jpo.ode.model.OdeTimPayload;
 import us.dot.its.jpo.ode.model.ReceivedMessageDetails;
@@ -114,9 +113,9 @@ public class TimDataConverterTest {
         odeTimPayload.setData(tim);
 
         // Act
-        OdeData odeDataTest = uut.processTimJson(value);
+        OdeData<?, OdeTimPayload> odeDataTest = uut.processTimJson(value);
         OdeLogMetadata odeTimMetadataTest = ((OdeLogMetadata) odeDataTest.getMetadata());
-        OdeTimPayload odeTimPayloadTest = (OdeTimPayload) odeDataTest.getPayload();
+        OdeTimPayload odeTimPayloadTest = odeDataTest.getPayload();
 
         // Assert
         Assertions.assertNotNull(odeTimMetadataTest);
@@ -154,7 +153,7 @@ public class TimDataConverterTest {
                 .readAllBytes(Paths.get("src/test/resources/rxMsg_TIM_OdeOutput_NullMetadata.json")));
 
         // Act
-        OdeData odeDataTest = uut.processTimJson(value);
+        OdeData<?, OdeTimPayload> odeDataTest = uut.processTimJson(value);
 
         // Assert
         Assertions.assertNull(odeDataTest);
@@ -167,7 +166,7 @@ public class TimDataConverterTest {
                 .readAllBytes(Paths.get("src/test/resources/rxMsg_TIM_OdeOutput_NullPayload.json")));
 
         // Act
-        OdeData odeDataTest = uut.processTimJson(value);
+        OdeData<?, OdeTimPayload> odeDataTest = uut.processTimJson(value);
 
         // Assert
         Assertions.assertNull(odeDataTest);
