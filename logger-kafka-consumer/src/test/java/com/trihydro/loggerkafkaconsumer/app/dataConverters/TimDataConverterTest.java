@@ -114,7 +114,7 @@ public class TimDataConverterTest {
         odeTimPayload.setData(tim);
 
         // Act
-        OdeData odeDataTest = uut.processTimJson(value);
+        OdeData<?, OdeTimPayload> odeDataTest = uut.processTimJson(value);
         OdeLogMetadata odeTimMetadataTest = ((OdeLogMetadata) odeDataTest.getMetadata());
         OdeTimPayload odeTimPayloadTest = (OdeTimPayload) odeDataTest.getPayload();
 
@@ -154,7 +154,7 @@ public class TimDataConverterTest {
                 .readAllBytes(Paths.get("src/test/resources/rxMsg_TIM_OdeOutput_NullMetadata.json")));
 
         // Act
-        OdeData odeDataTest = uut.processTimJson(value);
+        OdeData<?, OdeTimPayload> odeDataTest = uut.processTimJson(value);
 
         // Assert
         Assertions.assertNull(odeDataTest);
@@ -167,7 +167,7 @@ public class TimDataConverterTest {
                 .readAllBytes(Paths.get("src/test/resources/rxMsg_TIM_OdeOutput_NullPayload.json")));
 
         // Act
-        OdeData odeDataTest = uut.processTimJson(value);
+        OdeData<?, OdeTimPayload> odeDataTest = uut.processTimJson(value);
 
         // Assert
         Assertions.assertNull(odeDataTest);
