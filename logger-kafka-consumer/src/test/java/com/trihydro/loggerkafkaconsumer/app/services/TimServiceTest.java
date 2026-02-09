@@ -131,11 +131,11 @@ public class TimServiceTest extends TestBase<TimService> {
         ActiveTim aTim = getActiveTim();
         Long timId = -1L;
         Long dataFrameId = -2L;
-        DataFrame[] dFrames = (getTim((OdeTimPayload) odeData.getPayload())).getDataframes();
+        DataFrame[] dFrames = (getTim(odeData.getPayload())).getDataframes();
 
         doReturn(aTim).when(uut).setActiveTimByRegionName(anyString());
         doReturn(null).when(uut).getTimId(nullable(String.class), any());
-        doReturn(timId).when(uut).AddTim(odeData.getMetadata(), null, (getTim((OdeTimPayload) odeData.getPayload())),
+        doReturn(timId).when(uut).AddTim(odeData.getMetadata(), null, (getTim(odeData.getPayload())),
                 null, null, null, aTim.getSatRecordId(), dFrames[0].getRegions()[0].getName());
         doReturn(dataFrameId).when(mockDataFrameService).AddDataFrame(dFrames[0], timId);
         doNothing().when(uut).addRegions(any(), any());
@@ -147,7 +147,7 @@ public class TimServiceTest extends TestBase<TimService> {
         uut.addActiveTimToDatabase(odeData);
 
         // Assert
-        verify(uut).AddTim(odeData.getMetadata(), null, getTim((OdeTimPayload) odeData.getPayload()), null, null,
+        verify(uut).AddTim(odeData.getMetadata(), null, getTim(odeData.getPayload()), null, null,
                 null, aTim.getSatRecordId(), dFrames[0].getRegions()[0].getName());
         verify(mockDataFrameService).AddDataFrame(dFrames[0], timId);
         verify(uut).addRegions(dFrames[0], dataFrameId);
@@ -200,11 +200,11 @@ public class TimServiceTest extends TestBase<TimService> {
         odeData.getMetadata().getRequest().setRsus(new RSU[0]);
         Long timId = -1L;
         Long dataFrameId = -2L;
-        DataFrame[] dFrames = getTim((OdeTimPayload) odeData.getPayload()).getDataframes();
+        DataFrame[] dFrames = getTim(odeData.getPayload()).getDataframes();
 
         doReturn(aTim).when(uut).setActiveTimByRegionName(anyString());
         doReturn(null).when(uut).getTimId(nullable(String.class), any());
-        doReturn(timId).when(uut).AddTim(odeData.getMetadata(), null, getTim((OdeTimPayload) odeData.getPayload()),
+        doReturn(timId).when(uut).AddTim(odeData.getMetadata(), null, getTim(odeData.getPayload()),
                 null, null, null, aTim.getSatRecordId(), dFrames[0].getRegions()[0].getName());
         doReturn(dataFrameId).when(mockDataFrameService).AddDataFrame(dFrames[0], timId);
         doNothing().when(uut).addRegions(any(), any());
@@ -217,7 +217,7 @@ public class TimServiceTest extends TestBase<TimService> {
         uut.addActiveTimToDatabase(odeData);
 
         // Assert
-        verify(uut).AddTim(odeData.getMetadata(), null, getTim((OdeTimPayload) odeData.getPayload()), null, null,
+        verify(uut).AddTim(odeData.getMetadata(), null, getTim(odeData.getPayload()), null, null,
                 null, aTim.getSatRecordId(), dFrames[0].getRegions()[0].getName());
         verify(mockDataFrameService).AddDataFrame(dFrames[0], timId);
         verify(uut).addRegions(dFrames[0], dataFrameId);
@@ -236,7 +236,7 @@ public class TimServiceTest extends TestBase<TimService> {
         ActiveTim aTim = getActiveTim();
         aTim.setSatRecordId("satRecordId");
         aTim.setRsuTarget(null);
-        ((OdeRequestMsgMetadata) odeData.getMetadata()).getRequest().setRsus(new RSU[0]);
+        (odeData.getMetadata()).getRequest().setRsus(new RSU[0]);
 
         var ath = getActiveTimHolding();
 
@@ -255,7 +255,7 @@ public class TimServiceTest extends TestBase<TimService> {
         verify(uut, never()).addDataFrameItis(any(), any());
         verify(mockActiveTimHoldingService).getSdxActiveTimHolding(aTim.getClientId(), aTim.getDirection(),
                 aTim.getSatRecordId());
-        verify(mockActiveTimHoldingService).deleteActiveTimHolding(-1l);
+        verify(mockActiveTimHoldingService).deleteActiveTimHolding(-1L);
 
         var captor = ArgumentCaptor.forClass(ActiveTim.class);
         verify(mockActiveTimService).insertActiveTim(captor.capture());
@@ -309,7 +309,7 @@ public class TimServiceTest extends TestBase<TimService> {
         ActiveTim aTim = getActiveTim();
         aTim.setSatRecordId("satRecordId");
         aTim.setRsuTarget(null);
-        ((OdeRequestMsgMetadata) odeData.getMetadata()).getRequest().setRsus(new RSU[0]);
+        (odeData.getMetadata()).getRequest().setRsus(new RSU[0]);
 
         ActiveTim activeTimDb = new ActiveTim();
         var start = new Coordinate(BigDecimal.valueOf(0), BigDecimal.valueOf(0));
@@ -351,11 +351,11 @@ public class TimServiceTest extends TestBase<TimService> {
         // Arrange
         var odeData = getOdeData();
         doReturn(null).when(uut).AddTim(odeData.getMetadata(),
-                ((OdeLogMetadata) odeData.getMetadata()).getReceivedMessageDetails(),
-                getTim((OdeTimPayload) odeData.getPayload()),
-                ((OdeLogMetadata) odeData.getMetadata()).getRecordType(),
-                ((OdeLogMetadata) odeData.getMetadata()).getLogFileName(),
-                ((OdeLogMetadata) odeData.getMetadata()).getSecurityResultCode(), null, null);
+                (odeData.getMetadata()).getReceivedMessageDetails(),
+                getTim(odeData.getPayload()),
+                (odeData.getMetadata()).getRecordType(),
+                (odeData.getMetadata()).getLogFileName(),
+                (odeData.getMetadata()).getSecurityResultCode(), null, null);
 
         // Act
         uut.addTimToDatabase(odeData);
@@ -380,13 +380,13 @@ public class TimServiceTest extends TestBase<TimService> {
         var odeData = getOdeData();
         Long timId = -1L;
         Long dataFrameId = -2L;
-        DataFrame[] dFrames = getTim((OdeTimPayload) odeData.getPayload()).getDataframes();
+        DataFrame[] dFrames = getTim(odeData.getPayload()).getDataframes();
         doReturn(timId).when(uut).AddTim(odeData.getMetadata(),
-                ((OdeLogMetadata) odeData.getMetadata()).getReceivedMessageDetails(),
-                getTim(((OdeTimPayload) odeData.getPayload())),
-                ((OdeLogMetadata) odeData.getMetadata()).getRecordType(),
-                ((OdeLogMetadata) odeData.getMetadata()).getLogFileName(),
-                ((OdeLogMetadata) odeData.getMetadata()).getSecurityResultCode(), null, null);
+                (odeData.getMetadata()).getReceivedMessageDetails(),
+                getTim((odeData.getPayload())),
+                (odeData.getMetadata()).getRecordType(),
+                (odeData.getMetadata()).getLogFileName(),
+                (odeData.getMetadata()).getSecurityResultCode(), null, null);
         doReturn(dataFrameId).when(mockDataFrameService).AddDataFrame(dFrames[0], timId);
         doReturn(pathId).when(mockPathService).InsertPath();
         doReturn(getActiveTim()).when(uut).setActiveTimByRegionName(isA(String.class));
@@ -649,7 +649,7 @@ public class TimServiceTest extends TestBase<TimService> {
     @Test
     public void getTimType_SUCCESS() {
         // Arrange
-        List<TimType> timTypes = new ArrayList<TimType>();
+        List<TimType> timTypes = new ArrayList<>();
         TimType tt = new TimType();
         tt.setType("timTypeName");
         tt.setTimTypeId(-1L);
@@ -678,7 +678,7 @@ public class TimServiceTest extends TestBase<TimService> {
     @Test
     public void getItisCodeId_SUCCESS() {
         // Arrange
-        List<ItisCode> itisCodes = new ArrayList<ItisCode>();
+        List<ItisCode> itisCodes = new ArrayList<>();
         ItisCode code = new ItisCode();
         code.setItisCode(1234);
         code.setItisCodeId(-1);
