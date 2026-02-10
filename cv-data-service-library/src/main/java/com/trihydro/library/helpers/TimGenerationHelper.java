@@ -1099,10 +1099,6 @@ public class TimGenerationHelper {
 
         if (aTim.getClientId() != null) {
             regionName += "_" + aTim.getClientId();
-
-            if (aTim.getPk() != null) {
-                regionName += "_" + aTim.getPk();
-            }
         }
         return regionName;
     }

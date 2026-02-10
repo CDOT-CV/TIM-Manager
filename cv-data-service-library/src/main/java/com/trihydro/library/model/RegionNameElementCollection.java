@@ -32,13 +32,6 @@ public class RegionNameElementCollection {
         else {
             return;
         }
-
-        if (splitName.length > 3) {
-            this.pk = splitName[3];
-        }
-        else {
-            return;
-        }
     }
     
     public RegionNameElementCollection (String direction, String route, String rsuOrSat, String timType, String timId) {

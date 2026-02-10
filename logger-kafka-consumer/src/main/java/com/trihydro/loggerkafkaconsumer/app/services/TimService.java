@@ -746,15 +746,6 @@ public class TimService extends BaseService {
             return activeTim;
         }
 
-        if (elements.pk != null) {
-            try {
-                Integer pk = Integer.valueOf(elements.pk);
-                activeTim.setPk(pk);
-            } catch (NumberFormatException ex) {
-                // the pk won't get set here
-            }
-        }
-
         return activeTim;
     }
 
