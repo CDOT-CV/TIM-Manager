@@ -116,7 +116,9 @@ public class TimService extends BaseService {
                 secResCode = odeLogMetadata.getSecurityResultCode();
             }
 
-            Long timId = AddTim(odeData.getMetadata(), rxMsgDet, getTim((OdeTimPayload) odeData.getPayload()),
+            OdeTravelerInformationMessage tim = getTim(odeData.getPayload());
+
+            Long timId = AddTim(odeData.getMetadata(), rxMsgDet, tim,
                 recType, logFileName, secResCode, null, null);
 
             // return if TIM is not inserted
@@ -124,7 +126,7 @@ public class TimService extends BaseService {
                 return;
             }
 
-            DataFrame[] dFrames = getTim((OdeTimPayload) odeData.getPayload()).getDataframes();
+            DataFrame[] dFrames = tim.getDataframes();
             if (dFrames.length == 0) {
                 log.info("addTimToDatabase - No dataframes found in TIM (tim_id: {})", timId);
                 return;
@@ -137,12 +139,13 @@ public class TimService extends BaseService {
 
             String firstRegionName = regions[0].getName(); // all regions have the same name
             ActiveTim activeTim = setActiveTimByRegionName(firstRegionName);
+            ActiveTim finalActiveTim = setRsuOrSat(activeTim, tim.getPacketID());
 
             // if this is an RSU TIM
-            if (activeTim != null && activeTim.getRsuTarget() != null) {
+            if (finalActiveTim != null && finalActiveTim.getRsuTarget() != null) {
                 // save TIM RSU in DB
                 rsuService.getRsus().stream()
-                    .filter(x -> x.getRsuTarget().equals(activeTim.getRsuTarget())).findFirst()
+                    .filter(x -> x.getRsuTarget().equals(finalActiveTim.getRsuTarget())).findFirst()
                     .ifPresent(rsu -> timRsuService.AddTimRsu(timId, rsu.getRsuId(), rsu.getRsuIndex()));
             }
 
@@ -201,16 +204,17 @@ public class TimService extends BaseService {
         // Extract information from region name
         log.debug("Extracting TIM information from region name: '{}'", firstRegionName);
         ActiveTim activeTim = setActiveTimByRegionName(firstRegionName);
-        if (activeTim == null) {
+        ActiveTim finalActiveTim = setRsuOrSat(activeTim, tim.getPacketID());
+        if (finalActiveTim == null) {
             log.warn("Cannot process active TIM: failed to extract information from region name: '{}' for TIM with packet ID: {}", firstRegionName,
                 tim.getPacketID());
             return;
         }
 
-        log.debug("Extracted information - Route: {}, Direction: {}, ClientId: {}, TimType: {}", activeTim.getRoute(), activeTim.getDirection(),
-            activeTim.getClientId(), activeTim.getTimType());
+        log.debug("Extracted information - Route: {}, Direction: {}, ClientId: {}, TimType: {}", finalActiveTim.getRoute(), finalActiveTim.getDirection(),
+            finalActiveTim.getClientId(), finalActiveTim.getTimType());
 
-        String satRecordId = activeTim.getSatRecordId();
+        String satRecordId = finalActiveTim.getSatRecordId();
         if (satRecordId != null) {
             log.debug("TIM has satellite record ID: {}", satRecordId);
         }
@@ -269,14 +273,14 @@ public class TimService extends BaseService {
         RSU firstRsu = null; // TODO: update to handle multiple RSUs if needed
         if (metaData.getRequest() != null && metaData.getRequest().getRsus() != null && metaData.getRequest().getRsus().length > 0) {
             firstRsu = metaData.getRequest().getRsus()[0];
-            activeTim.setRsuTarget(firstRsu.getRsuTarget());
+            finalActiveTim.setRsuTarget(firstRsu.getRsuTarget());
             log.debug("Set RSU target: {} for TIM ID: {}", firstRsu.getRsuTarget(), timId);
         }
 
         // Set satellite record ID from metadata if available
         if (metaData.getRequest() != null && metaData.getRequest().getSdw() != null) {
             String metadataSatRecordId = metaData.getRequest().getSdw().getRecordId();
-            activeTim.setSatRecordId(metadataSatRecordId);
+            finalActiveTim.setSatRecordId(metadataSatRecordId);
             log.debug("Set satellite record ID from metadata: {} for TIM ID: {}", metadataSatRecordId, timId);
         }
 
@@ -288,45 +292,45 @@ public class TimService extends BaseService {
         } else {
             log.debug("Using metadata start time: {} for TIM ID: {}", stDate, timId);
         }
-        activeTim.setStartDateTime(stDate);
-        activeTim.setTimId(timId);
+        finalActiveTim.setStartDateTime(stDate);
+        finalActiveTim.setTimId(timId);
 
         // Get active TIM holding record
         ActiveTimHolding ath;
-        if (activeTim.getRsuTarget() != null && firstRsu != null) {
+        if (finalActiveTim.getRsuTarget() != null && firstRsu != null) {
             // RSU TIM handling
-            log.debug("Processing RSU TIM with target: {} for TIM ID: {}", activeTim.getRsuTarget(), timId);
+            log.debug("Processing RSU TIM with target: {} for TIM ID: {}", finalActiveTim.getRsuTarget(), timId);
 
             // Save TIM-RSU association
-            WydotRsu rsu = rsuService.getRsus().stream().filter(x -> x.getRsuTarget().equals(activeTim.getRsuTarget())).findFirst().orElse(null);
+            WydotRsu rsu = rsuService.getRsus().stream().filter(x -> x.getRsuTarget().equals(finalActiveTim.getRsuTarget())).findFirst().orElse(null);
             if (rsu != null) {
                 log.trace("Associating TIM ID: {} with RSU ID: {} (index: {})", timId, rsu.getRsuId(), rsu.getRsuIndex());
                 timRsuService.AddTimRsu(timId, rsu.getRsuId(), rsu.getRsuIndex());
             } else {
-                log.warn("RSU with target: {} not found in database for TIM ID: {}", activeTim.getRsuTarget(), timId);
+                log.warn("RSU with target: {} not found in database for TIM ID: {}", finalActiveTim.getRsuTarget(), timId);
             }
 
             // Get active TIM holding for RSU
-            log.trace("Retrieving active TIM holding for client ID: {}, direction: {}, RSU target: {}", activeTim.getClientId(),
-                activeTim.getDirection(), activeTim.getRsuTarget());
-            ath = activeTimHoldingService.getRsuActiveTimHolding(activeTim.getClientId(), activeTim.getDirection(), activeTim.getRsuTarget());
+            log.trace("Retrieving active TIM holding for client ID: {}, direction: {}, RSU target: {}", finalActiveTim.getClientId(),
+                finalActiveTim.getDirection(), finalActiveTim.getRsuTarget());
+            ath = activeTimHoldingService.getRsuActiveTimHolding(finalActiveTim.getClientId(), finalActiveTim.getDirection(), finalActiveTim.getRsuTarget());
         } else {
             // SDX TIM handling
-            log.debug("Processing SDX TIM with satellite record ID: {} for TIM ID: {}", activeTim.getSatRecordId(), timId);
+            log.debug("Processing SDX TIM with satellite record ID: {} for TIM ID: {}", finalActiveTim.getSatRecordId(), timId);
 
             // Get active TIM holding for SDX
-            log.trace("Retrieving active TIM holding for client ID: {}, direction: {}, satellite record ID: {}", activeTim.getClientId(),
-                activeTim.getDirection(), activeTim.getSatRecordId());
-            ath = activeTimHoldingService.getSdxActiveTimHolding(activeTim.getClientId(), activeTim.getDirection(), activeTim.getSatRecordId());
+            log.trace("Retrieving active TIM holding for client ID: {}, direction: {}, satellite record ID: {}", finalActiveTim.getClientId(),
+                finalActiveTim.getDirection(), finalActiveTim.getSatRecordId());
+            ath = activeTimHoldingService.getSdxActiveTimHolding(finalActiveTim.getClientId(), finalActiveTim.getDirection(), finalActiveTim.getSatRecordId());
         }
 
         if (ath == null) {
-            if (activeTim.getRsuTarget() != null) {
-                log.warn("No active TIM holding found for RSU TIM with client ID: '{}', direction: '{}', RSU target: '{}'", activeTim.getClientId(),
-                    activeTim.getDirection(), activeTim.getRsuTarget());
+            if (finalActiveTim.getRsuTarget() != null) {
+                log.warn("No active TIM holding found for RSU TIM with client ID: '{}', direction: '{}', RSU target: '{}'", finalActiveTim.getClientId(),
+                    finalActiveTim.getDirection(), finalActiveTim.getRsuTarget());
             } else {
-                log.warn("No active TIM holding found for SAT TIM with client ID: '{}', direction: '{}', satellite record ID: '{}'", activeTim.getClientId(),
-                    activeTim.getDirection(), activeTim.getSatRecordId());
+                log.warn("No active TIM holding found for SAT TIM with client ID: '{}', direction: '{}', satellite record ID: '{}'", finalActiveTim.getClientId(),
+                    finalActiveTim.getDirection(), finalActiveTim.getSatRecordId());
             }
         } else {
             log.debug("Found active TIM holding with ID: {}", ath.getActiveTimHoldingId());
@@ -349,7 +353,7 @@ public class TimService extends BaseService {
                 ZonedDateTime zdt = ZonedDateTime.parse(dframes[0].getStartDateTime()).plusMinutes(durationTime);
                 String endDateTime = dateTimeHelper.convertZonedDateTimeToISO8601Format(zdt);
                 log.debug("Calculated end time: {} for TIM ID: {}", endDateTime, timId);
-                activeTim.setEndDateTime(endDateTime);
+                finalActiveTim.setEndDateTime(endDateTime);
             } catch (Exception e) {
                 log.error("Failed to calculate end time for TIM ID: {} - {}", timId, e.getMessage());
             }
@@ -359,10 +363,10 @@ public class TimService extends BaseService {
 
             if (ath != null && ath.getDesiredEndDateTime() != null) {
                 log.debug("Using end time from active TIM holding: {} for TIM ID: {}", ath.getDesiredEndDateTime(), timId);
-                activeTim.setEndDateTime(ath.getDesiredEndDateTime());
+                finalActiveTim.setEndDateTime(ath.getDesiredEndDateTime());
             } else {
                 log.debug("No desired end time found in active TIM holding for TIM ID: {}, setting to null", timId);
-                activeTim.setEndDateTime(null);
+                finalActiveTim.setEndDateTime(null);
             }
         }
 
@@ -370,38 +374,38 @@ public class TimService extends BaseService {
         if (ath != null) {
             log.trace("Copying data from active TIM holding to active TIM for TIM ID: {}", timId);
 
-            activeTim.setStartPoint(ath.getStartPoint());
-            activeTim.setEndPoint(ath.getEndPoint());
-            activeTim.setProjectKey(ath.getProjectKey());
+            finalActiveTim.setStartPoint(ath.getStartPoint());
+            finalActiveTim.setEndPoint(ath.getEndPoint());
+            finalActiveTim.setProjectKey(ath.getProjectKey());
 
             if (StringUtils.isNotBlank(ath.getExpirationDateTime())) {
                 log.debug("Setting expiration time: {} for TIM ID: {}", ath.getExpirationDateTime(), timId);
-                activeTim.setExpirationDateTime(ath.getExpirationDateTime());
+                finalActiveTim.setExpirationDateTime(ath.getExpirationDateTime());
             }
         }
 
         // Insert or update active TIM record
-        if (activeTim.getTimType() != null) {
+        if (finalActiveTim.getTimType() != null) {
             // TIM came from WYDOT
-            log.debug("Processing WYDOT TIM ID: {} of type: {}", timId, activeTim.getTimType());
+            log.debug("Processing WYDOT TIM ID: {} of type: {}", timId, finalActiveTim.getTimType());
 
             ActiveTim activeTimDb;
-            if (activeTim.getRsuTarget() != null) {
+            if (finalActiveTim.getRsuTarget() != null) {
                 // Look for active RSU TIM
-                log.trace("Looking for existing active RSU TIM with client ID: {}, direction: {}, RSU target: {}", activeTim.getClientId(),
-                    activeTim.getDirection(), activeTim.getRsuTarget());
-                activeTimDb = activeTimService.getActiveRsuTim(activeTim.getClientId(), activeTim.getDirection(), activeTim.getRsuTarget());
+                log.trace("Looking for existing active RSU TIM with client ID: {}, direction: {}, RSU target: {}", finalActiveTim.getClientId(),
+                    finalActiveTim.getDirection(), finalActiveTim.getRsuTarget());
+                activeTimDb = activeTimService.getActiveRsuTim(finalActiveTim.getClientId(), finalActiveTim.getDirection(), finalActiveTim.getRsuTarget());
             } else {
                 // Look for active satellite TIM
-                log.trace("Looking for existing active satellite TIM with satellite record ID: {}, direction: {}", activeTim.getSatRecordId(),
-                    activeTim.getDirection());
-                activeTimDb = activeTimService.getActiveSatTim(activeTim.getSatRecordId(), activeTim.getDirection());
+                log.trace("Looking for existing active satellite TIM with satellite record ID: {}, direction: {}", finalActiveTim.getSatRecordId(),
+                    finalActiveTim.getDirection());
+                activeTimDb = activeTimService.getActiveSatTim(finalActiveTim.getSatRecordId(), finalActiveTim.getDirection());
             }
 
             if (activeTimDb == null) {
                 // Insert new active TIM
                 log.info("Inserting new active TIM for TIM ID: {}", timId);
-                activeTimService.insertActiveTim(activeTim);
+                activeTimService.insertActiveTim(finalActiveTim);
             } else {
                 // Update existing active TIM
                 log.info("Updating existing active TIM with ID: {} for TIM ID: {}", activeTimDb.getActiveTimId(), timId);
@@ -409,18 +413,18 @@ public class TimService extends BaseService {
                 // Preserve existing values if no active TIM holding
                 if (ath == null) {
                     log.debug("Preserving existing start/end points and project key from active TIM ID: {}", activeTimDb.getActiveTimId());
-                    activeTim.setStartPoint(activeTimDb.getStartPoint());
-                    activeTim.setEndPoint(activeTimDb.getEndPoint());
-                    activeTim.setProjectKey(activeTimDb.getProjectKey());
+                    finalActiveTim.setStartPoint(activeTimDb.getStartPoint());
+                    finalActiveTim.setEndPoint(activeTimDb.getEndPoint());
+                    finalActiveTim.setProjectKey(activeTimDb.getProjectKey());
                 }
 
-                activeTim.setActiveTimId(activeTimDb.getActiveTimId());
-                activeTimService.updateActiveTim(activeTim);
+                finalActiveTim.setActiveTimId(activeTimDb.getActiveTimId());
+                activeTimService.updateActiveTim(finalActiveTim);
             }
         } else {
             // Not from WYDOT application
             log.info("Inserting new active TIM for TIM ID: {} (not from WYDOT application - no TimType found)", timId);
-            activeTimService.insertActiveTim(activeTim);
+            activeTimService.insertActiveTim(finalActiveTim);
         }
 
         // Clean up active TIM holding
@@ -688,6 +692,33 @@ public class TimService extends BaseService {
         }
     }
 
+    public ActiveTim setRsuOrSat(ActiveTim activeTim, String packetId) {
+        try (
+                Connection connection = dbInteractions.getConnectionPool();
+                PreparedStatement preparedStatement = connection
+                        .prepareStatement("select sat_record_id and rsu_target from active_tim_holding where packet_id = ?")
+        ) {
+            preparedStatement.setString(1, packetId);
+
+            try (ResultSet rs = preparedStatement.executeQuery()) {
+                if (rs.next()) {
+                    String satRecordId = rs.getString("sat_record_id");
+
+                    if (satRecordId != null) {
+                        activeTim.setSatRecordId(satRecordId);
+                    } else {
+                        activeTim.setRsuTarget(rs.getString("rsu_target"));
+                    }
+                }
+            }
+
+        } catch (SQLException e) {
+            log.error("Failed to load RSU/SAT info for packetId={}", packetId, e);
+        }
+
+        return activeTim;
+    }
+
     public ActiveTim setActiveTimByRegionName(String regionName) {
 
         if (StringUtils.isBlank(regionName) || StringUtils.isEmpty(regionName)) {
@@ -699,19 +730,6 @@ public class TimService extends BaseService {
 
         activeTim.setDirection(elements.direction);
 
-        if (elements.rsuOrSat != null) {
-            // if this is an RSU TIM
-            String[] hyphen_array = elements.rsuOrSat.split("-");
-            if (hyphen_array.length > 1) {
-                if (hyphen_array[0].equals("SAT")) {
-                    activeTim.setSatRecordId(hyphen_array[1]);
-                } else {
-                    activeTim.setRsuTarget(hyphen_array[1]);
-                }
-            }
-        } else {
-            return activeTim;
-        }
         if (elements.timType != null) {
             TimType timType = getTimType(elements.timType);
             if (timType != null) {

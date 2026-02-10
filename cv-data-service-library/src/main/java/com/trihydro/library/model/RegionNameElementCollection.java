@@ -20,28 +20,21 @@ public class RegionNameElementCollection {
         this.direction = splitName[0];
 
         if (splitName.length > 1) {
-            this.rsuOrSat = splitName[1];
+            this.timType = splitName[1];
         }
         else {
             return;
         }
 
         if (splitName.length > 2) {
-            this.timType = splitName[2];
+            this.timId = splitName[2];
         }
         else {
             return;
         }
 
         if (splitName.length > 3) {
-            this.timId = splitName[3];
-        }
-        else {
-            return;
-        }
-
-        if (splitName.length > 4) {
-            this.pk = splitName[4];
+            this.pk = splitName[3];
         }
         else {
             return;

@@ -1085,17 +1085,8 @@ public class TimGenerationHelper {
         return region;
     }
 
-    private String getRsuRegionName(TimUpdateModel aTim, RSU rsu) {
-        return getBaseRegionName(aTim, "_RSU-" + rsu.getRsuTarget());
-    }
-
-    private String getSATRegionName(TimUpdateModel aTim, String recordId) {
-        return getBaseRegionName(aTim, "_SAT-" + recordId);
-    }
-
-    private String getBaseRegionName(TimUpdateModel aTim, String middle) {
+    private String getBaseRegionName(TimUpdateModel aTim) {
         String regionName = aTim.getDirection();
-        regionName += middle;// SAT_xxx or RSU_xxx
 
         String timType = aTim.getTimTypeName();
         if (timType == null || timType.isEmpty()) {
@@ -1167,7 +1158,7 @@ public class TimGenerationHelper {
                 rsus[0] = rsu;
                 timToSend.getRequest().setRsus(rsus);
 
-                String regionName = getRsuRegionName(aTim, wydotRsu);
+                String regionName = getBaseRegionName(aTim);
                 try {
                     regionName = regionNameTrimmer.trimRegionNameIfTooLong(regionName);
                 } catch (IllegalArgumentException e) {
@@ -1192,7 +1183,7 @@ public class TimGenerationHelper {
             // we don't have any existing RSUs, but some fall within the boundary so send
             // new ones there. We need to update requestName in this case
             for (WydotRsu rsu : dbRsus) {
-                String regionName = getRsuRegionName(aTim, rsu);
+                String regionName = getBaseRegionName(aTim);
                 try {
                     regionName = regionNameTrimmer.trimRegionNameIfTooLong(regionName);
                 } catch (IllegalArgumentException e) {
@@ -1274,7 +1265,7 @@ public class TimGenerationHelper {
         OdeGeoRegion serviceRegion = getServiceRegion(reduced_mps);
         sdw.setServiceRegion(serviceRegion);
 
-        String regionName = getSATRegionName(aTim, aTim.getSatRecordId());
+        String regionName = getBaseRegionName(aTim);
         try {
             regionName = regionNameTrimmer.trimRegionNameIfTooLong(regionName);
         } catch (IllegalArgumentException e) {
